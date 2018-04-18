@@ -27,9 +27,9 @@ RUN cd /opt && \
 
 # Deploy a BAR file; Use bash to make the profile work
 COPY Transformation_Map.bar /tmp
-RUN cd /root && bash -c '. /opt/ace-11.0.0.0/server/bin/mqsiprofile && mqsicreateworkdir /root/ace-server && mqsibar -w /root/ace-server -a /tmp/Mandalay.bar -c'
+RUN cd /root && bash -c '. /opt/ibm/ace-11.0.0.0/server/bin/mqsiprofile && mqsicreateworkdir /root/ace-server && mqsibar -w /root/ace-server -a /tmp/Transformation_Map.bar -c'
 
 EXPOSE 7600 7800
 
 # Default command to run
-CMD ["/bin/bash", "-c", ". /opt/ace-11.0.0.0/server/bin/mqsiprofile && IntegrationServer -w /root/ace-server --console-log --admin-rest-api 7600"]
+CMD ["/bin/bash", "-c", ". /opt/ibm/ace-11.0.0.0/server/bin/mqsiprofile && IntegrationServer -w /root/ace-server --console-log --admin-rest-api 7600"]
