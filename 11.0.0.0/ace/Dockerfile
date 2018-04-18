@@ -21,7 +21,7 @@ rm -rf /var/lib/apt/lists/*
 # Install the product
 RUN cd /opt && \
     mkdir /opt/ibm && \
-    curl http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.0-ACE-LINUX64-DEVELOPER.tar.gz \
+    curl http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/ACE-LINUX64-DEVELOPER.tar.gz \
     | tar zx --exclude ace-11.0.0.0/tools --directory /opt/ibm && \
     /opt/ibm/ace-11.0.0.0/ace make registry global accept license silently
 
