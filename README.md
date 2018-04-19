@@ -30,7 +30,9 @@ docker build -t ace-demo:11.0.0.0 .
 
 # Running a container
 
-After pulling the prebuilt image from Docker Hub, or building a Docker image from the supplied files, you can [run a container](https://docs.docker.com/userguide/usingdocker/) which will start an Integration Server listening on port 7600. 
+## Running the base image
+
+After pulling the prebuilt image from Docker Hub, or building a Docker image from the supplied files, you can [run a container](https://docs.docker.com/userguide/usingdocker/) which will start an Integration Server listening on port 7600.
 
 For example:
 
@@ -38,14 +40,27 @@ For example:
 docker run --name myAce -e LICENSE=accept -P ibmcom/ace:11.0.0.0
 ~~~
 
+You can then connect to the server via the web user interface.
+
+## Running the extended image
+
+Due to the changes made for v11 ... 
+
 Running the base image has limited value, as what you probably want to do is run an image with a BAR file available. You should start with the demo image we have provided, but then customised with your own BAR file. Build the image and then run as described above (remembering to reference the image by whatever name you built it with).
 
 For example:
 
 ~~~
 docker build -t ace-bar:1.0 .
-docker run -e LICENSE=accept -P ace-bar:1.0
+docker run --name myAceBar -e LICENSE=accept -P ace-bar:1.0
 ~~~
+
+# Verifying your container is running correctly
+
+Whether you are using the image as provided or if you have customised it, here are a few basic steps that will give you confidence your image has been created properly:
+
+1. Run a container, making sure to expose port 7600 to the host - the container should start without error
+2. Connect a browser to your host on the port you exposed in step 1 - the IBM App Connect Enterprise web user interface should be displayed.
 
 # Issues and contributions
 
