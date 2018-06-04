@@ -31,13 +31,14 @@ RUN echo "ACE_11:" > /etc/debian_chroot \
   && sed -i 's/PASS_MIN_DAYS\t0/PASS_MIN_DAYS\t1/'  /etc/login.defs \
   && sed -i 's/PASS_MAX_DAYS\t99999/PASS_MAX_DAYS\t90/' /etc/login.defs
 
-# Create a user to run as
-RUN useradd --create-home --home-dir /home/aceuser -G mqbrkrs,sudo aceuser \
-  && sed -e 's/^%sudo	.*/%sudo	ALL=NOPASSWD:ALL/g' -i /etc/sudoers \
-  && su - aceuser -c '. /opt/ibm/ace-11.0.0.0/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server' 
-
 # Copy in script files
 COPY *.sh /usr/local/bin/
+
+# Create a user to run as, create the ace workdir, and chmod script files
+RUN useradd --create-home --home-dir /home/aceuser -G mqbrkrs,sudo aceuser \
+  && sed -e 's/^%sudo	.*/%sudo	ALL=NOPASSWD:ALL/g' -i /etc/sudoers \
+  && su - aceuser -c '. /opt/ibm/ace-11.0.0.0/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server' \
+  && chmod 755 /usr/local/bin/*
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
 ENV BASH_ENV=/usr/local/bin/ace_env.sh
