@@ -9,5 +9,5 @@
 
 if [ -z "$MQSI_VERSION" ]; then
   echo "Sourcing profile"
-  source /opt/ibm/ace-11.0.0.0/server/bin/mqsiprofile
+  source /opt/ibm/ace-11.0.0.1/server/bin/mqsiprofile
 fi
