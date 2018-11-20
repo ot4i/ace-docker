@@ -1,0 +1,2 @@
+viewer1 passwd1
+viewer2 passwd2

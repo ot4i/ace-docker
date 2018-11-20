@@ -1,0 +1,17 @@
+---
+ResourceManagers:
+  JVM:
+    truststoreType: 'JKS'
+    truststoreFile: '/home/aceuser/ace-server/truststore.jks'
+    truststorePass: 'setdbparms::truststore'
+
+# Defaults:
+#   Policies:
+#     HTTPSConnector: 'HTTPS'
+
+Defaults:
+ defaultApplication: ''       # Name a default application under which independent resources will be placed
+ policyProject: 'DefaultPolicies'   # Name of the Policy project that will be used for unqualified Policy references
+ Policies:
+   # Set default policy names, optionally qualified with a policy project as {policy project}:name
+   HTTPSConnector: 'HTTPS'          # Default HTTPS connector policy

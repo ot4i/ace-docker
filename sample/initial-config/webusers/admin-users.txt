@@ -1,0 +1,2 @@
+admin1 passwd1
+admin2 passwd2
