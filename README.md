@@ -24,7 +24,9 @@ Get [ACE for Developers edition](https://www.ibm.com/marketing/iwm/iwm/web/pick.
 
 ### Using MQ production image
 
-When building an image with both ACE and MQ, the docker file uses the [MQ Advanced for Developers image in docker registry](https://hub.docker.com/r/ibmcom/mq/) as base image by default.
+When building an image with both ACE and MQ, the docker file uses the [MQ Advanced for Developers image in docker registry](https://hub.docker.com/r/ibmcom/mq/) as base image by default on Ubuntu.
+On RedHat Enterprise Linux the image can be built using the [MQ instructions](https://github.com/ibm-messaging/mq-container/blob/master/docs/building.md#prerequisites-for-building-a-red-hat-enterprise-linux-image) or downloaded from [IBM Passport Advantage] (https://www.ibm.com/software/passportadvantage/).
+
 When building a production image with MQ, follow the [MQ instructions](https://github.com/ibm-messaging/mq-container/blob/master/docs/building.md#building-a-production-image) to build your own production MQ image. Then, when building the ACE with MQ image use `build-arg` to set the `BASE_IMAGE` to your production MQ image. More details below.
 
 ## Build an image with App Connect Enterprise and MQ
@@ -35,8 +37,11 @@ The `deps` folder must contain a copy of ACE, **version 11.0.0.2 or greater**. I
 Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in `deps`.
 
 1. ACE production with MQ Advanced production:
-`docker build -t ace-mq --build-arg BASE_IMAGE={MQ-image} --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.acemq .`
-1. ACE for Developers with MQ Advanced for Developers: `docker build -t ace-dev-mq-dev --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubuntu/Dockerfile.acemq .`
+   * Ubuntu: `docker build -t ace-mq --build-arg BASE_IMAGE={MQ-image} --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.acemq .`
+   * RedHat Enterprise Linux: `./build.sh ace-mq {ACE-file-in-deps-folder} {mq-base-image-name}`
+2. ACE for Developers with MQ Advanced for Developers:
+   * Ubuntu: `docker build -t ace-dev-mq-dev --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubuntu/Dockerfile.acemq .`
+   * RedHat Enterprise Linux: `./build.sh ace-mq {ACE-file-in-deps-folder} {mq-base-image-name}`
 
 **Note:** As mentioned before, the docker file will download the **[Development version of IBM MQ](https://hub.docker.com/r/ibmcom/mq/)** by default unless `BASE_IMAGE` is changed.
 
@@ -45,8 +50,12 @@ Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in 
 The `deps` folder must contain a copy of ACE, **version 11.0.0.2 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
 Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in `deps`.
 
-1. ACE for Developers only: `docker build -t ace-dev-only --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
-1. ACE production only: `docker build -t ace-only --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
+1. ACE for Developers only:
+   * Ubuntu: `docker build -t ace-dev-only --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
+   * RedHat Enterprise Linux: `./build.sh ace-dev-only {ACE-file-in-deps-folder}`
+2. ACE production only: 
+   * Ubuntu: `docker build -t ace-only --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
+   * RedHat Enterprise Linux: `./build.sh ace-only {ACE-file-in-deps-folder}`
 
 # Usage
 

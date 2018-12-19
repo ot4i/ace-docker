@@ -26,9 +26,15 @@ FROM $BASE_IMAGE
 
 WORKDIR /opt/ibm
 
+
+
 # Install ACE V11
 RUN apt update && apt -y install --no-install-recommends sudo openssl \
   && rm -rf /var/lib/apt/lists/*
+
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.11.2/bin/linux/amd64/kubectl /usr/local/bin/kubectl
+RUN chmod +x /usr/local/bin/kubectl && \
+    /usr/local/bin/kubectl version --client
 
 COPY --from=aceinstall /opt/ibm/ace-11 /opt/ibm/ace-11
 

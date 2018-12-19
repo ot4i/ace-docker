@@ -22,8 +22,8 @@
     <KeyAlias>mykey</KeyAlias>
     <KeyPassword></KeyPassword>
     <KeystoreFile>/home/aceuser/ace-server/keystore.jks</KeystoreFile>
-    <KeystorePassword>passrods</KeystorePassword>
+    <KeystorePassword>keystorepwd</KeystorePassword>
     <TruststoreFile>/home/aceuser/ace-server/truststore.jks</TruststoreFile>
-    <TruststorePassword>passrods</TruststorePassword>
+    <TruststorePassword>truststorepwd</TruststorePassword>
   </policy>
 </policies>

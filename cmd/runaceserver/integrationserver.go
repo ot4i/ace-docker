@@ -110,6 +110,16 @@ func initialIntegrationServerConfig() error {
 	}
 
 	log.Printf("Initial configuration of integration server complete")
+
+	log.Println("Discovering override ports")
+
+	out, _, err := command.Run("bash", "ace_discover_port_overrides.sh")
+	if err != nil {
+		log.Errorf("Error discovering override ports: %v", string(out))
+		return err
+	}
+	log.Println("Successfully discovered override ports")
+
 	return nil
 }
 
