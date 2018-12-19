@@ -1,2 +1,2 @@
 # resource user password
-setdbparms::truststore dummy passrods
+setdbparms::truststore dummy truststorepwd

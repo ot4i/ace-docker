@@ -15,4 +15,8 @@ if [ -f /home/aceuser/ace-server/odbc.ini ]; then
   export ODBCINI=/home/aceuser/ace-server/odbc.ini
 fi
 
+if ! [[ -z "${KUBERNETES_PORT}" ]] && ! [[ -z "${SERVICE_NAME}" ]] ; then
+  . /home/aceuser/portOverrides
+fi
+
 exec IntegrationServer $*
