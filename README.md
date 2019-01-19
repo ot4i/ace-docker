@@ -38,10 +38,10 @@ Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in 
 
 1. ACE production with MQ Advanced production:
    * Ubuntu: `docker build -t ace-mq --build-arg BASE_IMAGE={MQ-image} --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.acemq .`
-   * RedHat Enterprise Linux: `./build.sh ace-mq {ACE-file-in-deps-folder} {mq-base-image-name}`
+   * RedHat Enterprise Linux: `docker build -t ace-mq --build-arg BASE_IMAGE={MQ-image} --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file rhel/Dockerfile.acemqrhel .`
 2. ACE for Developers with MQ Advanced for Developers:
    * Ubuntu: `docker build -t ace-dev-mq-dev --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubuntu/Dockerfile.acemq .`
-   * RedHat Enterprise Linux: `./build.sh ace-mq {ACE-file-in-deps-folder} {mq-base-image-name}`
+   * RedHat Enterprise Linux: `docker build -t ace-dev-mq-dev --build-arg BASE_IMAGE={MQ-image} --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file rhel/Dockerfile.acemqrhel .`
 
 **Note:** As mentioned before, the docker file will download the **[Development version of IBM MQ](https://hub.docker.com/r/ibmcom/mq/)** by default unless `BASE_IMAGE` is changed.
 
@@ -52,10 +52,10 @@ Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in 
 
 1. ACE for Developers only:
    * Ubuntu: `docker build -t ace-dev-only --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
-   * RedHat Enterprise Linux: `./build.sh ace-dev-only {ACE-file-in-deps-folder}`
+   * RedHat Enterprise Linux: `docker build -t ace-dev-only --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file rhel/Dockerfile.acerhel .`
 2. ACE production only: 
    * Ubuntu: `docker build -t ace-only --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
-   * RedHat Enterprise Linux: `./build.sh ace-only {ACE-file-in-deps-folder}`
+   * RedHat Enterprise Linux: `docker build -t ace-only --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file rhel/Dockerfile.acerhel .`
 
 # Usage
 
