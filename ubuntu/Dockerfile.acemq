@@ -15,7 +15,6 @@ RUN go test -v ./cmd/runaceserver/
 RUN go test -v ./internal/...
 RUN go vet ./cmd/... ./internal/...
 
-FROM ubuntu:16.04 as aceinstall
 ARG ACE_INSTALL=ace-11.0.0.2.tar.gz
 WORKDIR /opt/ibm
 COPY deps/$ACE_INSTALL .
@@ -36,7 +35,7 @@ ADD https://storage.googleapis.com/kubernetes-release/release/v1.11.2/bin/linux/
 RUN chmod +x /usr/local/bin/kubectl && \
     /usr/local/bin/kubectl version --client
 
-COPY --from=aceinstall /opt/ibm/ace-11 /opt/ibm/ace-11
+COPY --from=builder /opt/ibm/ace-11 /opt/ibm/ace-11
 
 RUN /opt/ibm/ace-11/ace make registry global accept license silently
 
