@@ -11,7 +11,9 @@ if [ -z "$MQSI_VERSION" ]; then
   source /opt/ibm/ace-11/server/bin/mqsiprofile
 fi
 
-for bar in /home/aceuser/bars/*.bar
-do
-  mqsibar -a $bar -w /home/aceuser/ace-server
-done
+if ls /home/aceuser/bars/*.bar >/dev/null 2>&1; then
+  for bar in /home/aceuser/bars/*.bar
+  do
+    mqsibar -a $bar -w /home/aceuser/ace-server
+  done
+fi

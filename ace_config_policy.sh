@@ -13,7 +13,17 @@ source ${SCRIPT_DIR}/ace_config_logging.sh
 log "Handling policy configuration"
 
 mkdir /home/aceuser/ace-server/overrides/DefaultPolicies
-cp /home/aceuser/initial-config/policy/*.policyxml /home/aceuser/ace-server/overrides/DefaultPolicies/.
-cp /home/aceuser/initial-config/policy/policy.descriptor /home/aceuser/ace-server/overrides/DefaultPolicies/policy.descriptor
+
+if ls /home/aceuser/initial-config/policy/*.policyxml >/dev/null 2>&1; then
+  for policyfile in `ls /home/aceuser/initial-config/policy/*.policyxml`; do
+    if [ -s "${policyfile}" ]; then
+      cp "${policyfile}" /home/aceuser/ace-server/overrides/DefaultPolicies/.
+    fi
+  done
+fi
+
+if [ -s "/home/aceuser/initial-config/policy/policy.descriptor" ]; then
+  cp /home/aceuser/initial-config/policy/policy.descriptor /home/aceuser/ace-server/overrides/DefaultPolicies/policy.descriptor
+fi
 
 log "Policy configuration complete"

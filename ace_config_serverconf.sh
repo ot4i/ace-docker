@@ -12,6 +12,8 @@ source ${SCRIPT_DIR}/ace_config_logging.sh
 
 log "Handling server.conf configuration"
 
-cp /home/aceuser/initial-config/serverconf/server.conf.yaml /home/aceuser/ace-server/overrides/server.conf.yaml
+if [ -s "/home/aceuser/initial-config/serverconf/server.conf.yaml" ]; then
+  cp /home/aceuser/initial-config/serverconf/server.conf.yaml /home/aceuser/ace-server/overrides/server.conf.yaml
+fi
 
 log "server.conf configuration complete"

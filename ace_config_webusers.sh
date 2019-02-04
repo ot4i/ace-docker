@@ -18,49 +18,62 @@ log "Handling webusers configuration"
 
 ADMINUSERSFILE=/home/aceuser/initial-config/webusers/admin-users.txt
 VIEWERUSERSFILE=/home/aceuser/initial-config/webusers/viewer-users.txt
+DASHBOARDUSERSFILE=/home/aceuser/initial-config/webusers/dashboard-users.txt
 
-if [ ! -f $ADMINUSERSFILE ]; then
-  log "File not found: ${ADMINUSERSFILE}"
-  exit 1
-fi
-
-if [ ! -f $VIEWERUSERSFILE ]; then
-  log "File not found: ${VIEWERUSERSFILE}"
-  exit 1
-fi
-
-OUTPUT=$(mqsichangeauthmode -w /home/aceuser/ace-server -s active -m file 2>&1)
-logAndExitIfError $? "${OUTPUT}"
-
-OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r admin -p all+ 2>&1)
-logAndExitIfError $? "${OUTPUT}"
-
-OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r viewer -p read+ 2>&1)
-logAndExitIfError $? "${OUTPUT}"
-
-OLDIFS=${IFS}
-IFS=$'\n'
-for line in $(cat $ADMINUSERSFILE | tr -d '\r'); do
-  if [[ $line =~ ^\# ]]; then
-    continue
-  fi
-  IFS=${OLDIFS}
-  fields=($line)
-  log "Creating admin user ${fields[0]}"
-
-  OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r admin 2>&1)
+if [ -s $ADMINUSERSFILE ] || [ -s $VIEWERUSERSFILE ] || [ -s $DASHBOARDUSERSFILE ]; then
+  OUTPUT=$(mqsichangeauthmode -w /home/aceuser/ace-server -s active -m file 2>&1)
   logAndExitIfError $? "${OUTPUT}"
-done
 
-IFS=$'\n'
-for line in $(cat $VIEWERUSERSFILE | tr -d '\r'); do
-  if [[ $line =~ ^\# ]]; then
-    continue
-  fi
-  IFS=${OLDIFS}
-  fields=($line)
-  log "Creating viewer user ${fields[0]}"
-
-  OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r viewer 2>&1)
+  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r admin -p all+ 2>&1)
   logAndExitIfError $? "${OUTPUT}"
-done
+
+  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r viewer -p read+ 2>&1)
+  logAndExitIfError $? "${OUTPUT}"
+
+  OLDIFS=${IFS}
+
+  if [ -s $ADMINUSERSFILE ]; then
+    IFS=$'\n'
+    for line in $(cat $ADMINUSERSFILE | tr -d '\r'); do
+      if [[ $line =~ ^\# ]]; then
+        continue
+      fi
+      IFS=${OLDIFS}
+      fields=($line)
+      log "Creating admin user ${fields[0]}"
+
+      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r admin 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    done
+  fi
+
+  if [ -s $VIEWERUSERSFILE ]; then
+    IFS=$'\n'
+    for line in $(cat $VIEWERUSERSFILE | tr -d '\r'); do
+      if [[ $line =~ ^\# ]]; then
+        continue
+      fi
+      IFS=${OLDIFS}
+      fields=($line)
+      log "Creating viewer user ${fields[0]}"
+
+      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r viewer 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    done
+  fi
+
+  if [ -s $DASHBOARDUSERSFILE ]; then
+    IFS=$'\n'
+    for line in $(cat $DASHBOARDUSERSFILE | tr -d '\r'); do
+      if [[ $line =~ ^\# ]]; then
+        continue
+      fi
+      IFS=${OLDIFS}
+      fields=($line)
+      log "Creating viewer user ${fields[0]}"
+
+      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r viewer 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    done
+  fi
+fi

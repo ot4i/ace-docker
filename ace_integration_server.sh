@@ -11,7 +11,7 @@ if [ -z "$MQSI_VERSION" ]; then
   source /opt/ibm/ace-11/server/bin/mqsiprofile
 fi
 
-if [ -f /home/aceuser/ace-server/odbc.ini ]; then
+if [ -s /home/aceuser/ace-server/odbc.ini ]; then
   export ODBCINI=/home/aceuser/ace-server/odbc.ini
 fi
 

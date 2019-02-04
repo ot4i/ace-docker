@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/rhel7:7.5
+FROM registry.access.redhat.com/rhel7
 
 WORKDIR /opt/ibm
 

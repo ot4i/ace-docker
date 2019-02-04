@@ -16,25 +16,22 @@ source ${SCRIPT_DIR}/ace_config_logging.sh
 
 log "Handling setdbparms configuration"
 
-FILE=/home/aceuser/initial-config/setdbparms/setdbparms.txt
+if [ -s "/home/aceuser/initial-config/setdbparms/setdbparms.txt"]; then
+  FILE=/home/aceuser/initial-config/setdbparms/setdbparms.txt
 
-if [ ! -f $FILE ]; then
-  log "File not found: ${FILE}"
-  exit 1
+  OLDIFS=${IFS}
+  IFS=$'\n'
+  for line in $(cat $FILE | tr -d '\r'); do
+    if [[ $line =~ ^\# ]]; then
+      continue
+    fi
+    IFS=${OLDIFS}
+    fields=($line)
+    log "Setting user and password for resource ${fields[0]}"
+
+    OUTPUT=$(mqsisetdbparms -w /home/aceuser/ace-server -n ${fields[0]} -u ${fields[1]} -p ${fields[2]} 2>&1)
+    logAndExitIfError $? "${OUTPUT}"
+  done
 fi
-
-OLDIFS=${IFS}
-IFS=$'\n'
-for line in $(cat $FILE | tr -d '\r'); do
-  if [[ $line =~ ^\# ]]; then
-    continue
-  fi
-  IFS=${OLDIFS}
-  fields=($line)
-  log "Setting user and password for resource ${fields[0]}"
-
-  OUTPUT=$(mqsisetdbparms -w /home/aceuser/ace-server -n ${fields[0]} -u ${fields[1]} -p ${fields[2]} 2>&1)
-  logAndExitIfError $? "${OUTPUT}"
-done
 
 log "setdbparms configuration complete"
