@@ -57,6 +57,14 @@ Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in 
    * Ubuntu: `docker build -t ace-only --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
    * RedHat Enterprise Linux: `./build-rhel.sh ace-only {buildTag} {ACE-file-in-deps-folder}`
 
+## Build an image with App Connect Enterprise and MQ Client
+
+Follow the instructions above for building an image with App Connect Enterprise Only.
+
+Add the MQ Client libraries to your existing image by running docker build -t ace-dev-only --build-arg BASE_IMAGE=<AceOnlyImageTag> --file ubuntu/Dockerfile.acemqclient .`
+
+You can supply a customer URL for the MQ binaries by setting the argument MQ_URL
+
 # Usage
 
 ### Accepting the License

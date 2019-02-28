@@ -1,5 +1,34 @@
 FROM registry.access.redhat.com/rhel7
 
+ENV SUMMARY="Integration Server for App Connect Enterprise on ICP" \
+    DESCRIPTION="Integration Server for App Connect Enterprise on ICP" \
+    PRODNAME="AppConnectEnterprise" \
+    COMPNAME="IntegrationServer"
+
+LABEL summary="$SUMMARY" \
+      description="$DESCRIPTION" \
+      io.k8s.description="$DESCRIPTION" \
+      io.k8s.display-name="Integration Server for App Connect Enterprise on ICP" \
+      io.openshift.tags="$PRODNAME,$COMPNAME" \
+      com.redhat.component="$PRODNAME-$COMPNAME" \
+      name="$PRODNAME/$COMPNAME" \
+      vendor="IBM" \
+      version="11.0.0.3" \
+      release="1" \
+      license="IBM" \
+      maintainer="Hybrid Integration Platform Cloud" \
+      io.openshift.expose-services="" \
+      usage=""
+
+# Increase security
+RUN sed -i 's/# minlen = 9/minlen = 9/'  /etc/security/pwquality.conf && \
+    sed -i 's/PASS_MIN_DAYS\t0/PASS_MIN_DAYS\t1/'  /etc/login.defs && \
+    sed -i 's/PASS_MAX_DAYS\t99999/PASS_MAX_DAYS\t90/'  /etc/login.defs
+
+# Add required license as text file in Liceses directory (GPL, MIT, APACHE, Partner End User Agreement, etc)
+RUN mkdir /licenses
+COPY LICENSE /licenses/licensing.txt
+
 WORKDIR /opt/ibm
 
 # Install ACE V11
@@ -9,7 +38,6 @@ RUN  yum update -y && \
      rm -rf /var/lib/apt/lists/*
 
 ADD ./rhel/ace-11  /opt/ibm/ace-11
-
 RUN /opt/ibm/ace-11/ace make registry global accept license silently
 
 # Copy in PID1 process
