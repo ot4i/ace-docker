@@ -16,7 +16,7 @@ source ${SCRIPT_DIR}/ace_config_logging.sh
 
 log "Handling setdbparms configuration"
 
-if [ -s "/home/aceuser/initial-config/setdbparms/setdbparms.txt"]; then
+if [ -s "/home/aceuser/initial-config/setdbparms/setdbparms.txt" ]; then
   FILE=/home/aceuser/initial-config/setdbparms/setdbparms.txt
 
   OLDIFS=${IFS}
