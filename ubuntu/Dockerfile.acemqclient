@@ -5,7 +5,7 @@ FROM $BASE_IMAGE
 ARG MQ_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqadv/mqadv_dev911_ubuntu_x86-64.tar.gz
 
 USER root
-COPY installMQClient.sh /tmp/mq/
+COPY ubuntu/installMQClient.sh /tmp/mq/
 RUN /tmp/mq/installMQClient.sh 
 
 USER aceuser
