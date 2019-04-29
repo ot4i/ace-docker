@@ -16,7 +16,7 @@ source ${SCRIPT_DIR}/ace_config_logging.sh
 
 log "Handling odbcini configuration"
 
-if [ -s "/home/aceuser/initial-config/odbcini/odbc.ini"]; then
+if [ -s "/home/aceuser/initial-config/odbcini/odbc.ini" ]; then
   ODBCINI=/home/aceuser/ace-server/odbc.ini
   cp /home/aceuser/initial-config/odbcini/odbc.ini ${ODBCINI}
 fi

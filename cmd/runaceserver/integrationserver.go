@@ -344,6 +344,12 @@ func startIntegrationServer() command.BackgroundCmd {
 		return returnErr
 	}
 
+    defaultAppName := os.Getenv("ACE_DEFAULT_APPLICATION_NAME")
+    if defaultAppName == "" {
+        log.Printf("No default application name supplied. Using the integration server name instead.")
+        defaultAppName = serverName
+    }
+
 	if qmgr.UseQueueManager() {
 		qmgrName, err := name.GetQueueManagerName()
 		if err != nil {
@@ -353,10 +359,10 @@ func startIntegrationServer() command.BackgroundCmd {
 			returnErr.ReturnError = err
 			return returnErr
 		}
-		return command.RunAsUserBackground("aceuser", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log")
+		return command.RunAsUserBackground("aceuser", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
 	}
 
-	return command.RunAsUserBackground("aceuser", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--log-output-format", logOutputFormat, "--console-log")
+	return command.RunAsUserBackground("aceuser", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
 }
 
 func waitForIntegrationServer() error {
