@@ -61,7 +61,7 @@ Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in 
 
 Follow the instructions above for building an image with App Connect Enterprise Only.
 
-Add the MQ Client libraries to your existing image by running docker `build -t ace-dev-only --build-arg BASE_IMAGE=<AceOnlyImageTag> --file ubuntu/Dockerfile.acemqclient .`
+Add the MQ Client libraries to your existing image by running docker `build -t ace-mqclient --build-arg BASE_IMAGE=<AceOnlyImageTag> --file ubuntu/Dockerfile.acemqclient .`
 
 `<AceOnlyImageTag>` is the tag of the image you want to add the client libs to i.e. ace-only
 
