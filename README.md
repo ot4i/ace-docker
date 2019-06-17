@@ -1,6 +1,6 @@
 # Overview
 
-<img src="https://raw.githubusercontent.com/ot4i/ace-helm/master/appconnect_enterprise_logo.svg?sanitize=true" width="100" alt="IBM ACE logo"/>
+<img src="https://raw.githubusercontent.com/ot4i/ace-docker/master/app_connect_light_256x256.png" width="100" alt="IBM ACE logo"/>
 
 Run [IBM® App Connect Enterprise](https://www.ibm.com/cloud/app-connect/enterprise) in a container.
 
