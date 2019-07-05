@@ -1,0 +1,21 @@
+FROM ace-minimal-install:11.0.0.5-alpine
+MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
+
+# docker build --build-arg LICENSE=accept -t ace-minimal:11.0.0.5-alpine -f Dockerfile.alpine .
+
+ARG LICENSE
+
+# Set BASH_ENV to source mqsiprofile when using docker exec bash -c
+ENV BASH_ENV=/etc/profile.d/profile-with-ibmjava-paths.sh
+
+# Create a user to run as, create the ace workdir, and chmod script files
+RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \
+    adduser aceuser mqbrkrs && \
+    cat /etc/profile.d/ibmjava-paths.sh >> /home/aceuser/.bashrc && \
+    chown aceuser /home/aceuser/.bashrc && \
+    chmod 664 /home/aceuser/.bashrc && \
+    su - aceuser -c "export LICENSE=${LICENSE} && . /etc/profile.d/profile-with-ibmjava-paths.sh && mqsicreateworkdir /home/aceuser/ace-server" && \
+    echo ". /etc/profile.d/profile-with-ibmjava-paths.sh" >> /home/aceuser/.bashrc
+
+USER aceuser
+ENTRYPOINT ["bash"]

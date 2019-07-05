@@ -1,6 +1,7 @@
 # Overview
 
-<img src="https://raw.githubusercontent.com/ot4i/ace-docker/master/app_connect_light_256x256.png" width="100" alt="IBM ACE logo"/>
+
+<img src="./app_connect_light_256x256.png" width="100" alt="IBM ACE logo"/>
 
 Run [IBM® App Connect Enterprise](https://www.ibm.com/cloud/app-connect/enterprise) in a container.
 
@@ -12,9 +13,9 @@ You can build an image containing one of the following combinations:
 
 # Building a container image
 
-Download a copy of App Connect Enterprise (ie. `ace-11.0.0.2.tar.gz`) and place it in the `deps` folder. When building the image use `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-11.0.0.2.tar.gz`
+Download a copy of App Connect Enterprise (ie. `ace-11.0.0.5.tar.gz`) and place it in the `deps` folder. When building the image use `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-11.0.0.5.tar.gz`
 
-- **Important:** Only ACE version **11.0.0.2 or greater** is supported.
+- **Important:** Only ACE version **11.0.0.5 or greater** is supported.
 
 Choose if you want to have an image with just App Connect Enterprise or an image with both App Connect Enterprise and IBM MQ Advanced.
 
@@ -24,8 +25,7 @@ Get [ACE for Developers edition](https://www.ibm.com/marketing/iwm/iwm/web/pick.
 
 ### Using MQ production image
 
-When building an image with both ACE and MQ, the docker file uses the [MQ Advanced for Developers image in docker registry](https://hub.docker.com/r/ibmcom/mq/) as base image by default on Ubuntu.
-On RedHat Enterprise Linux the image can be built using the [MQ instructions](https://github.com/ibm-messaging/mq-container/blob/master/docs/building.md#prerequisites-for-building-a-red-hat-enterprise-linux-image) or downloaded from [IBM Passport Advantage] (https://www.ibm.com/software/passportadvantage/).
+When building an image with both ACE and MQ, the docker file uses the [MQ Advanced for Developers image in docker registry](https://hub.docker.com/r/ibmcom/mq/) as base image.
 
 When building a production image with MQ, follow the [MQ instructions](https://github.com/ibm-messaging/mq-container/blob/master/docs/building.md#building-a-production-image) to build your own production MQ image. Then, when building the ACE with MQ image use `build-arg` to set the `BASE_IMAGE` to your production MQ image. More details below.
 
@@ -33,39 +33,33 @@ When building a production image with MQ, follow the [MQ instructions](https://g
 
 [Info on how to get the Developers or production image for MQ](#using-mq-production-image)
 
-The `deps` folder must contain a copy of ACE, **version 11.0.0.2 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
+The `deps` folder must contain a copy of ACE, **version 11.0.0.5 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
 Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in `deps`.
 
-1. ACE production with MQ Advanced production:
-   * Ubuntu: `docker build -t ace-mq --build-arg BASE_IMAGE={MQ-image} --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.acemq .`
-   * RedHat Enterprise Linux: `./build-rhel.sh ace-mq {buildTag} {ACE-file-in-deps-folder} {mq-base-image-name}`
+1. ACE production with MQ Advanced production
+   - `docker build -t ace-mq --build-arg BASE_IMAGE={MQ-image} --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubi/Dockerfile.acemq .`
 2. ACE for Developers with MQ Advanced for Developers:
-   * Ubuntu: `docker build -t ace-dev-mq-dev --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubuntu/Dockerfile.acemq .`
-   * RedHat Enterprise Linux: `./build-rhel.sh ace-mq {buildTag} {ACE-file-in-deps-folder} {mq-base-image-name}`
+   -`docker build -t ace-dev-mq-dev --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubi/Dockerfile.acemq .`
 
 **Note:** As mentioned before, the docker file will download the **[Development version of IBM MQ](https://hub.docker.com/r/ibmcom/mq/)** by default unless `BASE_IMAGE` is changed.
 
 ## Build an image with App Connect Enterprise only
 
-The `deps` folder must contain a copy of ACE, **version 11.0.0.2 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
+The `deps` folder must contain a copy of ACE, **version 11.0.0.5 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
 Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in `deps`.
 
 1. ACE for Developers only:
-   * Ubuntu: `docker build -t ace-dev-only --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
-   * RedHat Enterprise Linux: `./build-rhel.sh ace-dev-only {buildTag} {ACE-file-in-deps-folder}`
+   - `docker build -t ace-dev-only --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubi/Dockerfile.aceonly .`
 2. ACE production only: 
-   * Ubuntu: `docker build -t ace-only --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
-   * RedHat Enterprise Linux: `./build-rhel.sh ace-only {buildTag} {ACE-file-in-deps-folder}`
+   - `docker build -t ace-only --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubi/Dockerfile.aceonly .`
 
 ## Build an image with App Connect Enterprise and MQ Client
 
 Follow the instructions above for building an image with App Connect Enterprise Only.
 
-Add the MQ Client libraries to your existing image by running `docker build -t ace-mqclient --build-arg BASE_IMAGE=<AceOnlyImageTag> --file ubuntu/Dockerfile.acemqclient .`
+Add the MQ Client libraries to your existing image by running `cd ubi && docker build -t ace-mqclient --build-arg BASE_IMAGE=<AceOnlyImageTag> --file Dockerfile.mqclient .`
 
-`<AceOnlyImageTag>` is the tag of the image you want to add the client libs to i.e. ace-only
-
-You can supply a customer URL for the MQ binaries by setting the argument MQ_URL
+`<AceOnlyImageTag>` is the tag of the image you want to add the client libs to i.e. ace-only. You can supply a customer URL for the MQ binaries by setting the argument MQ_URL
 
 # Usage
 
@@ -205,6 +199,15 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
      admin1 password1
      admin2 password2
      ```
+- `/home/aceuser/initial-config/mqsc`
+   - A text file called `config.mqsc`. It contains a list of mqsc commands which will be processed on start by `runmqsc` command. Further details can be found in the [MQ Knowledge Center](https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.1.0/com.ibm.mq.adm.doc/q020670_.htm)
+- `/home/aceuser/initial-config/agent`
+   - A json file called 'switch.json' containing configuration information for the switch, this will be copied into the appropriate iibswitch directory
+   - A json file called 'agentx.json' containing configuration information for the agent connectivity, this will be copied into the appropriate iibswitch directory
+   - A json file called 'agentc.json' containing configuration information for the agent connectivity, this will be copied into the appropriate iibswitch directory
+   - A json file called 'agentp.json' containing configuration information for the agent connectivity, this will be copied into the appropriate iibswitch directory
+- `/home/aceuser/initial-config/extensions`
+   - A zip file called `extensions.zip` will be extracted into the directory `/home/aceuser/ace-server/extensions`. This allows you to place extra files into a directory you can then reference in, for example, the server.conf.yaml
 
 ## Logging
 
@@ -231,7 +234,6 @@ If `MQ_ENABLE_METRICS` is set to `true` and an MQ Queue Manager is present an ad
 The Dockerfile and associated scripts are licensed under the [Eclipse Public License 2.0](LICENSE). Licenses for the products installed within the images are as follows:
 
  - IBM App Connect Enterprise for Developers is licensed under the IBM International License Agreement for Non-Warranted Programs. This license may be viewed from the image using the `LICENSE=view` environment variable as described above.
- - License information for Ubuntu packages may be found in `/usr/share/doc/${package}/copyright`
 
 Note that the IBM App Connect Enterprise for Developers license does not permit further distribution.
 

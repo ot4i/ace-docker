@@ -1,0 +1,51 @@
+# Experimental docker files
+
+Simple docker images for ACE v11 on Linux (amd64 and s390x) and Windows
+
+ACE in an Alpine container
+
+
+docker tag ace-alpine-with-jdk uk.icr.io/ace-registry/ace-alpine-with-jdk:latest
+docker tag ace-alpine-ibmjava uk.icr.io/ace-registry/ace-alpine-ibmjava:latest
+docker tag ace-alpine uk.icr.io/ace-registry/ace-alpine:latest
+docker tag ace-minimal uk.icr.io/ace-registry/ace-minimal:latest
+
+
+docker push uk.icr.io/ace-registry/ace-alpine:latest
+docker push uk.icr.io/ace-registry/ace-alpine-ibmjava:latest
+docker push uk.icr.io/ace-registry/ace-alpine-with-jdk:latest
+docker push uk.icr.io/ace-registry/ace-minimal:latest
+
+
+Local on kenya (debian 8) without ace-admin-server:
+
+ace-alpine                                  2d36536875be        30 minutes ago      494MB
+ace-alpine-ibmjava                          47471b893134        22 minutes ago      548MB
+ace-alpine-with-jdk                         1f516b62ff7a        8 minutes ago       611MB
+ace-minimal                                 4d6b304e47e6        44 minutes ago      751MB
+
+On IBM Cloud Registry without ace-admin-server:
+
+uk.icr.io/ace-registry/ace-alpine           latest   1a66bcb38267   ace-registry   31 minutes ago   284 MB   12 Issues   
+uk.icr.io/ace-registry/ace-alpine-ibmjava   latest   52f37ba6908d   ace-registry   25 minutes ago   309 MB   Scanning...   
+uk.icr.io/ace-registry/ace-alpine-with-jdk  latest   1cd1176709dc   ace-registry   13 minutes ago   366 MB   Scanning...   
+uk.icr.io/ace-registry/ace-minimal          latest   23dbd58a647d   ace-registry   51 minutes ago   442 MB   Scanning...   
+
+
+
+docker rmi ace-alpine-with-jdk uk.icr.io/ace-registry/ace-alpine-with-jdk:latest
+docker rmi ace-alpine-ibmjava uk.icr.io/ace-registry/ace-alpine-ibmjava:latest
+docker rmi ace-alpine uk.icr.io/ace-registry/ace-alpine:latest
+docker rmi ace-minimal uk.icr.io/ace-registry/ace-minimal:latest
+
+
+Local on kenya (debian 8) with ace-admin-server:
+
+ace-alpine-ibmjava                          d63090ea0cb2        24 seconds ago      706MB
+ace-minimal                                 27f56e858d72        35 seconds ago      909MB
+
+On IBM Cloud Registry with ace-admin-server:
+
+uk.icr.io/ace-registry/ace-alpine-ibmjava   latest   9d2e0e57505a   ace-registry   2 minutes ago   368 MB   Scanning...   
+uk.icr.io/ace-registry/ace-minimal          latest   f9b4ede0019e   ace-registry   3 minutes ago   502 MB   Scanning...   
+

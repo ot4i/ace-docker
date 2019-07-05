@@ -1,0 +1,4 @@
+*/server/nodejs/lib/node_modules/ace-admin-server/node_modules
+*/server/nodejs/node_modules/@ibm-app-connect/ace-admin-server
+*/server/nodejs/loopback-modelapi-provider-software.tar.xz
+*/server/nodejs/nock

@@ -16,6 +16,8 @@ limitations under the License.
 package qmgr
 
 import (
+	"io/ioutil"
+	"log"
 	"os"
 	"time"
 
@@ -29,17 +31,28 @@ func UseQueueManager() bool {
 	return ok && useQmgrFlag == "true"
 }
 
+// DevManager returns a boolean for whether or not to use developer edition MQ.
+func DevManager() bool {
+	devQmgrFlag, ok := os.LookupEnv("DEV_QMGR")
+	return ok && devQmgrFlag == "true"
+}
+
 // StartQueueManager launches the runmqserver process in the background as the user "root".
 // This returns a BackgroundCmd, wrapping the backgrounded process.
 func StartQueueManager(log *logger.Logger) command.BackgroundCmd {
-	return command.RunBackground("runmqserver", log)
+	if DevManager() {
+		return command.RunBackground("runmqdevserver", log)
+	} else {
+		return command.RunBackground("runmqserver", log)
+	}
+
 }
 
 // WaitForQueueManager will run the "chkmqready" command every 2 seconds until it returns
 // an RC of zero, to indicate that the queue manager is ready.
 func WaitForQueueManager(log *logger.Logger) error {
 	for {
-		_, rc, err := command.RunAsUser("aceuser", "chkmqready")
+		_, rc, err := command.RunAsUser("mqm", "chkmqready")
 		if rc != 0 || err != nil {
 			log.Print("Queue manager not ready yet")
 		}
@@ -58,4 +71,30 @@ func StopQueueManager(qmgrProcess command.BackgroundCmd) {
 		command.SigIntBackground(qmgrProcess)
 		command.WaitOnBackground(qmgrProcess)
 	}
+}
+
+// InitializeMQ will copy the mqsc scripts to the appropriate directory if supplied
+func InitializeMQ() error {
+
+	originalFile := "/home/aceuser/initial-config/mqsc/config.mqsc"
+	if _, err := os.Stat(originalFile); err == nil {
+		log.Println("Copying mqsc file ", originalFile)
+		input, err := ioutil.ReadFile(originalFile)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		destinationFile := "/etc/mqm/config.mqsc"
+		err = ioutil.WriteFile(destinationFile, input, 0644)
+		if err != nil {
+			log.Println("Error creating ", destinationFile)
+			log.Println(err)
+			return err
+		}
+		log.Println("Finished copying mqsc file")
+	}
+
+	log.Println("MQ initialization complete")
+	return nil
 }

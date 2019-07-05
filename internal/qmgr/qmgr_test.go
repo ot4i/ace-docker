@@ -22,7 +22,7 @@ import (
 	"github.com/ot4i/ace-docker/internal/qmgr"
 )
 
-var useQMTests = []struct {
+var useTests = []struct {
 	in  string
 	out bool
 }{
@@ -32,7 +32,7 @@ var useQMTests = []struct {
 }
 
 func TestUseQueueManager(t *testing.T) {
-	for _, table := range useQMTests {
+	for _, table := range useTests {
 
 		err := os.Setenv("USE_QMGR", table.in)
 		if err != nil {
@@ -42,6 +42,21 @@ func TestUseQueueManager(t *testing.T) {
 		b := qmgr.UseQueueManager()
 		if b != table.out {
 			t.Errorf("qmgr.UseQueueManager() with USE_QMGR=%v - expected %v, got %v", table.in, table.out, b)
+		}
+	}
+}
+
+func TestDevManager(t *testing.T) {
+	for _, table := range useTests {
+
+		err := os.Setenv("DEV_QMGR", table.in)
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		b := qmgr.DevManager()
+		if b != table.out {
+			t.Errorf("qmgr.DevManager() with DEV_QMGR=%v - expected %v, got %v", table.in, table.out, b)
 		}
 	}
 }
