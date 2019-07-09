@@ -1,2 +1,3 @@
 # resource user password
 setdbparms::truststore dummy truststorepwd
+mqsisetdbparms -w /home/aceuser/ace-server -n salesforce::SecurityIdentity -u myUsername -p myPassword -c myClientID -s myClientSecret
