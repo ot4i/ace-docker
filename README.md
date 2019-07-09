@@ -164,14 +164,16 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
 - `/home/aceuser/initial-config/serverconf`
    - A text file called `server.conf.yaml` that contains a `server.conf.yaml` overrides file. This will be copied to `/home/aceuser/ace-server/overrides/server.conf.yaml`
 - `/home/aceuser/initial-config/setdbparms`
-   - For any parameters that need to be set via `mqsisetdbparms` include a text file called `setdbparms.txt` with the following format:
+   - For any parameters that need to be set via `mqsisetdbparms` include a text file called `setdbparms.txt`. This supports 2 formats:
       ```
       # Lines starting with a "#" are ignored
-      # Each line should specify the <resource> <userId> <password>, separated by a single space
+      # Each line which starts mqsisetdbparms will be run as written 
+      # Alternatively each line should specify the <resource> <userId> <password>, separated by a single space
       # Each line will be processed by calling...
       #   mqsisetdbparms ${ACE_SERVER_NAME} -n <resource> -u <userId> -p <password>
       resource1 user1 password1
       resource2 user2 password2
+      mqsisetdbparms -w /home/aceuser/ace-server -n salesforce::SecurityIdentity -u myUsername -p myPassword -c myClientID -s myClientSecret
       ```
 - `/home/aceuser/initial-config/truststore`
    - A text file containing a certificate file in PEM format. This will be imported into the truststore file as a trusted Certificate Authority's certificate. The filename must be the *alias* for the certificate in the keystore, with the suffix `.crt`. The alias must not contain any whitespace characters.
