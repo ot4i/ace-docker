@@ -27,9 +27,14 @@ if [ -s "/home/aceuser/initial-config/setdbparms/setdbparms.txt" ]; then
     fi
     IFS=${OLDIFS}
     fields=($line)
-    log "Setting user and password for resource ${fields[0]}"
-
-    OUTPUT=$(mqsisetdbparms -w /home/aceuser/ace-server -n ${fields[0]} -u ${fields[1]} -p ${fields[2]} 2>&1)
+    if [[ ${fields[0]} == "mqsisetdbparms" ]]; then 
+      log "Running command $line"
+      OUTPUT=$($line)
+    else
+      log "Setting user and password for resource ${fields[0]}"
+      OUTPUT=$(mqsisetdbparms -w /home/aceuser/ace-server -n ${fields[0]} -u ${fields[1]} -p ${fields[2]} 2>&1)
+      
+    fi
     logAndExitIfError $? "${OUTPUT}"
   done
 fi
