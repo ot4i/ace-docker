@@ -7,6 +7,21 @@
 # which accompanies this distribution, and is available at
 # http://www.eclipse.org/legal/epl-v20.html
 
+function argStrings {
+  shlex() {
+    python -c $'import sys, shlex\nfor arg in shlex.split(sys.stdin):\n\tsys.stdout.write(arg)\n\tsys.stdout.write(\"\\0\")'
+  }
+  args=()
+  while IFS='' read -r -d ''; do
+    args+=( "$REPLY" )
+  done < <(shlex <<<$1)
+  
+  log "${args[0]}"
+  log "${args[1]}"
+  log "${args[2]}"
+
+}
+
 if [ -z "$MQSI_VERSION" ]; then
   source /opt/ibm/ace-11/server/bin/mqsiprofile
 fi
@@ -26,14 +41,21 @@ if [ -s "/home/aceuser/initial-config/setdbparms/setdbparms.txt" ]; then
       continue
     fi
     IFS=${OLDIFS}
-    fields=($line)
-    if [[ ${fields[0]} == "mqsisetdbparms" ]]; then 
-      log "Running command $line"
-      OUTPUT=$($line)
+    if [[ $line == mqsisetdbparms* ]]; then 
+      log "Running suppplied mqsisetdbparms command"
+      OUTPUT=`eval "$line"`
     else
-      log "Setting user and password for resource ${fields[0]}"
-      OUTPUT=$(mqsisetdbparms -w /home/aceuser/ace-server -n ${fields[0]} -u ${fields[1]} -p ${fields[2]} 2>&1)
-      
+      shlex() {
+        python -c $'import sys, shlex\nfor arg in shlex.split(sys.stdin):\n\tsys.stdout.write(arg)\n\tsys.stdout.write(\"\\0\")'
+      }
+      args=()
+      while IFS='' read -r -d ''; do
+        args+=( "$REPLY" )
+      done < <(shlex <<<$line)
+      log "Setting user and password for resource: ${args[0]}"
+      cmd="mqsisetdbparms -w /home/aceuser/ace-server -n \"${args[0]}\" -u \"${args[1]}\" -p \"${args[2]}\" 2>&1"
+      OUTPUT=`eval "$cmd"`
+      echo $OUTPUT
     fi
     logAndExitIfError $? "${OUTPUT}"
   done
