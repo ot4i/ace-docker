@@ -1,0 +1,23 @@
+
+ARG BASE_IMAGE=ibmcom/ace
+FROM $BASE_IMAGE
+
+# The MQ packages to install - see install-mq.sh for default value
+ARG MQ_URL="https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqadv/mqadv_dev912_linux_x86-64.tar.gz"
+ARG MQ_URL_USER
+ARG MQ_URL_PASS
+ARG MQ_PACKAGES="MQSeriesRuntime*.rpm MQSeriesJava*.rpm MQSeriesGSKit*.rpm MQSeriesClient*.rpm"
+
+ARG MQM_UID=888
+
+USER root
+
+COPY install-mq.sh /usr/local/bin/
+COPY install-mq-client-prereqs.sh /usr/local/bin/
+# Install MQ.  To avoid a "text file busy" error here, we sleep before installing.
+RUN chmod u+x /usr/local/bin/install-*.sh \
+  && sleep 1 \
+  && install-mq-client-prereqs.sh $MQM_UID \
+  && install-mq.sh $MQM_UID
+
+USER aceuser

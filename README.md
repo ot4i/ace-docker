@@ -1,6 +1,7 @@
 # Overview
 
-<img src="https://raw.githubusercontent.com/ot4i/ace-helm/master/appconnect_enterprise_logo.svg?sanitize=true" width="100" alt="IBM ACE logo"/>
+
+<img src="./app_connect_light_256x256.png" width="100" alt="IBM ACE logo"/>
 
 Run [IBM® App Connect Enterprise](https://www.ibm.com/cloud/app-connect/enterprise) in a container.
 
@@ -12,9 +13,9 @@ You can build an image containing one of the following combinations:
 
 # Building a container image
 
-Download a copy of App Connect Enterprise (ie. `ace-11.0.0.2.tar.gz`) and place it in the `deps` folder. When building the image use `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-11.0.0.2.tar.gz`
+Download a copy of App Connect Enterprise (ie. `ace-11.0.0.5.tar.gz`) and place it in the `deps` folder. When building the image use `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-11.0.0.5.tar.gz`
 
-- **Important:** Only ACE version **11.0.0.2 or greater** is supported.
+- **Important:** Only ACE version **11.0.0.5 or greater** is supported.
 
 Choose if you want to have an image with just App Connect Enterprise or an image with both App Connect Enterprise and IBM MQ Advanced.
 
@@ -24,8 +25,7 @@ Get [ACE for Developers edition](https://www.ibm.com/marketing/iwm/iwm/web/pick.
 
 ### Using MQ production image
 
-When building an image with both ACE and MQ, the docker file uses the [MQ Advanced for Developers image in docker registry](https://hub.docker.com/r/ibmcom/mq/) as base image by default on Ubuntu.
-On RedHat Enterprise Linux the image can be built using the [MQ instructions](https://github.com/ibm-messaging/mq-container/blob/master/docs/building.md#prerequisites-for-building-a-red-hat-enterprise-linux-image) or downloaded from [IBM Passport Advantage] (https://www.ibm.com/software/passportadvantage/).
+When building an image with both ACE and MQ, the docker file uses the [MQ Advanced for Developers image in docker registry](https://hub.docker.com/r/ibmcom/mq/) as base image.
 
 When building a production image with MQ, follow the [MQ instructions](https://github.com/ibm-messaging/mq-container/blob/master/docs/building.md#building-a-production-image) to build your own production MQ image. Then, when building the ACE with MQ image use `build-arg` to set the `BASE_IMAGE` to your production MQ image. More details below.
 
@@ -33,43 +33,61 @@ When building a production image with MQ, follow the [MQ instructions](https://g
 
 [Info on how to get the Developers or production image for MQ](#using-mq-production-image)
 
-The `deps` folder must contain a copy of ACE, **version 11.0.0.2 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
+The `deps` folder must contain a copy of ACE, **version 11.0.0.5 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
 Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in `deps`.
 
-1. ACE production with MQ Advanced production:
-   * Ubuntu: `docker build -t ace-mq --build-arg BASE_IMAGE={MQ-image} --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.acemq .`
-   * RedHat Enterprise Linux: `./build-rhel.sh ace-mq {buildTag} {ACE-file-in-deps-folder} {mq-base-image-name}`
+1. ACE production with MQ Advanced production
+   - `docker build -t ace-mq --build-arg BASE_IMAGE={MQ-image} --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubi/Dockerfile.acemq .`
 2. ACE for Developers with MQ Advanced for Developers:
-   * Ubuntu: `docker build -t ace-dev-mq-dev --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubuntu/Dockerfile.acemq .`
-   * RedHat Enterprise Linux: `./build-rhel.sh ace-mq {buildTag} {ACE-file-in-deps-folder} {mq-base-image-name}`
+   -`docker build -t ace-dev-mq-dev --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubi/Dockerfile.acemq .`
 
 **Note:** As mentioned before, the docker file will download the **[Development version of IBM MQ](https://hub.docker.com/r/ibmcom/mq/)** by default unless `BASE_IMAGE` is changed.
 
 ## Build an image with App Connect Enterprise only
 
-The `deps` folder must contain a copy of ACE, **version 11.0.0.2 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
+The `deps` folder must contain a copy of ACE, **version 11.0.0.5 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
 Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in `deps`.
 
 1. ACE for Developers only:
-   * Ubuntu: `docker build -t ace-dev-only --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
-   * RedHat Enterprise Linux: `./build-rhel.sh ace-dev-only {buildTag} {ACE-file-in-deps-folder}`
+   - `docker build -t ace-dev-only --build-arg ACE_INSTALL={ACE-dev-file-in-deps-folder} --file ubi/Dockerfile.aceonly .`
 2. ACE production only: 
-   * Ubuntu: `docker build -t ace-only --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubuntu/Dockerfile.aceonly .`
-   * RedHat Enterprise Linux: `./build-rhel.sh ace-only {buildTag} {ACE-file-in-deps-folder}`
+   - `docker build -t ace-only --build-arg ACE_INSTALL={ACE-file-in-deps-folder} --file ubi/Dockerfile.aceonly .`
 
 ## Build an image with App Connect Enterprise and MQ Client
 
 Follow the instructions above for building an image with App Connect Enterprise Only.
 
-Add the MQ Client libraries to your existing image by running docker build -t ace-dev-only --build-arg BASE_IMAGE=<AceOnlyImageTag> --file ubuntu/Dockerfile.acemqclient .`
+Add the MQ Client libraries to your existing image by running `cd ubi && docker build -t ace-mqclient --build-arg BASE_IMAGE=<AceOnlyImageTag> --file Dockerfile.mqclient .`
 
-You can supply a customer URL for the MQ binaries by setting the argument MQ_URL
+`<AceOnlyImageTag>` is the tag of the image you want to add the client libs to i.e. ace-only. You can supply a customer URL for the MQ binaries by setting the argument MQ_URL
 
 # Usage
 
 ### Accepting the License
 
 In order to use the image, it is necessary to accept the terms of the IBM App Connect Enterprise license. This is achieved by specifying the environment variable `LICENSE` equal to `accept` when running the image. You can also view the license terms by setting this variable to `view`. Failure to set the variable will result in the termination of the container with a usage statement. You can view the license in a different language by also setting the `LANG` environment variable.
+
+### Red Hat OpenShift SecurityContextConstraints Requirements
+
+This chart requires a SecurityContextConstraints to be bound to the target namespace prior to installation. To meet this requirement there may be cluster scoped as well as namespace scoped pre and post actions that need to occur.
+
+#### Running an ACE Only Integration Server
+
+The predefined SecurityContextConstraints name: [`ibm-anyuid-scc`](https://ibm.biz/cpkspec-scc) has been verified for this chart when creating an ACE & MQ integration server, if your target namespace is bound to this SecurityContextConstraints resource you can proceed to install the chart.
+
+Run the following command to add the service account of the Integration server to the anyuid scc - `oc adm policy add-scc-to-user ibm-anyuid-scc system:serviceaccount:<namespace>:<releaseName>-ibm-ace-server-prod-serviceaccount` i.e.
+``` 
+oc adm policy add-scc-to-user ibm-anyuid-scc system:serviceaccount:default:ace-nomq-ibm-ace-server-rhel-prod-serviceaccount
+```
+
+#### Running an ACE & MQ Integration Server
+
+The predefined SecurityContextConstraints name: [`ibm-anyuid-scc`](https://ibm.biz/cpkspec-scc) has been verified for this chart when creating an ACE & MQ integration server, if your target namespace is bound to this SecurityContextConstraints resource you can proceed to install the chart.
+
+Run the following command to add the service account of the Integration server to the anyuid scc. - `oc adm policy add-scc-to-user ibm-anyuid-scc system:serviceaccount:<namespace>:<releaseName>-ibm-ace-server-mq-prod-serviceaccount` i.e.
+```
+oc adm policy add-scc-to-user ibm-anyuid-scc system:serviceaccount:ace:ace-mq-ibm-ace-server-mq-prod-serviceaccount
+```
 
 ### ACE & MQ image
 
@@ -146,14 +164,16 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
 - `/home/aceuser/initial-config/serverconf`
    - A text file called `server.conf.yaml` that contains a `server.conf.yaml` overrides file. This will be copied to `/home/aceuser/ace-server/overrides/server.conf.yaml`
 - `/home/aceuser/initial-config/setdbparms`
-   - For any parameters that need to be set via `mqsisetdbparms` include a text file called `setdbparms.txt` with the following format:
+   - For any parameters that need to be set via `mqsisetdbparms` include a text file called `setdbparms.txt`. This supports 2 formats:
       ```
       # Lines starting with a "#" are ignored
-      # Each line should specify the <resource> <userId> <password>, separated by a single space
+      # Each line which starts mqsisetdbparms will be run as written 
+      # Alternatively each line should specify the <resource> <userId> <password>, separated by a single space
       # Each line will be processed by calling...
       #   mqsisetdbparms ${ACE_SERVER_NAME} -n <resource> -u <userId> -p <password>
       resource1 user1 password1
       resource2 user2 password2
+      mqsisetdbparms -w /home/aceuser/ace-server -n salesforce::SecurityIdentity -u myUsername -p myPassword -c myClientID -s myClientSecret
       ```
 - `/home/aceuser/initial-config/truststore`
    - A text file containing a certificate file in PEM format. This will be imported into the truststore file as a trusted Certificate Authority's certificate. The filename must be the *alias* for the certificate in the keystore, with the suffix `.crt`. The alias must not contain any whitespace characters.
@@ -180,6 +200,15 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
      admin1 password1
      admin2 password2
      ```
+- `/home/aceuser/initial-config/mqsc`
+   - A text file called `config.mqsc`. It contains a list of mqsc commands which will be processed on start by `runmqsc` command. Further details can be found in the [MQ Knowledge Center](https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.1.0/com.ibm.mq.adm.doc/q020670_.htm)
+- `/home/aceuser/initial-config/agent`
+   - A json file called 'switch.json' containing configuration information for the switch, this will be copied into the appropriate iibswitch directory
+   - A json file called 'agentx.json' containing configuration information for the agent connectivity, this will be copied into the appropriate iibswitch directory
+   - A json file called 'agentc.json' containing configuration information for the agent connectivity, this will be copied into the appropriate iibswitch directory
+   - A json file called 'agentp.json' containing configuration information for the agent connectivity, this will be copied into the appropriate iibswitch directory
+- `/home/aceuser/initial-config/extensions`
+   - A zip file called `extensions.zip` will be extracted into the directory `/home/aceuser/ace-server/extensions`. This allows you to place extra files into a directory you can then reference in, for example, the server.conf.yaml
 
 ## Logging
 
@@ -206,7 +235,6 @@ If `MQ_ENABLE_METRICS` is set to `true` and an MQ Queue Manager is present an ad
 The Dockerfile and associated scripts are licensed under the [Eclipse Public License 2.0](LICENSE). Licenses for the products installed within the images are as follows:
 
  - IBM App Connect Enterprise for Developers is licensed under the IBM International License Agreement for Non-Warranted Programs. This license may be viewed from the image using the `LICENSE=view` environment variable as described above.
- - License information for Ubuntu packages may be found in `/usr/share/doc/${package}/copyright`
 
 Note that the IBM App Connect Enterprise for Developers license does not permit further distribution.
 

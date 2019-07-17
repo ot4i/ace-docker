@@ -38,7 +38,7 @@ func main() {
 
 	// Run MQ's liveness check chkmqhealthy, if enabled
 	if qmgr.UseQueueManager() {
-		out, rc, err := command.RunAsUser("aceuser", "chkmqhealthy")
+		out, rc, err := command.RunAsUser("mqm", "chkmqhealthy")
 		if rc != 0 || err != nil {
 			fmt.Println(out)
 			fmt.Println(err)

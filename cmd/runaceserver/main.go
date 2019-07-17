@@ -75,6 +75,15 @@ func doMain() error {
 	logVersionInfo()
 
 	if useQmgr {
+
+		log.Println("Starting MQ Initialisation")
+		err = qmgr.InitializeMQ()
+		if err != nil {
+			logTermination(err)
+			performShutdown()
+			return err
+		}
+
 		log.Println("Starting queue manager")
 		qmgrProcess = qmgr.StartQueueManager(log)
 		if qmgrProcess.ReturnError != nil {
@@ -97,6 +106,14 @@ func doMain() error {
 			performShutdown()
 			return err
 		}
+	}
+
+	log.Println("Checking for valid working directory")
+	err = createWorkDir()
+	if err != nil {
+		logTermination(err)
+		performShutdown()
+		return err
 	}
 
 	err = initialIntegrationServerConfig()
