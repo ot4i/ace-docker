@@ -57,6 +57,3 @@ find /opt/mqm -name '*.tar.gz' -delete
 
 # Clean up all the downloaded files
 rm -rf ${DIR_EXTRACT}
-
-# Remove the directory structure under /var/mqm which was created by the installer
-rm -rf /var/mqm
