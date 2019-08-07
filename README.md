@@ -19,6 +19,18 @@ Download a copy of App Connect Enterprise (ie. `ace-11.0.0.5.tar.gz`) and place 
 
 Choose if you want to have an image with just App Connect Enterprise or an image with both App Connect Enterprise and IBM MQ Advanced.
 
+### Building a container image which contains an IBM Service provided fix for ACE
+
+You may have been provided with a fix for App Connect Enterprise by IBM Support, this fix will have a name of the form `11.0.0.X-ACE-LinuxX64-TF12345.tar.gz`. In order to apply this fix follow these steps.
+ - On a local system extract the App Connect Enterprise archive
+   `tar -xvf ace-11.0.0.5.tar.gz`
+ - Extract the fix package into expanded App Connect Enterprise installation
+   `tar -xvf /path/to/11.0.0.5-ACE-LinuxX64-TF12345.tar.gz --directory ace-11.0.0.5`
+ - Tar and compress the resulting App Connect Enterprise installation
+   `tar -cvf ace-11.0.0.5_with_IT12345.tar ace-11.0.0.5`
+   `gzip ace-11.0.0.5_with_IT12345.tar`
+ - Place the resulting `ace-11.0.0.5_with_IT12345.tar.gz` file in the `deps` folder and when building using the `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-11.0.0.5_with_IT12345.tar.gz`
+    
 ### Using App Connect Enterprise for Developers
 
 Get [ACE for Developers edition](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd). Then place it in the `deps` folder as mentioned above.
