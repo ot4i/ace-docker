@@ -12,8 +12,8 @@ ARG MQM_UID=888
 
 USER root
 
-COPY install-mq.sh /usr/local/bin/
-COPY install-mq-client-prereqs.sh /usr/local/bin/
+COPY ubi/install-mq.sh /usr/local/bin/
+COPY ubi/install-mq-client-prereqs.sh /usr/local/bin/
 # Install MQ.  To avoid a "text file busy" error here, we sleep before installing.
 RUN chmod u+x /usr/local/bin/install-*.sh \
   && sleep 1 \
