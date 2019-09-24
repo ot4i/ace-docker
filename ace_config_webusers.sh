@@ -17,10 +17,13 @@ source ${SCRIPT_DIR}/ace_config_logging.sh
 log "Handling webusers configuration"
 
 ADMINUSERSFILE=/home/aceuser/initial-config/webusers/admin-users.txt
+OPERATORUSERSFILE=/home/aceuser/initial-config/webusers/operator-users.txt
 VIEWERUSERSFILE=/home/aceuser/initial-config/webusers/viewer-users.txt
+EDITORUSERSFILE=/home/aceuser/initial-config/webusers/editor-users.txt
+AUDITUSERSFILE=/home/aceuser/initial-config/webusers/audit-users.txt
 DASHBOARDUSERSFILE=/home/aceuser/initial-config/webusers/dashboard-users.txt
 
-if [ -s $ADMINUSERSFILE ] || [ -s $VIEWERUSERSFILE ] || [ -s $DASHBOARDUSERSFILE ]; then
+if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $VIEWERUSERSFILE ] || [ -s $EDITORUSERSFILE ]  || [ -s $AUDITUSERSFILE ] || [ -s $DASHBOARDUSERSFILE ]; then
   OUTPUT=$(mqsichangeauthmode -w /home/aceuser/ace-server -s active -m file 2>&1)
   logAndExitIfError $? "${OUTPUT}"
 
@@ -47,9 +50,54 @@ if [ -s $ADMINUSERSFILE ] || [ -s $VIEWERUSERSFILE ] || [ -s $DASHBOARDUSERSFILE
     done
   fi
 
+  if [ -s $OPERATORUSERSFILE ]; then
+    IFS=$'\n'
+    for line in $(cat $OPERATORUSERSFILE | tr -d '\r'); do
+      if [[ $line =~ ^\# ]]; then
+        continue
+      fi
+      IFS=${OLDIFS}
+      fields=($line)
+      log "Creating admin user ${fields[0]}"
+
+      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r admin 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    done
+  fi
+
   if [ -s $VIEWERUSERSFILE ]; then
     IFS=$'\n'
     for line in $(cat $VIEWERUSERSFILE | tr -d '\r'); do
+      if [[ $line =~ ^\# ]]; then
+        continue
+      fi
+      IFS=${OLDIFS}
+      fields=($line)
+      log "Creating viewer user ${fields[0]}"
+
+      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r viewer 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    done
+  fi
+
+  if [ -s $EDITORUSERSFILE ]; then
+    IFS=$'\n'
+    for line in $(cat $EDITORUSERSFILE | tr -d '\r'); do
+      if [[ $line =~ ^\# ]]; then
+        continue
+      fi
+      IFS=${OLDIFS}
+      fields=($line)
+      log "Creating viewer user ${fields[0]}"
+
+      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r viewer 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    done
+  fi
+
+  if [ -s $AUDITUSERSFILE ]; then
+    IFS=$'\n'
+    for line in $(cat $AUDITUSERSFILE | tr -d '\r'); do
       if [[ $line =~ ^\# ]]; then
         continue
       fi
