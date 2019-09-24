@@ -1,0 +1,14 @@
+sudo: required
+dist: xenial
+language: generic
+services:
+  - docker
+# Make some fake binaries to spoof an ACE install for the Dockerbuild files to use.
+before_install:
+  - mkdir -p deps/ace-install/server/bin/
+  - echo -e "#!/bin/bash\nexport PATH=/opt/ibm/ace-11/server/bin/" > deps/ace-install/server/bin/mqsiprofile && chmod ugo+x deps/ace-install/server/bin/mqsiprofile
+  - echo -e "#!/bin/bash\nexit 0" > deps/ace-install/server/bin/mqsicreateworkdir && chmod ugo+x deps/ace-install/server/bin/mqsicreateworkdir
+  - echo -e "#!/bin/bash\ngroupadd mqbrkrs\ngroupadd mqm\nexit 0" > deps/ace-install/ace && chmod u+x deps/ace-install/ace
+  - cd deps && tar czf ace-install.tar.gz ace-install && cd ..
+install:
+  - docker build --build-arg ACE_INSTALL=ace-install.tar.gz --file ubi/Dockerfile.aceonly .

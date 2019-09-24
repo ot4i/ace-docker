@@ -119,6 +119,17 @@ func initialIntegrationServerConfig() error {
 		}
 	}
 
+	enableOpenTracing := os.Getenv("ACE_ENABLE_OPEN_TRACING")
+	if enableOpenTracing == "true" || enableOpenTracing == "1" {
+		enableOpenTracingError := enableOpenTracingInServerConf()
+		if enableOpenTracingError != nil {
+			log.Errorf("Error enabling user exits in server.conf.yaml: %v", enableOpenTracingError)
+			return enableOpenTracingError
+		}
+	}
+
+	
+
 	log.Printf("Initial configuration of integration server complete")
 
 	log.Println("Discovering override ports")
@@ -163,6 +174,36 @@ func enableMetricsInServerConf() error {
 	return nil
 }
 
+// enableOpenTracingInServerConf adds OpenTracing UserExits fields to the server.conf.yaml in overrides
+// If the file does not exist already it gets created.
+func enableOpenTracingInServerConf() error {
+
+	log.Println("Enabling OpenTracing in server.conf.yaml")
+
+	serverconfContent, readError := readServerConfFile()
+	if readError != nil {
+		if !os.IsNotExist(readError) {
+			// Error is different from file not existing (if the file does not exist we will create it ourselves)
+			log.Errorf("Error reading server.conf.yaml: %v", readError)
+			return readError
+		}
+	}
+
+	serverconfYaml, manipulationError := addOpenTracingToServerConf(serverconfContent)
+	if manipulationError != nil {
+		return manipulationError
+	}
+
+	writeError := writeServerConfFile(serverconfYaml)
+	if writeError != nil {
+		return writeError
+	}
+
+	log.Println("OpenTracing enabled in server.conf.yaml")
+
+	return nil
+}
+
 // readServerConfFile returns the content of the server.conf.yaml file in the overrides folder
 func readServerConfFile() ([]byte, error) {
 	content, err := ioutil.ReadFile("/home/aceuser/ace-server/overrides/server.conf.yaml")
@@ -180,7 +221,7 @@ func writeServerConfFile(content []byte) error {
 	return nil
 }
 
-// addMetricsToServerConf gets the content of the server.conf.yaml and adds the metrics fileds to it
+// addMetricsToServerConf gets the content of the server.conf.yaml and adds the metrics fields to it
 // It returns the updated server.conf.yaml content
 func addMetricsToServerConf(serverconfContent []byte) ([]byte, error) {
 	serverconfMap := make(map[interface{}]interface{})
@@ -221,6 +262,38 @@ func addMetricsToServerConf(serverconfContent []byte) ([]byte, error) {
 		serverconfMap["Statistics"] = map[string]interface{}{
 			"Snapshot": snapshotObj,
 			"Resource": resourceObj,
+		}
+	}
+
+	serverconfYaml, marshallError := yaml.Marshal(&serverconfMap)
+	if marshallError != nil {
+		log.Errorf("Error marshalling server.conf.yaml: %v", marshallError)
+		return nil, marshallError
+	}
+
+	return serverconfYaml, nil
+}
+
+// addOpenTracingToServerConf gets the content of the server.conf.yaml and adds the OpenTracing UserExits fields to it
+// It returns the updated server.conf.yaml content
+func addOpenTracingToServerConf(serverconfContent []byte) ([]byte, error) {
+	serverconfMap := make(map[interface{}]interface{})
+	unmarshallError := yaml.Unmarshal([]byte(serverconfContent), &serverconfMap)
+	if unmarshallError != nil {
+		log.Errorf("Error unmarshalling server.conf.yaml: %v", unmarshallError)
+		return nil, unmarshallError
+	}
+
+	if serverconfMap["UserExits"] != nil {
+		userExits := serverconfMap["UserExits"].(map[string]string)
+
+		userExits["activeUserExitList"] = "ACEOpenTracingUserExit"
+		userExits["userExitPath"] = "/opt/ACEOpenTracing"
+
+	} else {
+		serverconfMap["UserExits"] = map[string]string{
+			"activeUserExitList":    "ACEOpenTracingUserExit",
+			"userExitPath":    "/opt/ACEOpenTracing",
 		}
 	}
 
