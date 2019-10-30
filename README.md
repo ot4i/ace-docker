@@ -13,9 +13,9 @@ You can build an image containing one of the following combinations:
 
 # Building a container image
 
-Download a copy of App Connect Enterprise (ie. `ace-11.0.0.5.tar.gz`) and place it in the `deps` folder. When building the image use `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-11.0.0.5.tar.gz`
+Download a copy of App Connect Enterprise (ie. `ace-11.0.0.6.tar.gz`) and place it in the `deps` folder. When building the image use `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-11.0.0.6.tar.gz`
 
-- **Important:** Only ACE version **11.0.0.5 or greater** is supported.
+- **Important:** Only ACE version **11.0.0.6 or greater** is supported.
 
 Choose if you want to have an image with just App Connect Enterprise or an image with both App Connect Enterprise and IBM MQ Advanced.
 
@@ -23,11 +23,11 @@ Choose if you want to have an image with just App Connect Enterprise or an image
 
 You may have been provided with a fix for App Connect Enterprise by IBM Support, this fix will have a name of the form `11.0.0.X-ACE-LinuxX64-TF12345.tar.gz`. In order to apply this fix follow these steps.
  - On a local system extract the App Connect Enterprise archive
-   `tar -xvf ace-11.0.0.5.tar.gz`
+   `tar -xvf ace-11.0.0.6.tar.gz`
  - Extract the fix package into expanded App Connect Enterprise installation
-   `tar -xvf /path/to/11.0.0.5-ACE-LinuxX64-TF12345.tar.gz --directory ace-11.0.0.5`
+   `tar -xvf /path/to/11.0.0.6-ACE-LinuxX64-TF12345.tar.gz --directory ace-11.0.0.6`
  - Tar and compress the resulting App Connect Enterprise installation
-   `tar -cvf ace-11.0.0.5_with_IT12345.tar ace-11.0.0.5`
+   `tar -cvf ace-11.0.0.5_with_IT12345.tar ace-11.0.0.6`
    `gzip ace-11.0.0.5_with_IT12345.tar`
  - Place the resulting `ace-11.0.0.5_with_IT12345.tar.gz` file in the `deps` folder and when building using the `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-11.0.0.5_with_IT12345.tar.gz`
 
@@ -45,7 +45,7 @@ When building a production image with MQ, follow the [MQ instructions](https://g
 
 [Info on how to get the Developers or production image for MQ](#using-mq-production-image)
 
-The `deps` folder must contain a copy of ACE, **version 11.0.0.5 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
+The `deps` folder must contain a copy of ACE, **version 11.0.0.6 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
 Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in `deps`.
 
 1. ACE production with MQ Advanced production
@@ -57,7 +57,7 @@ Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in 
 
 ## Build an image with App Connect Enterprise only
 
-The `deps` folder must contain a copy of ACE, **version 11.0.0.5 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
+The `deps` folder must contain a copy of ACE, **version 11.0.0.6 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
 Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in `deps`.
 
 1. ACE for Developers only:
@@ -143,6 +143,12 @@ In the `sample` folder there is an example on how to build a server image with a
 - **ACE_TRUSTSTORE_PASSWORD** - Set this to the password you wish to use for the trust store (if using one).
 - **ACE_KEYSTORE_PASSWORD** - Set this to the password you wish to use for the key store (if using one).
 
+- **ACE_ADMIN_SERVER_SECURITY** - Set to `true` if you intend to secure your Integration Server using SSL.
+- **ACE_ADMIN_SERVER_NAME** - Set this to the DNS name of your Integration Server for SSL SAN checking.
+- **ACE_ADMIN_SERVER_CA** - Set this to your Integration Server SSL CA certificate.
+- **ACE_ADMIN_SERVER_CERT** - Set this to your Integration Server SSL certificate.
+- **ACE_ADMIN_SERVER_KEY** - Set this to your Integration Server SSL key certificate.
+
 The following environment variables are used by MQ Advanced if being used:
 
 - **LICENSE** - Set this to `accept` to agree to the App Connect Enterprise license. If you wish to see the license you can set this to `view`.
@@ -177,7 +183,7 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
 - `/home/aceuser/initial-config/serverconf`
    - A text file called `server.conf.yaml` that contains a `server.conf.yaml` overrides file. This will be copied to `/home/aceuser/ace-server/overrides/server.conf.yaml`
 - `/home/aceuser/initial-config/setdbparms`
-   - For any parameters that need to be set via `mqsisetdbparms` include a text file called `setdbparms.txt`. This supports 2 formats:
+   - For any parameters that need to be set via `mqsisetdbparms` include a text file called `setdbparms.txt` This supports 2 formats:
       ```
       # Lines starting with a "#" are ignored
       # Each line which starts mqsisetdbparms will be run as written 

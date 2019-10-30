@@ -1,6 +1,28 @@
 # Change log
 
-## 11.0.0.5 (2019-07-x)
+## 11.0.0.6 (2019-10-30)
+
+**Breaking changes**:
+* None
+
+**Other changes**:
+* Updated to use the 11.0.0.6 build
+* Support metrics when Integration Server is using TLS
+
+## 11.0.0.5.1 (2019-09-24)
+
+**Breaking changes**:
+* None
+
+**Other changes**:
+* New image that includes an MQ client
+* Supports MQ 9.1.3 images
+* Support for defining custom ports
+* Support for running switches
+* Ability to set up operator, editor, and audit users for the ACE web UI, in addition to admin and viewer users
+* Support for LEL User Exit files
+
+## 11.0.0.5 (2019-07-05)
 
 **Breaking changes**:
 * When using MQ, the UID of the mqm user is now 888.  You need to run the container with an entrypoint of `runmqserver -i` under the root user to update any existing files.
