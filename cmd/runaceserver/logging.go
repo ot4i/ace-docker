@@ -26,11 +26,11 @@ import (
 var log *logger.Logger
 
 func logTerminationf(format string, args ...interface{}) {
-	logTermination(fmt.Sprintf(format, args))
+	logTermination(fmt.Sprintf(format, args...))
 }
 
 func logTermination(args ...interface{}) {
-	msg := fmt.Sprint(args)
+	msg := fmt.Sprint(args...)
 	// Write the message to the termination log.  This is the default place
 	// that Kubernetes will look for termination information.
 	log.Debugf("Writing termination message: %v", msg)

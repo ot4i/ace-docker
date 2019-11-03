@@ -35,7 +35,7 @@ LABEL summary="$SUMMARY" \
       com.redhat.component="$PRODNAME-$COMPNAME" \
       name="$PRODNAME/$COMPNAME" \
       vendor="IBM" \
-      version="11.0.0.4" \
+      version="11.0.0.6" \
       release="1" \
       license="IBM" \
       maintainer="Hybrid Integration Platform Cloud" \
@@ -44,6 +44,11 @@ LABEL summary="$SUMMARY" \
 
 # Add required license as text file in Liceses directory (GPL, MIT, APACHE, Partner End User Agreement, etc)
 COPY /licenses/ /licenses/
+
+# Create OpenTracing directories, and copy in any library or configuration files available
+RUN mkdir /etc/ACEOpenTracing /opt/ACEOpenTracing /var/log/ACEOpenTracing
+COPY deps/OpenTracing/library/* ./opt/ACEOpenTracing/
+COPY deps/OpenTracing/config/* ./etc/ACEOpenTracing/
 
 WORKDIR /opt/ibm
 
@@ -66,6 +71,9 @@ RUN chmod +x /usr/local/bin/kubectl && \
 RUN useradd -u 1000 -d /home/aceuser -G mqbrkrs,wheel aceuser \
   && su - aceuser -c '. /opt/ibm/ace-11/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server' \
   && chmod 755 /usr/local/bin/*
+
+# Set permissions for OpenTracing directories
+RUN chown aceuser:aceuser /etc/ACEOpenTracing /opt/ACEOpenTracing /var/log/ACEOpenTracing
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
 ENV BASH_ENV=/usr/local/bin/ace_env.sh

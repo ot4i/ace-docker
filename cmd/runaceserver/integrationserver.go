@@ -119,6 +119,17 @@ func initialIntegrationServerConfig() error {
 		}
 	}
 
+	enableOpenTracing := os.Getenv("ACE_ENABLE_OPEN_TRACING")
+	if enableOpenTracing == "true" || enableOpenTracing == "1" {
+		enableOpenTracingError := enableOpenTracingInServerConf()
+		if enableOpenTracingError != nil {
+			log.Errorf("Error enabling user exits in server.conf.yaml: %v", enableOpenTracingError)
+			return enableOpenTracingError
+		}
+	}
+
+
+
 	log.Printf("Initial configuration of integration server complete")
 
 	log.Println("Discovering override ports")
@@ -163,6 +174,36 @@ func enableMetricsInServerConf() error {
 	return nil
 }
 
+// enableOpenTracingInServerConf adds OpenTracing UserExits fields to the server.conf.yaml in overrides
+// If the file does not exist already it gets created.
+func enableOpenTracingInServerConf() error {
+
+	log.Println("Enabling OpenTracing in server.conf.yaml")
+
+	serverconfContent, readError := readServerConfFile()
+	if readError != nil {
+		if !os.IsNotExist(readError) {
+			// Error is different from file not existing (if the file does not exist we will create it ourselves)
+			log.Errorf("Error reading server.conf.yaml: %v", readError)
+			return readError
+		}
+	}
+
+	serverconfYaml, manipulationError := addOpenTracingToServerConf(serverconfContent)
+	if manipulationError != nil {
+		return manipulationError
+	}
+
+	writeError := writeServerConfFile(serverconfYaml)
+	if writeError != nil {
+		return writeError
+	}
+
+	log.Println("OpenTracing enabled in server.conf.yaml")
+
+	return nil
+}
+
 // readServerConfFile returns the content of the server.conf.yaml file in the overrides folder
 func readServerConfFile() ([]byte, error) {
 	content, err := ioutil.ReadFile("/home/aceuser/ace-server/overrides/server.conf.yaml")
@@ -180,7 +221,7 @@ func writeServerConfFile(content []byte) error {
 	return nil
 }
 
-// addMetricsToServerConf gets the content of the server.conf.yaml and adds the metrics fileds to it
+// addMetricsToServerConf gets the content of the server.conf.yaml and adds the metrics fields to it
 // It returns the updated server.conf.yaml content
 func addMetricsToServerConf(serverconfContent []byte) ([]byte, error) {
 	serverconfMap := make(map[interface{}]interface{})
@@ -233,13 +274,52 @@ func addMetricsToServerConf(serverconfContent []byte) ([]byte, error) {
 	return serverconfYaml, nil
 }
 
+// addOpenTracingToServerConf gets the content of the server.conf.yaml and adds the OpenTracing UserExits fields to it
+// It returns the updated server.conf.yaml content
+func addOpenTracingToServerConf(serverconfContent []byte) ([]byte, error) {
+	serverconfMap := make(map[interface{}]interface{})
+	unmarshallError := yaml.Unmarshal([]byte(serverconfContent), &serverconfMap)
+	if unmarshallError != nil {
+		log.Errorf("Error unmarshalling server.conf.yaml: %v", unmarshallError)
+		return nil, unmarshallError
+	}
+
+	if serverconfMap["UserExits"] != nil {
+		userExits := serverconfMap["UserExits"].(map[string]string)
+
+		userExits["activeUserExitList"] = "ACEOpenTracingUserExit"
+		userExits["userExitPath"] = "/opt/ACEOpenTracing"
+
+	} else {
+		serverconfMap["UserExits"] = map[string]string{
+			"activeUserExitList":    "ACEOpenTracingUserExit",
+			"userExitPath":    "/opt/ACEOpenTracing",
+		}
+	}
+
+	serverconfYaml, marshallError := yaml.Marshal(&serverconfMap)
+	if marshallError != nil {
+		log.Errorf("Error marshalling server.conf.yaml: %v", marshallError)
+		return nil, marshallError
+	}
+
+	return serverconfYaml, nil
+}
+
 // getConfigurationFromContentServer checks if ACE_CONTENT_SERVER_URL exists.  If so then it pulls
 // a bar file from that URL
 func getConfigurationFromContentServer() error {
+
 	url := os.Getenv("ACE_CONTENT_SERVER_URL")
 	if url == "" {
 		log.Printf("No content server url available")
 		return nil
+	}
+
+	defaultContentServer := os.Getenv("DEFAULT_CONTENT_SERVER")
+	if defaultContentServer == "" {
+		log.Printf("Can't tell if content server is default one so defaulting")
+		defaultContentServer = "true"
 	}
 
 	serverName := os.Getenv("ACE_CONTENT_SERVER_NAME")
@@ -249,13 +329,10 @@ func getConfigurationFromContentServer() error {
 	}
 
 	token := os.Getenv("ACE_CONTENT_SERVER_TOKEN")
-	if token == "" {
+	if token == "" &&  defaultContentServer == "true" {
 		log.Errorf("No content server token available but a url is defined")
 		return errors.New("No content server token available but a url is defined")
 	}
-
-	log.Printf("Getting configuration from content server")
-	url = url + "?archive=true"
 
 	err := os.Mkdir("/home/aceuser/initial-config/bars", os.ModePerm)
 	if err != nil {
@@ -270,8 +347,22 @@ func getConfigurationFromContentServer() error {
 	}
 	defer file.Close()
 
-	// Get file from content server
-	caCert, err := ioutil.ReadFile("/home/aceuser/ssl/cacert.pem")
+	// Create a CA certificate pool and add cacert to it
+	var contentServerCACert string
+	if defaultContentServer == "true" {
+		log.Printf("Getting configuration from content server")
+		contentServerCACert = "/home/aceuser/ssl/cacert.pem"
+		url = url + "?archive=true"
+	} else {
+		log.Printf("Getting configuration from custom content server")
+		contentServerCACert = os.Getenv("CONTENT_SERVER_CA")
+		if contentServerCACert == "" {
+			log.Printf("CONTENT_SERVER_CA not defined")
+			return errors.New("CONTENT_SERVER_CA not defined")
+		}
+	}
+	log.Printf("Using ca file %s", contentServerCACert)
+	caCert, err := ioutil.ReadFile(contentServerCACert)
 	if err != nil {
 		log.Errorf("Error reading CA Certificate")
 		return errors.New("Error reading CA Certificate")
@@ -279,10 +370,24 @@ func getConfigurationFromContentServer() error {
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
 
+	// If provided read the key pair to create certificate
+	contentServerCert := os.Getenv("CONTENT_SERVER_CERT")
+	contentServerKey := os.Getenv("CONTENT_SERVER_KEY")
+	cert, err := tls.LoadX509KeyPair(contentServerCert, contentServerKey)
+	if err != nil {
+		if ( contentServerCert != "" && contentServerKey != "" ) {
+			log.Errorf("Error reading Certificates: %s", err)
+			return errors.New("Error reading Certificates")
+		}
+	} else {
+		log.Printf("Using certs for mutual auth")
+	}
+
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				RootCAs:    caCertPool,
+				Certificates: []tls.Certificate{cert},
 				ServerName: serverName,
 			},
 		},
