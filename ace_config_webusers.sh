@@ -18,19 +18,27 @@ log "Handling webusers configuration"
 
 ADMINUSERSFILE=/home/aceuser/initial-config/webusers/admin-users.txt
 OPERATORUSERSFILE=/home/aceuser/initial-config/webusers/operator-users.txt
-VIEWERUSERSFILE=/home/aceuser/initial-config/webusers/viewer-users.txt
 EDITORUSERSFILE=/home/aceuser/initial-config/webusers/editor-users.txt
 AUDITUSERSFILE=/home/aceuser/initial-config/webusers/audit-users.txt
-DASHBOARDUSERSFILE=/home/aceuser/initial-config/webusers/dashboard-users.txt
+VIEWERUSERSFILE=/home/aceuser/initial-config/webusers/viewer-users.txt
 
-if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $VIEWERUSERSFILE ] || [ -s $EDITORUSERSFILE ]  || [ -s $AUDITUSERSFILE ] || [ -s $DASHBOARDUSERSFILE ]; then
+if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $EDITORUSERSFILE ] || [ -s $AUDITUSERSFILE ] || [ -s $VIEWERUSERSFILE ]; then
   OUTPUT=$(mqsichangeauthmode -w /home/aceuser/ace-server -s active -m file 2>&1)
   logAndExitIfError $? "${OUTPUT}"
 
   OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r admin -p all+ 2>&1)
   logAndExitIfError $? "${OUTPUT}"
 
-  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r viewer -p read+ 2>&1)
+  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r operator -p read+,write-,execute+ 2>&1)
+  logAndExitIfError $? "${OUTPUT}"
+  
+  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r editor -p read+,write+,execute- 2>&1)
+  logAndExitIfError $? "${OUTPUT}"
+
+  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r audit -p read+,write-,execute- 2>&1)
+  logAndExitIfError $? "${OUTPUT}"
+
+  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r viewer -p read+,write-,execute- 2>&1)
   logAndExitIfError $? "${OUTPUT}"
 
   OLDIFS=${IFS}
@@ -58,24 +66,9 @@ if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $VIEWERUSERSFILE 
       fi
       IFS=${OLDIFS}
       fields=($line)
-      log "Creating admin user ${fields[0]}"
+      log "Creating operator user ${fields[0]}"
 
-      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r admin 2>&1)
-      logAndExitIfError $? "${OUTPUT}"
-    done
-  fi
-
-  if [ -s $VIEWERUSERSFILE ]; then
-    IFS=$'\n'
-    for line in $(cat $VIEWERUSERSFILE | tr -d '\r'); do
-      if [[ $line =~ ^\# ]]; then
-        continue
-      fi
-      IFS=${OLDIFS}
-      fields=($line)
-      log "Creating viewer user ${fields[0]}"
-
-      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r viewer 2>&1)
+      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r operator 2>&1)
       logAndExitIfError $? "${OUTPUT}"
     done
   fi
@@ -88,9 +81,9 @@ if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $VIEWERUSERSFILE 
       fi
       IFS=${OLDIFS}
       fields=($line)
-      log "Creating viewer user ${fields[0]}"
+      log "Creating editor user ${fields[0]}"
 
-      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r viewer 2>&1)
+      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r editor 2>&1)
       logAndExitIfError $? "${OUTPUT}"
     done
   fi
@@ -103,16 +96,16 @@ if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $VIEWERUSERSFILE 
       fi
       IFS=${OLDIFS}
       fields=($line)
-      log "Creating viewer user ${fields[0]}"
+      log "Creating audit user ${fields[0]}"
 
-      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r viewer 2>&1)
+      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r audit 2>&1)
       logAndExitIfError $? "${OUTPUT}"
     done
   fi
 
-  if [ -s $DASHBOARDUSERSFILE ]; then
+  if [ -s $VIEWERUSERSFILE ]; then
     IFS=$'\n'
-    for line in $(cat $DASHBOARDUSERSFILE | tr -d '\r'); do
+    for line in $(cat $VIEWERUSERSFILE | tr -d '\r'); do
       if [[ $line =~ ^\# ]]; then
         continue
       fi

@@ -15,7 +15,9 @@ if [ -s /home/aceuser/ace-server/odbc.ini ]; then
   export ODBCINI=/home/aceuser/ace-server/odbc.ini
 fi
 
-if ! [[ -z "${KUBERNETES_PORT}" ]] && ! [[ -z "${SERVICE_NAME}" ]] ; then
+if ! [[ -z "${ACE_HTTP_ROUTE_NAME}" ]] || ! [[ -z "${ACE_HTTPS_ROUTE_NAME}" ]] ; then
+  . /home/aceuser/portOverrides
+elif ! [[ -z "${KUBERNETES_PORT}" ]] && ! [[ -z "${SERVICE_NAME}" ]] ; then
   . /home/aceuser/portOverrides
 fi
 

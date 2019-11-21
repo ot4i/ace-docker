@@ -1,5 +1,16 @@
 # Change log
 
+## 11.0.0.6.1 (2019-11-20)
+
+**Breaking changes**:
+* None
+
+**Other changes**:
+* Updated kubectl to version v1.16.0
+* Updated MQ to version 9.1.3.0-r3
+* Added support for hostname and port overrides when routes are defined
+* Created ACE roles for five different access levels: admin, operator, viewer, editor, and audit
+
 ## 11.0.0.6 (2019-10-30)
 
 **Breaking changes**:
