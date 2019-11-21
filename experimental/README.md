@@ -12,4 +12,4 @@ To run the sample after building:
 
 docker run -e LICENSE=accept --rm -ti ace-sample-alpine
 
-and then curl http://IP_address_of_container:7800/test should return '{"data":"a string from ACE"}'
+and then curl http://<container IP>:7800/test should return '{"data":"a string from ACE"}'

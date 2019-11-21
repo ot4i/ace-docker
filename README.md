@@ -199,25 +199,55 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
    - The truststore file that will be created for these files needs a password. You must set a truststore password using the environment variable `ACE_TRUSTSTORE_PASSWORD`
    - You can place multiple files, each with a different file name/alias.
 - `/home/aceuser/initial-config/webusers`
-   - A text file called either `admin-users.txt` or `operator-users.txt`. It contains a list of users to be created as admin/operator users using the command `mqsiwebuseradmin`. These users will have READ, WRITE and EXECUTE access on the Integration Server. The file has the following format:
+   - A text file called `admin-users.txt`. It contains a list of users to be created as `admin` users using the command `mqsiwebuseradmin`. These users will have READ, WRITE and EXECUTE access on the Integration Server. The file has the following format:
      ```
      # Lines starting with a "#" are ignored
-     # Each line should specify the <adminUser> <password>, separated by a single space
+     # Each line should specify the <user> <password>, separated by a single space
      # Each user will have "READ", "WRITE" and "EXECUTE" access on the integration server
      # Each line will be processed by calling...
-     #   mqsiwebuseradmin -w /home/aceuser/ace-server -c -u <adminUser> -a <password> -r admin
+     #   mqsiwebuseradmin -w /home/aceuser/ace-server -c -u <user> -a <password> -r admin
      admin1 password1
      admin2 password2
      ```
-   - A text file called `viewer-users.txt`, `editor-users.txt`, `audit-users.txt` . It contains a list of users to be created as viewer/editor/auditor users using the command `mqsiwebuseradmin`. These users will have READ access on the Integration Server. The file has the following format:
+     - A text file called `operator-users.txt`. It contains a list of users to be created as `operator` users using the command `mqsiwebuseradmin`. These users will have READ and EXECUTE access on the Integration Server. The file has the following format:
      ```
      # Lines starting with a "#" are ignored
-     # Each line should specify the <adminUser> <password>, separated by a single space
+     # Each line should specify the <user> <password>, separated by a single space
+     # Each user will have "READ" and "EXECUTE" access on the integration server
+     # Each line will be processed by calling...
+     #   mqsiwebuseradmin -w /home/aceuser/ace-server -c -u <user> -a <password> -r operator
+     operator1 password1
+     operator2 password2
+     ```
+     - A text file called `editor-users.txt`. It contains a list of users to be created as `editor` users using the command `mqsiwebuseradmin`. These users will have READ and WRITE access on the Integration Server. The file has the following format:
+     ```
+     # Lines starting with a "#" are ignored
+     # Each line should specify the <user> <password>, separated by a single space
+     # Each user will have "READ" and "WRITE" access on the integration server
+     # Each line will be processed by calling...
+     #   mqsiwebuseradmin -w /home/aceuser/ace-server -c -u <user> -a <password> -r editor
+     editor1 password1
+     editor2 password2
+     ```
+     - A text file called `audit-users.txt`. It contains a list of users to be created as `audit` users using the command `mqsiwebuseradmin`. These users will have READ access on the Integration Server. The file has the following format:
+     ```
+     # Lines starting with a "#" are ignored
+     # Each line should specify the <user> <password>, separated by a single space
      # Each user will have "READ" access on the integration server
      # Each line will be processed by calling...
-     #   mqsiwebuseradmin -w /home/aceuser/ace-server -c -u <adminUser> -a <password> -r viewer
-     admin1 password1
-     admin2 password2
+     #   mqsiwebuseradmin -w /home/aceuser/ace-server -c -u <user> -a <password> -r audit
+     audit1 password1
+     audit2 password2
+     ```
+     - A text file called `viewer-users.txt`. It contains a list of users to be created as `viewer` users using the command `mqsiwebuseradmin`. These users will have READ access on the Integration Server. The file has the following format:
+     ```
+     # Lines starting with a "#" are ignored
+     # Each line should specify the <user> <password>, separated by a single space
+     # Each user will have "READ" access on the integration server
+     # Each line will be processed by calling...
+     #   mqsiwebuseradmin -w /home/aceuser/ace-server -c -u <user> -a <password> -r viewer
+     viewer1 password1
+     viewer2 password2
      ```
 - `/home/aceuser/initial-config/mqsc`
    - A text file called `config.mqsc`. It contains a list of mqsc commands which will be processed on start by `runmqsc` command. Further details can be found in the [MQ Knowledge Center](https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.1.0/com.ibm.mq.adm.doc/q020670_.htm)
