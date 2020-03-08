@@ -18,8 +18,8 @@ ARG ACE_INSTALL=ace-11.0.0.2.tar.gz
 WORKDIR /opt/ibm
 COPY deps/$ACE_INSTALL .
 RUN mkdir ace-11
-#RUN tar -xzf $ACE_INSTALL --absolute-names --exclude ace-11.\*/tools --strip-components 1 --directory /opt/ibm/ace-11
-RUN tar -xzf $ACE_INSTALL --absolute-names --strip-components 1 --directory /opt/ibm/ace-11
+RUN tar -xzf $ACE_INSTALL --absolute-names --exclude ace-11.\*/tools --strip-components 1 --directory /opt/ibm/ace-11
+#RUN tar -xzf $ACE_INSTALL --absolute-names --strip-components 1 --directory /opt/ibm/ace-11
 
 
 FROM registry.access.redhat.com/ubi7/ubi-minimal
