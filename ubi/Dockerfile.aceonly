@@ -14,13 +14,13 @@ RUN go test -v ./cmd/runaceserver/
 RUN go test -v ./internal/...
 RUN go vet ./cmd/... ./internal/...
 
-ARG ACE_INSTALL=ace-11.0.0.2.tar.gz
+ARG ACE_INSTALL=ace-11.0.0.8.tar.gz
 WORKDIR /opt/ibm
 COPY deps/$ACE_INSTALL .
 RUN mkdir ace-11
 RUN tar -xzf $ACE_INSTALL --absolute-names --exclude ace-11.\*/tools --strip-components 1 --directory /opt/ibm/ace-11
 
-FROM registry.access.redhat.com/ubi7/ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 
 ENV SUMMARY="Integration Server for App Connect Enterprise" \
     DESCRIPTION="Integration Server for App Connect Enterprise" \
@@ -35,7 +35,7 @@ LABEL summary="$SUMMARY" \
       com.redhat.component="$PRODNAME-$COMPNAME" \
       name="$PRODNAME/$COMPNAME" \
       vendor="IBM" \
-      version="11.0.0.6" \
+      version="11.0.0.8" \
       release="1" \
       license="IBM" \
       maintainer="Hybrid Integration Platform Cloud" \
@@ -52,7 +52,7 @@ COPY deps/OpenTracing/config/* ./etc/ACEOpenTracing/
 
 WORKDIR /opt/ibm
 
-RUN microdnf install --nodocs openssl util-linux unzip python2 && microdnf clean all
+RUN microdnf install findutils openssl util-linux unzip python2 && microdnf clean all
 COPY --from=builder /opt/ibm/ace-11 /opt/ibm/ace-11
 RUN /opt/ibm/ace-11/ace make registry global accept license silently
 
@@ -63,9 +63,10 @@ COPY --from=builder /go/src/github.com/ot4i/ace-docker/chkace* /usr/local/bin/
 # Copy in script files
 COPY *.sh /usr/local/bin/
 
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
-RUN chmod +x /usr/local/bin/kubectl && \
-    /usr/local/bin/kubectl version --client
+# Install kubernetes cli
+COPY ubi/install-kubectl.sh /usr/local/bin/
+RUN chmod u+x /usr/local/bin/install-kubectl.sh \
+  && install-kubectl.sh
 
 # Create a user to run as, create the ace workdir, and chmod script files
 RUN useradd -u 1000 -d /home/aceuser -G mqbrkrs,wheel aceuser \

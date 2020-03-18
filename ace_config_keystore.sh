@@ -22,6 +22,11 @@ if ls /home/aceuser/initial-config/keystore/*.key >/dev/null 2>&1; then
   fi
 
   IFS=$'\n'
+  KEYTOOL=/opt/ibm/ace-11/common/jdk/jre/bin/keytool
+  if [ ! -f "$KEYTOOL" ]; then
+    KEYTOOL=/opt/ibm/ace-11/common/jre/bin/keytool
+  fi
+
   for keyfile in `ls /home/aceuser/initial-config/keystore/*.key`; do
     if [ -s "${keyfile}" ]; then
       if [ -z "${ACE_KEYSTORE_PASSWORD}" ]; then
@@ -48,7 +53,7 @@ if ls /home/aceuser/initial-config/keystore/*.key >/dev/null 2>&1; then
       fi
       logAndExitIfError $? "${OUTPUT}"
 
-      OUTPUT=$(/opt/ibm/ace-11/common/jdk/jre/bin/keytool -importkeystore -srckeystore /home/aceuser/ace-server/keystore.p12 -destkeystore /home/aceuser/ace-server/keystore.jks -srcstorepass ${ACE_KEYSTORE_PASSWORD} -deststorepass ${ACE_KEYSTORE_PASSWORD} -srcalias ${alias} -destalias ${alias} -srcstoretype PKCS12 -noprompt 2>&1)
+      OUTPUT=$(${KEYTOOL} -importkeystore -srckeystore /home/aceuser/ace-server/keystore.p12 -destkeystore /home/aceuser/ace-server/keystore.jks -srcstorepass ${ACE_KEYSTORE_PASSWORD} -deststorepass ${ACE_KEYSTORE_PASSWORD} -srcalias ${alias} -destalias ${alias} -srcstoretype PKCS12 -noprompt 2>&1)
       logAndExitIfError $? "${OUTPUT}"
 
       OUTPUT=$(rm /home/aceuser/ace-server/keystore.p12 2>&1)

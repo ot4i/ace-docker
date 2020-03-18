@@ -16,17 +16,14 @@
 # limitations under the License.
 
 # Fail on any non-zero return code
-set -ex
+set -e
 
-test -f /usr/bin/microdnf && MICRODNF=true || MICRODNF=false
-test -f /usr/bin/rpm && RPM=true || RPM=false
-
-if ($RPM); then
-  EXTRA_RPMS="findutils ca-certificates curl tar"
-  $MICRODNF && microdnf install ${EXTRA_RPMS}
+# Download kubectl
+if [[ $(uname -m) == s390x ]]
+then
+  curl -s -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.17.0/bin/linux/s390x/kubectl
 else
-  $MICRODNF && microdnf install findutils
+   curl -s -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl
 fi
-
-# Clean up cached files
-$MICRODNF && microdnf clean all
+chmod +x /usr/local/bin/kubectl && \
+    /usr/local/bin/kubectl version --client
