@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/user"
 	"strings"
 	"time"
@@ -127,8 +128,6 @@ func initialIntegrationServerConfig() error {
 			return enableOpenTracingError
 		}
 	}
-
-
 
 	log.Printf("Initial configuration of integration server complete")
 
@@ -292,8 +291,8 @@ func addOpenTracingToServerConf(serverconfContent []byte) ([]byte, error) {
 
 	} else {
 		serverconfMap["UserExits"] = map[string]string{
-			"activeUserExitList":    "ACEOpenTracingUserExit",
-			"userExitPath":    "/opt/ACEOpenTracing",
+			"activeUserExitList": "ACEOpenTracingUserExit",
+			"userExitPath":       "/opt/ACEOpenTracing",
 		}
 	}
 
@@ -329,7 +328,7 @@ func getConfigurationFromContentServer() error {
 	}
 
 	token := os.Getenv("ACE_CONTENT_SERVER_TOKEN")
-	if token == "" &&  defaultContentServer == "true" {
+	if token == "" && defaultContentServer == "true" {
 		log.Errorf("No content server token available but a url is defined")
 		return errors.New("No content server token available but a url is defined")
 	}
@@ -375,7 +374,7 @@ func getConfigurationFromContentServer() error {
 	contentServerKey := os.Getenv("CONTENT_SERVER_KEY")
 	cert, err := tls.LoadX509KeyPair(contentServerCert, contentServerKey)
 	if err != nil {
-		if ( contentServerCert != "" && contentServerKey != "" ) {
+		if contentServerCert != "" && contentServerKey != "" {
 			log.Errorf("Error reading Certificates: %s", err)
 			return errors.New("Error reading Certificates")
 		}
@@ -386,9 +385,9 @@ func getConfigurationFromContentServer() error {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				RootCAs:    caCertPool,
+				RootCAs:      caCertPool,
 				Certificates: []tls.Certificate{cert},
-				ServerName: serverName,
+				ServerName:   serverName,
 			},
 		},
 	}
@@ -459,11 +458,11 @@ func startIntegrationServer() command.BackgroundCmd {
 		return returnErr
 	}
 
-    defaultAppName := os.Getenv("ACE_DEFAULT_APPLICATION_NAME")
-    if defaultAppName == "" {
-        log.Printf("No default application name supplied. Using the integration server name instead.")
-        defaultAppName = serverName
-    }
+	defaultAppName := os.Getenv("ACE_DEFAULT_APPLICATION_NAME")
+	if defaultAppName == "" {
+		log.Printf("No default application name supplied. Using the integration server name instead.")
+		defaultAppName = serverName
+	}
 
 	if qmgr.UseQueueManager() {
 		qmgrName, err := name.GetQueueManagerName()
@@ -513,32 +512,56 @@ func stopIntegrationServer(integrationServerProcess command.BackgroundCmd) {
 }
 
 func createWorkDir() error {
-  log.Printf("Checking if work dir is already initialized")
-  f, err := os.Open("/home/aceuser/ace-server")
-  if err != nil {
-    log.Printf("Error reading /home/aceuser/ace-server")
-    return err
-  }
+	log.Printf("Checking if work dir is already initialized")
+	f, err := os.Open("/home/aceuser/ace-server")
+	if err != nil {
+		log.Printf("Error reading /home/aceuser/ace-server")
+		return err
+	}
 
-  log.Printf("Checking for contents in the work dir")
-  _, err = f.Readdirnames(1)
-  if err != nil {
-    log.Printf("Work dir is not yet initialized - initializing now in /home/aceuser/ace-server")
+	log.Printf("Checking for contents in the work dir")
+	_, err = f.Readdirnames(1)
+	if err != nil {
+		log.Printf("Work dir is not yet initialized - initializing now in /home/aceuser/ace-server")
 
-    if qmgr.UseQueueManager() {
-      _, _, err := command.RunAsUser("mqm", "/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
-      if err != nil {
-        log.Printf("Error reading initializing work dir")
-        return err
-      }
-    } else {
-      _, _, err := command.RunAsUser("aceuser", "/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
-      if err != nil {
-        log.Printf("Error reading initializing work dir")
-        return err
-      }
-    }
-  }
-  log.Printf("Work dir initialization complete")
-  return nil
+		if qmgr.UseQueueManager() {
+			_, _, err := command.RunAsUser("mqm", "/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+			if err != nil {
+				log.Printf("Error reading initializing work dir")
+				return err
+			}
+		} else {
+			_, _, err := command.RunAsUser("aceuser", "/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+			if err != nil {
+				log.Printf("Error reading initializing work dir")
+				return err
+			}
+		}
+	}
+	log.Printf("Work dir initialization complete")
+	return nil
+}
+
+func checkLogs() error {
+	log.Printf("Contents of log directory")
+	system("ls", "-l", "/home/aceuser/ace-server/config/common/log")
+
+	if os.Getenv("MQSI_PREVENT_CONTAINER_SHUTDOWN") == "true" {
+		log.Printf("MQSI_PREVENT_CONTAINER_SHUTDOWN set to blocking container shutdown to enable log copy out")
+		log.Printf("Once all logs have been copied out please kill container")
+		select {}
+	}
+
+	log.Printf("If you want to stop the container shutting down to enable retrieval of these files please set the environment variable \"MQSI_PREVENT_CONTAINER_SHUTDOWN=true\"")
+	log.Printf("If you are running under kubernetes you will also need to disable the livenessProbe")
+	log.Printf("Log checking complete")
+	return nil
+}
+
+func system(cmd string, arg ...string) {
+	out, err := exec.Command(cmd, arg...).Output()
+	if err != nil {
+		log.Printf(err.Error())
+	}
+	log.Printf(string(out))
 }

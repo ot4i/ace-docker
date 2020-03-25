@@ -1,0 +1,12 @@
+<!-- This file should not be copied to the external repo -->
+<Configuration>
+  <Targets>
+    <Target path="../">
+      <Exclude>asoc/</Exclude>
+      <Exclude>*home.html</Exclude>
+      <Exclude>*integrationserver.go</Exclude>
+      <Exclude>*setup.py</Exclude>
+      <Exclude>*mksysnum.pl</Exclude>
+    </Target>
+  </Targets>
+</Configuration>

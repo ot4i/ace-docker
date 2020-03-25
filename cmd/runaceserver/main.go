@@ -65,6 +65,8 @@ func doMain() error {
 		qmgr.StopQueueManager(qmgrProcess)
 		log.Print("Queue Mgr stopped")
 
+		checkLogs()
+
 		log.Print("Shutdown complete")
 	}
 

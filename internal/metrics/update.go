@@ -26,7 +26,10 @@ import (
     "fmt"
     "math"
     "net/url"
+    "net/http"
+    "net/http/cookiejar"
     "os"
+    "strings"
     "sync"
 
     "github.com/ot4i/ace-docker/internal/logger"
@@ -160,11 +163,47 @@ func ReadStatistics(log *logger.Logger) {
                     ServerName: aceAdminServerName,
                 },
             }
-            c, _, dialError = d.Dial(u.String(), nil)
+            // Create the websocket connection
+            c, _, dialError = d.Dial(u.String(), http.Header{"Origin": {u.String()}})
         } else {
-            u := url.URL{Scheme: "ws", Host: *addr, Path: "/"}
-            log.Printf("Connecting to %s for statistics", u.String())
-            c, _, dialError = websocket.DefaultDialer.Dial(u.String(), nil)
+            wsUrl := url.URL{Scheme: "ws", Host: *addr, Path: "/"}
+            log.Printf("Connecting to %s for statistics", wsUrl.String())
+
+            d := websocket.DefaultDialer
+
+            // Retrieve session if the webusers exist
+            contentBytes, err := ioutil.ReadFile("/home/aceuser/initial-config/webusers/admin-users.txt")
+            if err != nil {
+                log.Printf("Cannot find admin-users.txt file, not retrieving session")
+            } else {
+                userPassword := strings.Fields(string(contentBytes))
+                username := userPassword[0]
+                password := userPassword[1]
+
+                httpUrl := url.URL{Scheme: "http", Host: *addr, Path: "/"}
+                client := &http.Client{}
+                req, err := http.NewRequest("GET", httpUrl.String(), nil)
+                req.SetBasicAuth(username, password)
+                resp, err := client.Do(req)
+                if err != nil{
+                    log.Errorf("Error retrieving session: %s", err)
+                }
+
+                jar, _ := cookiejar.New(nil)
+                if (resp != nil) {
+                    cookies := resp.Cookies()
+                    jar.SetCookies(&httpUrl, cookies)
+                }
+
+                if (jar.Cookies(&httpUrl) != nil) {
+                    log.Printf("Connecting to %s using session cookie", wsUrl.String())
+                    d.Jar = jar
+                } else {
+                    log.Printf("Connecting to %s without using session cookie", wsUrl.String())
+                }
+            }
+            // Create the websocket connection
+            c, _, dialError = d.Dial(wsUrl.String(), http.Header{"Origin": {wsUrl.String()}})
         }
 
         if dialError == nil {

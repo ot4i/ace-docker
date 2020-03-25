@@ -23,8 +23,8 @@ var yamlTests = []struct {
 	in  string
 	out string
 }{
-{ // User's yaml has Statistics - it should keep accountingOrigin in Statics and any other main sections
-`
+	{ // User's yaml has Statistics - it should keep accountingOrigin in Statics and any other main sections
+		`
 Defaults:
  defaultApplication: ''
  policyProject: 'DefaultPolicies'
@@ -35,8 +35,8 @@ Statistics:
   accountingOrigin: 'test'
  Archive:
   test1: 'blah'
-  test2: 'blah2'`, 
-`Defaults:
+  test2: 'blah2'`,
+		`Defaults:
   Policies:
     HTTPSConnector: HTTPS
   defaultApplication: ""
@@ -54,14 +54,14 @@ Statistics:
     publicationOn: active
     threadDataLevel: none
 `},
-{ // User's yaml does not have a Statistics section, it adds the default metrics info
-`
+	{ // User's yaml does not have a Statistics section, it adds the default metrics info
+		`
 Defaults:
  defaultApplication: ''
  policyProject: 'DefaultPolicies'
  Policies:
-  HTTPSConnector: 'HTTPS'`, 
-`Defaults:
+  HTTPSConnector: 'HTTPS'`,
+		`Defaults:
   Policies:
     HTTPSConnector: HTTPS
   defaultApplication: ""
@@ -76,8 +76,8 @@ Statistics:
     publicationOn: active
     threadDataLevel: none
 `},
-{ // User's yaml has accountingOrigin in Statistics.Snapshot. It keeps this value.
-`
+	{ // User's yaml has accountingOrigin in Statistics.Snapshot. It keeps this value.
+		`
 Defaults:
  defaultApplication: ''
  policyProject: 'DefaultPolicies'
@@ -85,8 +85,8 @@ Defaults:
   HTTPSConnector: 'HTTPS'
 Statistics:
  Snapshot:
-  accountingOrigin: 'test'`, 
-`Defaults:
+  accountingOrigin: 'test'`,
+		`Defaults:
   Policies:
     HTTPSConnector: HTTPS
   defaultApplication: ""
@@ -113,5 +113,12 @@ func TestAddMetricsToServerConf(t *testing.T) {
 		if stringOut != table.out {
 			t.Errorf("addMetricsToServerConf expected %v, got %v", table.out, stringOut)
 		}
+	}
+}
+
+func TestCheckLogs(t *testing.T) {
+	err := checkLogs()
+	if err != nil {
+		t.Error(err)
 	}
 }
