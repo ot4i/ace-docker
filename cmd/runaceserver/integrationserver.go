@@ -25,7 +25,6 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"strings"
 	"time"
 
 	"github.com/ot4i/ace-docker/internal/command"
@@ -100,7 +99,8 @@ func initialIntegrationServerConfig() error {
 				}
 				log.LogDirect(out)
 			} else {
-				out, _, err := command.RunAsUser("aceuser", "ace_config_"+file.Name()+".sh")
+				cmd := exec.Command("ace_config_"+file.Name()+".sh")
+				out, _, err := command.RunCmd(cmd)
 				if err != nil {
 					log.LogDirect(out)
 					log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
@@ -416,29 +416,6 @@ func getConfigurationFromContentServer() error {
 		return err
 	}
 
-	thisUser, err := user.Current()
-	if err != nil {
-		log.Errorf("Error finding this user when setting permissions on file %v: %v", file, err)
-		return err
-	}
-	if strings.Compare("root", thisUser.Username) == 0 {
-		uid, gid, _, err := command.LookupUser("aceuser")
-		if err != nil {
-			log.Errorf("Error looking up aceuser when setting permissions on file %v: %v", file, err)
-			return err
-		}
-		err = os.Chown("/home/aceuser/initial-config/bars", int(uid), int(gid))
-		if err != nil {
-			log.Errorf("Error modifying permissions on directory /home/aceuser/initial-config/bars: %v", err)
-			return err
-		}
-		err = file.Chown(int(uid), int(gid))
-		if err != nil {
-			log.Errorf("Error modifying permissions on file %v: %v", file, err)
-			return err
-		}
-	}
-
 	log.Printf("Configuration pulled from content server successfully")
 	return nil
 }
@@ -476,7 +453,16 @@ func startIntegrationServer() command.BackgroundCmd {
 		return command.RunAsUserBackground("mqm", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
 	}
 
-	return command.RunAsUserBackground("aceuser", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
+	thisUser, err := user.Current()
+	if err != nil {
+		log.Errorf("Error finding this user: %v", err)
+		returnErr := command.BackgroundCmd{}
+		returnErr.ReturnCode = -1
+		returnErr.ReturnError = err
+		return returnErr
+	}
+
+	return command.RunAsUserBackground(thisUser.Username, "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
 }
 
 func waitForIntegrationServer() error {
@@ -491,7 +477,8 @@ func waitForIntegrationServer() error {
 			}
 			time.Sleep(5 * time.Second)
 		} else {
-			_, rc, err := command.RunAsUser("aceuser", "chkaceready")
+			cmd := exec.Command("chkaceready")
+			_, rc, err := command.RunCmd(cmd)
 			if rc != 0 || err != nil {
 				log.Printf("Integration server not ready yet")
 			}
@@ -531,7 +518,8 @@ func createWorkDir() error {
 				return err
 			}
 		} else {
-			_, _, err := command.RunAsUser("aceuser", "/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+			cmd := exec.Command("/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+			_, _, err := command.RunCmd(cmd)
 			if err != nil {
 				log.Printf("Error reading initializing work dir")
 				return err

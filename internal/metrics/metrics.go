@@ -26,6 +26,7 @@ import (
 	"github.com/ot4i/ace-docker/internal/logger"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -74,7 +75,7 @@ func startMetricsGathering(serverName string, log *logger.Logger) error {
 	}
 
 	// Setup HTTP server to handle requests from Prometheus
-	http.Handle("/metrics", prometheus.Handler())
+	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		w.Write([]byte("Status: METRICS ACTIVE"))

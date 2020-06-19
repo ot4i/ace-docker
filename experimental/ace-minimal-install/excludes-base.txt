@@ -1,3 +1,4 @@
+*.so.d
 */server/messages/BIPmsgs_de.properties
 */server/messages/BIPmsgs_es.properties
 */server/messages/BIPmsgs_fr.properties

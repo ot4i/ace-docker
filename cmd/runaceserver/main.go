@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"github.com/ot4i/ace-docker/internal/command"
+	"github.com/ot4i/ace-docker/internal/configuration"
 	"github.com/ot4i/ace-docker/internal/metrics"
 	"github.com/ot4i/ace-docker/internal/name"
 	"github.com/ot4i/ace-docker/internal/qmgr"
@@ -112,6 +113,14 @@ func doMain() error {
 
 	log.Println("Checking for valid working directory")
 	err = createWorkDir()
+	if err != nil {
+		logTermination(err)
+		performShutdown()
+		return err
+	}
+
+    // Note: this will do nothing if there are no crs set in the environment
+	err = configuration.SetupConfigurationsFiles(log, "/home/aceuser")
 	if err != nil {
 		logTermination(err)
 		performShutdown()

@@ -34,12 +34,11 @@ then
 else
       curl -LO -u  ${MQ_URL_USER}:${MQ_URL_PASS} $MQ_URL
 fi
-tar -zxf ./*.tar.gz
+tar -zxvf ./*.tar.gz
 
 # Recommended: Create the mqm user ID with a fixed UID and group, so that the file permissions work between different images
 groupadd --system --gid ${mqm_uid} mqm
 useradd --system --uid ${mqm_uid} --gid mqm --groups 0 mqm
-usermod -a -G mqm aceuser
 
 # Find directory containing .rpm files
 $RPM && DIR_RPM=$(find ${DIR_EXTRACT} -name "*.rpm" -printf "%h\n" | sort -u | head -1)

@@ -1,6 +1,6 @@
-FROM ace-minimal-install:11.0.0.5-ubuntu
+FROM ace-minimal-install:11.0.0.8-ubuntu
 
-# docker build --build-arg LICENSE=accept -t ace-minimal:11.0.0.5-ubuntu -f Dockerfile.ubuntu .
+# docker build --build-arg LICENSE=accept -t ace-minimal:11.0.0.8-ubuntu -f Dockerfile.ubuntu .
 
 ARG LICENSE
 

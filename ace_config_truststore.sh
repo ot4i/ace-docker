@@ -22,6 +22,10 @@ if ls /home/aceuser/initial-config/truststore/*.crt >/dev/null 2>&1; then
   fi
 
   IFS=$'\n'
+  KEYTOOL=/opt/ibm/ace-11/common/jdk/jre/bin/keytool
+  if [ ! -f "$KEYTOOL" ]; then
+    KEYTOOL=/opt/ibm/ace-11/common/jre/bin/keytool
+  fi
   for file in `ls /home/aceuser/initial-config/truststore/*.crt`; do
     if [ -s "${file}" ]; then
       if [ -z "${ACE_TRUSTSTORE_PASSWORD}" ]; then
@@ -31,7 +35,7 @@ if ls /home/aceuser/initial-config/truststore/*.crt >/dev/null 2>&1; then
 
       filename=$(basename $file)
       alias=$(echo $filename | sed -e 's/\.crt$'//)
-      OUTPUT=$(/opt/ibm/ace-11/common/jdk/jre/bin/keytool -importcert -trustcacerts -alias ${filename} -file ${file} -keystore /home/aceuser/ace-server/truststore.jks -storepass ${ACE_TRUSTSTORE_PASSWORD} -noprompt 2>&1)
+      OUTPUT=$(${KEYTOOL} -importcert -trustcacerts -alias ${filename} -file ${file} -keystore /home/aceuser/ace-server/truststore.jks -storepass ${ACE_TRUSTSTORE_PASSWORD} -noprompt 2>&1)
       logAndExitIfError $? "${OUTPUT}"
     fi
   done
