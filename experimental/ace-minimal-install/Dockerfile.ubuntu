@@ -1,11 +1,11 @@
 FROM ubuntu:18.04
 
-# docker build --build-arg DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.16836.5.tar.gz --build-arg PRODUCT_VERSION=ace-11.0.16836.5 -t ace-minimal-install:11.0.0.5-ubuntu -f Dockerfile.ubuntu .
+# docker build --build-arg DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.0.8.tar.gz --build-arg PRODUCT_VERSION=ace-11.0.0.8 -t ace-minimal-install:11.0.0.8-ubuntu -f Dockerfile.ubuntu .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.16836.5.tar.gz
-ARG PRODUCT_VERSION=ace-11.0.16836.5
+ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.0.8.tar.gz
+ARG PRODUCT_VERSION=ace-11.0.0.8
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
@@ -33,7 +33,7 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # Toolkit is optional
     cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt
 
-# Install ACE v11.0.0.5 and accept the license
+# Install ACE v11.0.0.8 and accept the license
 RUN apt-get install -y zip binutils && \
     mkdir /opt/ibm && \
     curl ${DOWNLOAD_URL} \
@@ -44,6 +44,6 @@ RUN apt-get install -y zip binutils && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
     ( strip /opt/ibm/ace-11/server/bin/* 2>/dev/null || /bin/true ) && \
     zip -d /opt/ibm/ace-11/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
-    apt-get remove -y zip binutils binutils-common binutils-x86-64-linux-gnu libbinutils && \
+    if [ $(uname -m) = x86_64 ]; then apt-get remove -y zip binutils binutils-common libbinutils binutils-x86-64-linux-gnu; else apt-get remove -y zip binutils binutils-common libbinutils; fi && \
     /opt/ibm/ace-11/ace make registry global accept license deferred
  

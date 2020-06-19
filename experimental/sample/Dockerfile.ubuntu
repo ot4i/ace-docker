@@ -1,4 +1,4 @@
-FROM ace-minimal:11.0.0.5-ubuntu
+FROM ace-minimal:11.0.0.8-ubuntu
 
 ARG LICENSE
 
