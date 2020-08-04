@@ -122,3 +122,88 @@ func TestCheckLogs(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+
+var yamlAdminTests = []struct {
+	in  string
+	out string
+}{
+	{ // User's yaml does not have a ResourceAdminListener section, so it is added
+`Defaults:
+ defaultApplication: ''
+ policyProject: 'DefaultPolicies'
+ Policies:
+  HTTPSConnector: 'HTTPS'`,
+`Defaults:
+  Policies:
+    HTTPSConnector: HTTPS
+  defaultApplication: ""
+  policyProject: DefaultPolicies
+RestAdminListener:
+  caPath: /home/aceuser/adminssl
+  requireClientCert: true
+  sslCertificate: /home/aceuser/adminssl/tls.crt.pem
+  sslPassword: /home/aceuser/adminssl/tls.key.pem
+`},
+	{ // User's yaml has RestAdminListener in don't alter.
+`Defaults:
+ defaultApplication: ''
+ policyProject: 'DefaultPolicies'
+ Policies:
+  HTTPSConnector: 'HTTPS'
+RestAdminListener:
+  caPath: "test"
+  requireClientCert: false
+  sslCertificate: "test"
+  sslPassword: "test"`,
+`Defaults:
+  Policies:
+    HTTPSConnector: HTTPS
+  defaultApplication: ""
+  policyProject: DefaultPolicies
+RestAdminListener:
+  caPath: test
+  requireClientCert: false
+  sslCertificate: test
+  sslPassword: test
+`},
+	{ // User's yaml has a ResourceAdminListener section, so ours is merged with users taking precedence
+`Defaults:
+ defaultApplication: ''
+ policyProject: 'DefaultPolicies'
+ Policies:
+  HTTPSConnector: 'HTTPS'
+RestAdminListener:
+  authorizationEnabled: true
+  requireClientCert: false
+  authorizationMode: file
+  sslPassword: "test"
+`,
+`Defaults:
+  Policies:
+    HTTPSConnector: HTTPS
+  defaultApplication: ""
+  policyProject: DefaultPolicies
+RestAdminListener:
+  authorizationEnabled: true
+  authorizationMode: file
+  caPath: /home/aceuser/adminssl
+  requireClientCert: false
+  sslCertificate: /home/aceuser/adminssl/tls.crt.pem
+  sslPassword: test
+`},
+}
+
+
+func TestAddAdminsslToServerConf(t *testing.T) {
+	for _, table := range yamlAdminTests {
+		out, err := addAdminsslToServerConf([]byte(table.in))
+		if err != nil {
+			t.Error(err)
+		}
+		stringOut := string(out)
+		if stringOut != table.out {
+			t.Errorf("addAdminsslToServerConf expected \n%v, got \n%v", table.out, stringOut)
+		}
+	}
+}

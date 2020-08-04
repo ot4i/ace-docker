@@ -81,26 +81,7 @@ In order to use the image, it is necessary to accept the terms of the IBM App Co
 
 ### Red Hat OpenShift SecurityContextConstraints Requirements
 
-This chart requires a SecurityContextConstraints to be bound to the target namespace prior to installation. To meet this requirement there may be cluster scoped as well as namespace scoped pre and post actions that need to occur.
-
-
-#### Running an ACE Only Integration Server
-
-The predefined SecurityContextConstraints name: [`ibm-anyuid-scc`](https://ibm.biz/cpkspec-scc) has been verified for this chart when creating an ACE & MQ integration server, if your target namespace is bound to this SecurityContextConstraints resource you can proceed to install the chart.
-
-Run the following command to add the service account of the Integration server to the anyuid scc - `oc adm policy add-scc-to-user ibm-anyuid-scc system:serviceaccount:<namespace>:<releaseName>-ibm-ace-server-prod-serviceaccount` i.e.
-``` 
-oc adm policy add-scc-to-user ibm-anyuid-scc system:serviceaccount:default:ace-nomq-ibm-ace-server-rhel-prod-serviceaccount
-```
-
-#### Running an ACE & MQ Integration Server
-
-The predefined SecurityContextConstraints name: [`ibm-anyuid-scc`](https://ibm.biz/cpkspec-scc) has been verified for this chart when creating an ACE & MQ integration server, if your target namespace is bound to this SecurityContextConstraints resource you can proceed to install the chart.
-
-Run the following command to add the service account of the Integration server to the anyuid scc. - `oc adm policy add-scc-to-user ibm-anyuid-scc system:serviceaccount:<namespace>:<releaseName>-ibm-ace-server-mq-prod-serviceaccount` i.e.
-```
-oc adm policy add-scc-to-user ibm-anyuid-scc system:serviceaccount:ace:ace-mq-ibm-ace-server-mq-prod-serviceaccount
-```
+The predefined SecurityContextConstraint (SCC) `restricted` has been verified with the image when being run in a Red Hat OpenShift environment.
 
 ### ACE & MQ image
 
@@ -145,7 +126,7 @@ In the `sample` folder there is an example on how to build a server image with a
 
 - **ACE_ADMIN_SERVER_SECURITY** - Set to `true` if you intend to secure your Integration Server using SSL.
 - **ACE_ADMIN_SERVER_NAME** - Set this to the DNS name of your Integration Server for SSL SAN checking.
-- **ACE_ADMIN_SERVER_CA** - Set this to your Integration Server SSL CA certificate.
+- **ACE_ADMIN_SERVER_CA** - Set this to your Integration Server SSL CA certificates folder.
 - **ACE_ADMIN_SERVER_CERT** - Set this to your Integration Server SSL certificate.
 - **ACE_ADMIN_SERVER_KEY** - Set this to your Integration Server SSL key certificate.
 

@@ -22,7 +22,7 @@ ARG ACE_INSTALL=ace-11.0.0.8.tar.gz
 WORKDIR /opt/ibm
 COPY deps/$ACE_INSTALL .
 RUN mkdir ace-11
-RUN tar -xzf $ACE_INSTALL --absolute-names --exclude ace-11.\*/tools --strip-components 1 --directory /opt/ibm/ace-11
+RUN tar -xzf $ACE_INSTALL --absolute-names --exclude ace-11.\*/tools --exclude ace-11.\*/server/bin/TADataCollector.sh --exclude ace-11.\*/server/transformationAdvisor/ta-plugin-ace.jar --strip-components 1 --directory /opt/ibm/ace-11
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 
@@ -56,7 +56,8 @@ COPY deps/OpenTracing/config/* ./etc/ACEOpenTracing/
 
 WORKDIR /opt/ibm
 
-RUN microdnf install findutils util-linux unzip python2 && microdnf clean all
+RUN microdnf update && microdnf install findutils util-linux unzip python3 && microdnf clean all
+RUN ln -s /usr/bin/python3 /usr/local/bin/python
 COPY --from=builder /opt/ibm/ace-11 /opt/ibm/ace-11
 
 # Copy in PID1 process
@@ -72,11 +73,11 @@ RUN chmod u+x /usr/local/bin/install-kubectl.sh \
   && install-kubectl.sh
 
 # Create a user to run as, create the ace workdir, and chmod script files
-RUN mkdir -p /var/mqsi \
-    && /opt/ibm/ace-11/ace make registry global accept license silently \
-    && mkdir -p /home/aceuser/initial-config
-RUN su - -c '. /opt/ibm/ace-11/server/bin/mqsiprofile \
-    && mqsicreateworkdir /home/aceuser/ace-server' \
+RUN /opt/ibm/ace-11/ace make registry global accept license silently \ 
+    && useradd -u 1000 -d /home/aceuser -G mqbrkrs,wheel aceuser \
+    && mkdir -p /var/mqsi \
+    && mkdir -p /home/aceuser/initial-config \
+    && su - -c '. /opt/ibm/ace-11/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server' \
     && chmod -R 777 /home/aceuser \
     && chmod -R 777 /var/mqsi
 
@@ -89,6 +90,9 @@ EXPOSE 7600 7800 7843 9483
 WORKDIR /home/aceuser
 
 ENV LOG_FORMAT=basic
+
+# Set user to prevent container running as root by default
+USER aceuser
 
 # Set entrypoint to run management script
 

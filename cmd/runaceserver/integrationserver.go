@@ -129,6 +129,15 @@ func initialIntegrationServerConfig() error {
 		}
 	}
 
+	enableAdminssl := os.Getenv("ACE_ADMIN_SERVER_SECURITY")
+	if enableAdminssl == "true" || enableAdminssl == "1" {
+		enableAdminsslError := enableAdminsslInServerConf()
+		if enableAdminsslError != nil {
+			log.Errorf("Error enabling admin server security in server.conf.yaml: %v", enableAdminsslError)
+			return enableAdminsslError
+		}
+	}
+
 	log.Printf("Initial configuration of integration server complete")
 
 	log.Println("Discovering override ports")
@@ -199,6 +208,37 @@ func enableOpenTracingInServerConf() error {
 	}
 
 	log.Println("OpenTracing enabled in server.conf.yaml")
+
+	return nil
+}
+
+// enableAdminsslInServerConf adds RestAdminListener configuration fields to the server.conf.yaml in overrides
+// based on the env vars ACE_ADMIN_SERVER_KEY, ACE_ADMIN_SERVER_CERT, ACE_ADMIN_SERVER_CA
+// If the file does not exist already it gets created.
+func enableAdminsslInServerConf() error {
+
+	log.Println("Enabling Admin Server Security in server.conf.yaml")
+
+	serverconfContent, readError := readServerConfFile()
+	if readError != nil {
+		if !os.IsNotExist(readError) {
+			// Error is different from file not existing (if the file does not exist we will create it ourselves)
+			log.Errorf("Error reading server.conf.yaml: %v", readError)
+			return readError
+		}
+	}
+
+	serverconfYaml, manipulationError := addAdminsslToServerConf(serverconfContent)
+	if manipulationError != nil {
+		return manipulationError
+	}
+
+	writeError := writeServerConfFile(serverconfYaml)
+	if writeError != nil {
+		return writeError
+	}
+
+	log.Println("Admin Server Security enabled in server.conf.yaml")
 
 	return nil
 }
@@ -294,6 +334,70 @@ func addOpenTracingToServerConf(serverconfContent []byte) ([]byte, error) {
 			"activeUserExitList": "ACEOpenTracingUserExit",
 			"userExitPath":       "/opt/ACEOpenTracing",
 		}
+	}
+
+	serverconfYaml, marshallError := yaml.Marshal(&serverconfMap)
+	if marshallError != nil {
+		log.Errorf("Error marshalling server.conf.yaml: %v", marshallError)
+		return nil, marshallError
+	}
+
+	return serverconfYaml, nil
+}
+
+// addAdminsslToServerConf gets the content of the server.conf.yaml and adds the Admin Server Security fields to it
+// It returns the updated server.conf.yaml content
+func addAdminsslToServerConf(serverconfContent []byte) ([]byte, error) {
+	serverconfMap := make(map[interface{}]interface{})
+	unmarshallError := yaml.Unmarshal([]byte(serverconfContent), &serverconfMap)
+	if unmarshallError != nil {
+		log.Errorf("Error unmarshalling server.conf.yaml: %v", unmarshallError)
+		return nil, unmarshallError
+	}
+
+	// Get the keys, certs location and default if not found
+	cert := os.Getenv("ACE_ADMIN_SERVER_CERT")
+	if cert == "" {
+		cert = "/home/aceuser/adminssl/tls.crt.pem"
+	}
+
+	key := os.Getenv("ACE_ADMIN_SERVER_KEY")
+	if key == "" {
+		key = "/home/aceuser/adminssl/tls.key.pem"
+	}
+
+	cacert := os.Getenv("ACE_ADMIN_SERVER_CA")
+	if cacert == "" {
+		cacert = "/home/aceuser/adminssl"
+	}
+
+	isTrue := true
+	// Only update if there is not an existing entry in the override server.conf.yaml
+	// so we don't overwrite any customer provided configuration
+	if serverconfMap["RestAdminListener"] == nil {
+		serverconfMap["RestAdminListener"] = map[string]interface{}{
+			"sslCertificate" : cert,
+			"sslPassword" : key,
+			"requireClientCert" : isTrue,
+			"caPath" : cacert,
+		}
+		log.Printf("Admin Server Security updating RestAdminListener using ACE_ADMIN_SERVER environment variables")
+	} else {
+		restAdminListener := serverconfMap["RestAdminListener"].(map[interface{}]interface{})
+
+    	if restAdminListener["sslCertificate"] == nil {
+    		restAdminListener["sslCertificate"] =  cert
+    	}
+    	if restAdminListener["sslPassword"] == nil {
+    		restAdminListener["sslPassword"] =  key
+    	}
+    	if restAdminListener["requireClientCert"] == nil {
+    		restAdminListener["requireClientCert"] = isTrue
+    	}
+    	if restAdminListener["caPath"] == nil {
+    		restAdminListener["caPath"] = cacert
+    	}
+		log.Printf("Admin Server Security merging RestAdminListener using ACE_ADMIN_SERVER environment variables")
 	}
 
 	serverconfYaml, marshallError := yaml.Marshal(&serverconfMap)

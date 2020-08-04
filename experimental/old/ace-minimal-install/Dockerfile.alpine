@@ -1,11 +1,11 @@
-FROM openjdk:8-jre-alpine
+FROM ibmjava:8-sfj-alpine
 
-# docker build --build-arg DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.16836.5.tar.gz --build-arg PRODUCT_VERSION=ace-11.0.16836.5 -t ace-minimal-install:11.0.0.5-alpine-openjdk -f Dockerfile.alpine-openjdk .
+# docker build --build-arg DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.0.9.tar.gz --build-arg PRODUCT_LABEL=ace-11.0.0.9 -t ace-minimal-install:11.0.0.9-alpine -f Dockerfile.alpine .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.16836.5.tar.gz
-ARG PRODUCT_VERSION=ace-11.0.16836.5
+ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.0.9.tar.gz
+ARG PRODUCT_LABEL=ace-11.0.0.9
 
 RUN apk --update add --no-cache --virtual .build-deps curl binutils \
     && GLIBC_VER="2.29-r0" \
@@ -18,7 +18,6 @@ RUN apk --update add --no-cache --virtual .build-deps curl binutils \
     && curl -Ls ${ALPINE_GLIBC_REPO}/${GLIBC_VER}/glibc-${GLIBC_VER}.apk > /tmp/${GLIBC_VER}.apk \
     && apk add /tmp/${GLIBC_VER}.apk \
     && curl -Ls ${GCC_LIBS_URL} -o /tmp/gcc-libs.tar.xz \
-    && echo "${GCC_LIBS_SHA256}  /tmp/gcc-libs.tar.xz" | sha256sum -c - \
     && mkdir /tmp/gcc \
     && tar -xf /tmp/gcc-libs.tar.xz -C /tmp/gcc \
     && mv /tmp/gcc/usr/lib/libgcc* /tmp/gcc/usr/lib/libstdc++* /usr/glibc-compat/lib \
@@ -34,7 +33,6 @@ RUN apk --update add --no-cache --virtual .build-deps curl binutils \
     && mkdir /usr/glibc-compat/zlib-only \
     && ( cd /usr/glibc-compat/lib && tar -cf - libz* ) | ( cd /usr/glibc-compat/zlib-only && tar -xf - )
 
-
 ENV TZ=Europe/London
 
 # Set up exclusions
@@ -47,11 +45,15 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-cics.txt >> /tmp/all-excludes.txt && \
 # FTE is optional
     cat /tmp/excludes-fte.txt >> /tmp/all-excludes.txt && \
-# Global Cache is optional; set MQSI_NO_CACHE_SUPPORT=1
-    cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
+# GlobalCache is optional; set MQSI_NO_CACHE_SUPPORT=1
+#    cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
+# IMS is optional
+    cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
 # JDK provided by base layer; use MQSI_SIGNAL_EXCLUSIONS=11 and 
 # MQSI_NON_IBM_JAVA=1 for non-IBM Java layers
     cat /tmp/excludes-jdk.txt >> /tmp/all-excludes.txt && \
+# node.js support is optional; use --no-nodejs on server start line
+    cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
     cat /tmp/excludes-npm.txt >> /tmp/all-excludes.txt && \
 # ODBC drivers are optional
@@ -61,18 +63,25 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # XSLT nodes are optional
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt && \
 # Toolkit is optional
-    cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt
+    cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt && \
+# Web UI support optional; use --admin-rest-api -1 on server start line
+    cat /tmp/excludes-webui.txt >> /tmp/all-excludes.txt && \
+# WSRR nodes are optional
+    cat /tmp/excludes-wsrr.txt >> /tmp/all-excludes.txt && \
+# XSLT nodes are optional
+    cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
 # Set the env vars mentioned above
-COPY profile-with-openjdk-paths.sh /etc/profile.d/profile-with-openjdk-paths.sh
-COPY openjdk-paths.sh /etc/profile.d/openjdk-paths.sh
+COPY profile-with-ibmjava-paths.sh /etc/profile.d/profile-with-ibmjava-paths.sh
+COPY ibmjava-paths.sh /etc/profile.d/ibmjava-paths.sh
 
-# Install ACE v11.0.0.5
+# Install ACE v11.0.0.9
 RUN mkdir -p /opt/ibm && \
     apk add binutils zip && \
+    echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} \
     | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
-    mv /opt/ibm/${PRODUCT_VERSION} /opt/ibm/ace-11 && \
+    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-11 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
@@ -80,7 +89,7 @@ RUN mkdir -p /opt/ibm && \
     zip -d /opt/ibm/ace-11/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     apk del --purge binutils zip && \
     addgroup mqbrkrs && \
-    cat /etc/profile.d/openjdk-paths.sh >> /root/.bashrc && \
-    ln -s /usr/lib/jvm/default-jvm /opt/ibm/ace-11/common/jdk
+    cat /etc/profile.d/ibmjava-paths.sh >> /root/.bashrc && \
+    ln -s /opt/ibm/java /opt/ibm/ace-11/common/jdk
 
-RUN bash -c '. /etc/profile.d/openjdk-paths.sh && /opt/ibm/ace-11/ace make registry global accept license deferred'
+RUN bash -c '. /etc/profile.d/ibmjava-paths.sh && /opt/ibm/ace-11/ace make registry global accept license deferred'

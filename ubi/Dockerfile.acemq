@@ -61,8 +61,7 @@ COPY deps/OpenTracing/config/* ./etc/ACEOpenTracing/
 
 WORKDIR /opt/ibm
 
-RUN microdnf install util-linux unzip python2 && microdnf clean all
-RUN microdnf update
+RUN microdnf update && microdnf install util-linux unzip python2 && microdnf clean all
 COPY --from=builder /opt/ibm/ace-11 /opt/ibm/ace-11
 RUN /opt/ibm/ace-11/ace make registry global accept license silently
 

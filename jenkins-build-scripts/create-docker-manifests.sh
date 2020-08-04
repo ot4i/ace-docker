@@ -56,16 +56,30 @@ do
       docker pull ${operatorregistry}/${devimage}:latest-$arch
     fi
   fi
+
   echo Finished pulling $arch
 done
 
-sudo docker manifest create --amend ${operatorregistry}/${prodimage}:$TAG $PROD_IMAGE_STRING
-sudo docker manifest create --amend ${operatorregistry}/${devimage}:$TAG $DEV_IMAGE_STRING
-sudo docker manifest create --amend ${operatorregistry}/${prodimage}:$TAG $ZPROD_IMAGE_STRING
+
+if [ "$BUILD_PLATFORM" == "amd64-only" ] || [ "$BUILD_PLATFORM" == "both" ] ; then
+  sudo docker manifest create --amend ${operatorregistry}/${prodimage}:$TAG $PROD_IMAGE_STRING
+  sudo docker manifest create --amend ${operatorregistry}/${devimage}:$TAG $DEV_IMAGE_STRING
+fi
+if [ "$BUILD_PLATFORM" == "s390x-only" ] || [ "$BUILD_PLATFORM" == "both" ] ; then
+  sudo docker manifest create --amend ${operatorregistry}/${prodimage}:$TAG $ZPROD_IMAGE_STRING
+fi
 if [ "${BRANCH_TO_BUILD}" == "master" ] ; then
-  sudo docker manifest create --amend ${operatorregistry}/${prodimage}:latest $PROD_LATEST_IMAGE_STRING
-  sudo docker manifest create --amend ${operatorregistry}/${devimage}:latest $DEV_LATEST_IMAGE_STRING
-  sudo docker manifest create --amend ${operatorregistry}/${prodimage}:latest $ZPROD_LATEST_IMAGE_STRING
+  if [ "$BUILD_PLATFORM" == "amd64-only" ] || [ "$BUILD_PLATFORM" == "both" ] ; then
+    echo "INFO: creating manifests with 'latest' tag"
+    sudo docker manifest create --amend ${operatorregistry}/${prodimage}:latest $PROD_LATEST_IMAGE_STRING
+    sudo docker manifest create --amend ${operatorregistry}/${devimage}:latest $DEV_LATEST_IMAGE_STRING
+    sudo docker manifest inspect ${operatorregistry}/${devimage}:latest
+  fi
+  if [ "$BUILD_PLATFORM" == "s390x-only" ] || [ "$BUILD_PLATFORM" == "both" ] ; then
+    echo "INFO: Adding zlinux image to prod manifest that has the 'latest' tag"
+    sudo docker manifest create --amend ${operatorregistry}/${prodimage}:latest $ZPROD_LATEST_IMAGE_STRING
+    sudo docker manifest inspect ${operatorregistry}/${prodimage}:latest
+  fi
 fi
 
 for arch in "${ARCH_ARRAY[@]}"
@@ -76,9 +90,13 @@ do
     sudo docker manifest annotate ${operatorregistry}/${devimage}:$TAG ${operatorregistry}/${devimage}:$TAG-$arch --os linux --arch $arch
   fi
   if [ "${BRANCH_TO_BUILD}" == "master" ] ; then
+    echo "INFO: Annotating image entry in 'latest' prod manifest for $arch"    
     sudo docker manifest annotate ${operatorregistry}/${prodimage}:latest ${operatorregistry}/${prodimage}:latest-$arch --os linux --arch $arch
+    sudo docker manifest inspect ${operatorregistry}/${prodimage}:latest
     if [ "$arch" == "amd64" ]; then
+      echo "INFO: Annotating image entry in 'latest' dev manifest for $arch"
       sudo docker manifest annotate ${operatorregistry}/${devimage}:latest ${operatorregistry}/${devimage}:latest-$arch --os linux --arch $arch
+      sudo docker manifest inspect ${operatorregistry}/${devimage}:latest
     fi
   fi
 done

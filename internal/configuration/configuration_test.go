@@ -71,7 +71,7 @@ func reset() {
 		panic("Should be mocked")
 	}
 
-	internalRunCommand = func(command string, params []string) error {
+	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
 		panic("Should be mocked")
 	}
 
@@ -197,6 +197,14 @@ func TestSetupConfigurationsFiles(t *testing.T) {
 		}, nil
 	}
 	assert.Nil(t, SetupConfigurationsFiles(testLogger, testBaseDir))
+}
+
+func TestRunCommand(t *testing.T) {
+	// check get an error when command is rubbish
+	err := runCommand(testLogger, "fakeCommand", []string{"fake"})
+	if err == nil {
+		assert.Equal(t, errors.New("Command should have failed"), err)
+	}
 }
 
 func TestSetupConfigurationsFilesInternal(t *testing.T) {
@@ -412,14 +420,14 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	assert.Nil(t, SetupConfigurationsFilesInternal(testLogger, []string{"accounts-1"}, testBaseDir))
 	// Test agentx.json
 	reset()
-		osMkdirAll = func(path string, perm os.FileMode) error {
-    		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agentx", path)
-    		return nil
-    	}
-    		ioutilWriteFile = func(fn string, data []byte, perm os.FileMode) error {
-        		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agentx"+string(os.PathSeparator)+"agentx.json", fn)
-        		return nil
-        	}
+	osMkdirAll = func(path string, perm os.FileMode) error {
+		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agentx", path)
+		return nil
+	}
+	ioutilWriteFile = func(fn string, data []byte, perm os.FileMode) error {
+		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agentx"+string(os.PathSeparator)+"agentx.json", fn)
+		return nil
+	}
 	getSecret = func(basdir string, name string) ([]byte, error) {
 
 		assert.Equal(t, name, secretName)
@@ -568,7 +576,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"setdbparms.txt"}, testBaseDir)
 		if assert.Error(t, err, "Fails due to invalid setdbparms command") {
-			assert.Equal(t, errors.New("invalid mqsisetdbparms entry - too few parameters"), err)
+			assert.Equal(t, errors.New("Invalid mqsisetdbparms entry - too few parameters"), err)
 		}
 	}
 	// Test setdbparms with too many parameters
@@ -579,7 +587,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"setdbparms.txt"}, testBaseDir)
 		if assert.Error(t, err, "Fails due to invalid setdbparms command") {
-			assert.Equal(t, errors.New("invalid mqsisetdbparms entry - too many parameters"), err)
+			assert.Equal(t, errors.New("Invalid mqsisetdbparms entry - too many parameters"), err)
 		}
 	}
 	// Test setdbparms with just name, user and password but command fails
@@ -587,7 +595,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("name user pass"), nil
 	}
-	internalRunCommand = func(command string, params []string) error {
+	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -604,7 +612,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("mqsisetdbparms    -n name    -u    user     -p        pass    -w    /tmp/tests/ace-server"), nil
 	}
-	internalRunCommand = func(command string, params []string) error {
+	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -621,7 +629,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("name user pass"), nil
 	}
-	internalRunCommand = func(command string, params []string) error {
+	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -635,7 +643,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		return []byte("\n   name1    user1     pass1   \n  name2    user2     pass2'  "), nil
 
 	}
-	internalRunCommand = func(command string, params []string) error {
+	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		var testParams []string
 		if params[1] == "'name1'" {
@@ -654,7 +662,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("mqsisetdbparms -n name -u user -p pass"), nil
 	}
-	internalRunCommand = func(command string, params []string) error {
+	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -668,7 +676,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("mqsisetdbparms    -n name    -u    user     -p        pass    -w    /tmp/tests/ace-server"), nil
 	}
-	internalRunCommand = func(command string, params []string) error {
+	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)

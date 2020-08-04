@@ -1,3 +1,0 @@
-*/server/nodejs/lib/node_modules/ace-admin-server/node_modules
-*/server/nodejs/loopback-modelapi-provider-software.tar.xz
-*/server/nodejs/nock

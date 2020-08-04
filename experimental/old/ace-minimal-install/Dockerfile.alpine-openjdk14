@@ -1,11 +1,15 @@
-FROM ibmjava:8-sfj-alpine
+FROM alpine:3.12
 
-# docker build -t ace-minimal:11.0.0.9-alpine -f Dockerfile.alpine .
+# docker build --build-arg DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.0.9.tar.gz --build-arg PRODUCT_LABEL=ace-11.0.0.9 -t ace-minimal-install:11.0.0.9-alpine-openjdk14 -f Dockerfile.alpine-openjdk14 .
+
+# . /opt/ibm/ace-11/server/bin/mqsiprofile && IntegrationServer -w /tmp/blah --admin-rest-api -1 --no-nodejs
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.9-ACE-LINUX64-DEVELOPER.tar.gz
+ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.0.9.tar.gz
 ARG PRODUCT_LABEL=ace-11.0.0.9
+ARG JDK_DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/openjdk-14.0.1_linux-x64_bin.tar.gz
+ARG JDK_LABEL=jdk-14.0.1
 
 
 RUN apk --update add --no-cache --virtual .build-deps curl binutils zstd \
@@ -47,19 +51,25 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-cics.txt >> /tmp/all-excludes.txt && \
 # FTE is optional
     cat /tmp/excludes-fte.txt >> /tmp/all-excludes.txt && \
-# GlobalCache is optional; set MQSI_NO_CACHE_SUPPORT=1
-#    cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
+# GlobalCache is optional; set MQSI_NO_CACHE_SUPPORT=1 but note that 11.0.0.9 will print harmless error messages
+    cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
 # IMS is optional
     cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
 # JDK provided by base layer; use MQSI_SIGNAL_EXCLUSIONS=11 and 
 # MQSI_NON_IBM_JAVA=1 for non-IBM Java layers
     cat /tmp/excludes-jdk.txt >> /tmp/all-excludes.txt && \
+# Kafka has log4j-1.2.17
+    cat /tmp/excludes-kafka.txt >> /tmp/all-excludes.txt && \
 # node.js support is optional; use --no-nodejs on server start line
     cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
     cat /tmp/excludes-npm.txt >> /tmp/all-excludes.txt && \
 # ODBC drivers are optional
     cat /tmp/excludes-odbc.txt >> /tmp/all-excludes.txt && \
+# REST Web UI support optional; use --admin-rest-api -1 on server start line
+    cat /tmp/excludes-webui.txt >> /tmp/all-excludes.txt && \
+# XSLT nodes are optional
+    cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt && \
 # Toolkit is optional
     cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt && \
 # Web UI support optional; use --admin-rest-api -1 on server start line
@@ -70,12 +80,24 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
 # Set the env vars mentioned above
-COPY profile-with-ibmjava-paths.sh /etc/profile.d/profile-with-ibmjava-paths.sh
-COPY ibmjava-paths.sh /etc/profile.d/ibmjava-paths.sh
+COPY profile-with-openjdk14-paths.sh /etc/profile.d/profile-with-openjdk14-paths.sh
+COPY openjdk14-paths.sh /etc/profile.d/openjdk14-paths.sh
 
-# Install ACE 
+
+# Install openjdk
 RUN mkdir -p /opt/ibm && \
-    apk add bash curl binutils zip && \
+    apk add binutils zip bash curl && \
+    cd /opt && \
+    curl ${JDK_DOWNLOAD_URL} | tar -xzf - && \
+    /opt/${JDK_LABEL}/bin/jlink --strip-debug --no-man-pages --no-header-files --output /opt/openjdk-14 --add-modules java.base,java.compiler,java.datatransfer,java.instrument,java.logging,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.se,java.security.jgss,java.security.sasl,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto,jdk.accessibility,jdk.aot,jdk.attach,jdk.charsets,jdk.compiler,jdk.crypto.cryptoki,jdk.crypto.ec,jdk.dynalink,jdk.hotspot.agent,jdk.internal.ed,jdk.internal.jvmstat,jdk.internal.le,jdk.internal.opt,jdk.internal.vm.ci,jdk.internal.vm.compiler,jdk.internal.vm.compiler.management,jdk.jartool,jdk.jcmd,jdk.jconsole,jdk.jdeps,jdk.jdi,jdk.jdwp.agent,jdk.jfr,jdk.jlink,jdk.management,jdk.management.agent,jdk.management.jfr,jdk.naming.dns,jdk.naming.rmi,jdk.net,jdk.nio.mapmode,jdk.sctp,jdk.security.auth,jdk.security.jgss,jdk.unsupported,jdk.xml.dom,jdk.zipfs && \
+    rm -rf /opt/${JDK_LABEL} && \
+    apk del --purge binutils zip curl ncurses-terminfo-base ncurses-libs
+
+
+# Install ACE v11.0.0.9
+RUN mkdir -p /opt/ibm && \
+    apk add binutils zip bash curl && \
+    cd /opt && \
     echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} \
     | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
@@ -85,24 +107,11 @@ RUN mkdir -p /opt/ibm && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
     ( strip /opt/ibm/ace-11/server/bin/* 2>/dev/null || /bin/true ) && \
     zip -d /opt/ibm/ace-11/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
-    apk del --purge binutils zip curl && \
+    apk del --purge binutils zip curl ncurses-terminfo-base ncurses-libs && \
     addgroup mqbrkrs && \
-    cat /etc/profile.d/ibmjava-paths.sh >> /root/.bashrc && \
-    ln -s /opt/ibm/java /opt/ibm/ace-11/common/jdk
+    cat /etc/profile.d/openjdk14-paths.sh >> /root/.bashrc && \
+    mkdir /opt/ibm/ace-11/common/jdk && \
+    ln -s /opt/openjdk-14 /opt/ibm/ace-11/common/jdk/jre
 
-RUN bash -c '. /etc/profile.d/ibmjava-paths.sh && /opt/ibm/ace-11/ace make registry global accept license deferred'
+RUN bash -c '. /etc/profile.d/openjdk14-paths.sh && /opt/ibm/ace-11/ace make registry global accept license deferred'
 
-# Set BASH_ENV to source mqsiprofile when using docker exec bash -c
-ENV BASH_ENV=/etc/profile.d/profile-with-ibmjava-paths.sh
-
-# Create a user to run as, create the ace workdir, and chmod script files
-RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \
-    adduser aceuser mqbrkrs && \
-    cat /etc/profile.d/ibmjava-paths.sh >> /home/aceuser/.bashrc && \
-    chown aceuser /home/aceuser/.bashrc && \
-    chmod 664 /home/aceuser/.bashrc && \
-    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-ibmjava-paths.sh && mqsicreateworkdir /home/aceuser/ace-server" && \
-    echo ". /etc/profile.d/profile-with-ibmjava-paths.sh" >> /home/aceuser/.bashrc
-
-USER aceuser
-ENTRYPOINT ["bash"]

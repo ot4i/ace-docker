@@ -241,10 +241,9 @@ func setupClientsImpl() (dynamic.Interface, error) {
 var setupClients = setupClientsImpl
 
 func SetupConfigurationsFiles(log *logger.Logger, basedir string) error {
-	log.Println("SetupConfigurationsFiles")
 	configurationNames, ok := os.LookupEnv("ACE_CONFIGURATIONS")
 	if ok && configurationNames != "" {
-		log.Printf("SetupConfigurationsFiles - configuration names: %s", configurationNames)
+		log.Printf("Setup configuration files - configuration names: %s", configurationNames)
 
 		return SetupConfigurationsFilesInternal(log, strings.SplitN(configurationNames, ",", -1), basedir)
 	} else {
@@ -284,7 +283,7 @@ func SetupConfigurationsFilesInternal(log *logger.Logger, configurationNames []s
 }
 
 func constructConfigurationsOnFileSystem(log *logger.Logger, basedir string, configName string, configType string, contents []byte) error {
-	log.Printf("ConstructConfigurationsOnFileSystem - configuration name: %s type: %s", configName, configType)
+	log.Printf("Construct a configuration on the filesystem - configuration name: %s type: %s", configName, configType)
 	switch configType {
 	case "policyproject":
 		return constructPolicyProjectOnFileSystem(log, basedir, contents)
@@ -313,51 +312,50 @@ func constructConfigurationsOnFileSystem(log *logger.Logger, basedir string, con
 }
 
 func constructPolicyProjectOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
-	log.Println("ConstructPolicyProjectOnFileSystem")
+	log.Println("Construct policy project on the filesystem")
 	return unzip(log, basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"overrides", contents)
 }
 
 func constructTrustStoreOnFileSystem(log *logger.Logger, basedir string, name string, contents []byte) error {
-	log.Printf("ConstructTrustStoreOnFileSystem - Truststore name: %s", name)
+	log.Printf("Construct truststore on the filesystem - Truststore name: %s", name)
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+truststoresName, name, contents)
 }
 
 func constructKeyStoreOnFileSystem(log *logger.Logger, basedir string, name string, contents []byte) error {
-	log.Printf("constructKeyStoreOnFileSystem - Keystore name: %s", name)
+	log.Printf("Construct keystore on the filesystem - Keystore name: %s", name)
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+keystoresName, name, contents)
 }
 
 func constructOdbcIniOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
-	log.Println("ConstructOdbcIniOnFileSystem")
+	log.Println("Construct odbc.Ini on the filesystem")
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+workdirName, "odbc.ini", contents)
 }
 
 func constructGenericOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
-	log.Println("ConstructExtensionsOnFileSystem")
+	log.Println("Construct generic files on the filesystem")
 	return unzip(log, basedir+string(os.PathSeparator)+genericName, contents)
 }
 func constructAdminSSLOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
-	log.Println("constructAdminSSLOnFileSystem")
+	log.Println("Construct adminssl on the filesystem")
 	return unzip(log, basedir+string(os.PathSeparator)+adminsslName, contents)
 }
 
 func constructServerConfYamlOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
-	log.Println("constructServerConfYamlOnFileSystem")
+	log.Println("Construct serverconfyaml on the filesystem")
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"overrides", "server.conf.yaml", contents)
 }
 func constructAgentxOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
-	log.Println("constructAgentxOnFileSystem")
+	log.Println("Construct agentx on the filesystem")
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agentx", "agentx.json", contents)
 }
 
 func executeSetDbParms(log *logger.Logger, basedir string, contents []byte) error {
-	log.Println("ExecuteSetDbParms")
+	log.Println("Execute mqsisetdbparms command")
 	for index, m := range strings.Split(string(contents), "\n") {
 		// ignore empty lines
 		if len(strings.TrimSpace(m)) > 0 {
 			contentsArray := strings.Fields(strings.TrimSpace(m))
-			log.Printf("ExecuteSetDbParms - execute line %d with number of args: %d", index, len(contentsArray))
-
+			log.Printf("Execute line %d with number of args: %d", index, len(contentsArray))
 			var trimmedArray []string
 			for _, m := range contentsArray {
 				escapedQuote := strings.Replace(m, "'", "'\\''", -1)
@@ -369,36 +367,43 @@ func executeSetDbParms(log *logger.Logger, basedir string, contents []byte) erro
 						trimmedArray = append(trimmedArray, "'-w'")
 						trimmedArray = append(trimmedArray, "'"+basedir+string(os.PathSeparator)+workdirName+"'")
 					}
-					err := internalRunCommand("mqsisetdbparms", trimmedArray[1:])
+					err := internalRunCommand(log, "mqsisetdbparms", trimmedArray[1:])
 					if err != nil {
 						return err
 					}
 				} else if len(trimmedArray) == 3 {
 					args := []string{"'-n'", trimmedArray[0], "'-u'", trimmedArray[1], "'-p'", trimmedArray[2], "'-w'", "'" + basedir + string(os.PathSeparator) + workdirName + "'"}
-					err := internalRunCommand("mqsisetdbparms", args)
+					err := internalRunCommand(log, "mqsisetdbparms", args)
 					if err != nil {
 						return err
 					}
 				} else {
-					return errors.New("invalid mqsisetdbparms entry - too many parameters")
+					return errors.New("Invalid mqsisetdbparms entry - too many parameters")
 				}
 			} else {
-				return errors.New("invalid mqsisetdbparms entry - too few parameters")
+				return errors.New("Invalid mqsisetdbparms entry - too few parameters")
 			}
 		}
 	}
 	return nil
 
 }
-func runCommand(command string, params []string) error {
-
+func runCommand(log *logger.Logger, command string, params []string) error {
 	realCommand := "source " + aceInstall + "/mqsiprofile && " + command + " "
 	realCommand += strings.Join(params[:], " ")
 	cmd := exec.Command("/bin/sh", "-c", realCommand)
 	cmd.Stdin = strings.NewReader("some input")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	return cmd.Run()
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	error := cmd.Run()
+	if error != nil {
+		log.Printf("Error executing command: %s %s", stdout.String(), stderr.String())
+	} else {
+		log.Printf("Successfully executed command.")
+	}
+	return error
 
 }
 

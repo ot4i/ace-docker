@@ -25,10 +25,12 @@ import (
     "flag"
     "fmt"
     "math"
+    "net"
     "net/url"
     "net/http"
     "net/http/cookiejar"
     "os"
+    "path/filepath"
     "strings"
     "sync"
 
@@ -121,16 +123,36 @@ func ReadStatistics(log *logger.Logger) {
         // Use wss with TLS if using the admin server is secured
         if aceAdminServerSecurity == "true" {
             adminServerCACert :=  os.Getenv("ACE_ADMIN_SERVER_CA")
-            log.Printf("Using CA Certificate file %s", adminServerCACert)
-            caCert, err := ioutil.ReadFile(adminServerCACert)
-            if err != nil {
-                log.Errorf("Error reading CA Certificate %s", err)
-                return
-            }
-            caCertPool := x509.NewCertPool()
-            ok := caCertPool.AppendCertsFromPEM(caCert)
-            if !ok {
-                log.Errorf("failed to parse root CA Certificate")
+
+      	    caCertPool := x509.NewCertPool()
+            if stat, err := os.Stat(adminServerCACert); err == nil && stat.IsDir() {
+                // path is a directory load all certs
+                log.Printf("Using CA Certificate folder %s", adminServerCACert)
+			    filepath.Walk(adminServerCACert, func(cert string, info os.FileInfo, err error) error {
+			    	if (strings.HasSuffix(cert, "crt.pem")) {
+						log.Printf("Adding Certificate %s to CA pool", cert)
+						binaryCert, err := ioutil.ReadFile(cert)
+						if err != nil {
+                          log.Errorf("Error reading CA Certificate %s", err)
+                        }
+						ok := caCertPool.AppendCertsFromPEM(binaryCert)
+						if !ok {
+						  log.Errorf("Failed to parse Certificate %s", cert)
+						}
+					}
+        			return nil
+    			})
+            } else {
+	            log.Printf("Using CA Certificate file %s", adminServerCACert)
+ 	           	caCert, err := ioutil.ReadFile(adminServerCACert)
+    	        if err != nil {
+    	            log.Errorf("Error reading CA Certificate %s", err)
+    	            return
+   	         	}
+     	       	ok := caCertPool.AppendCertsFromPEM(caCert)
+     	       	if !ok {
+     	       	    log.Errorf("failed to parse root CA Certificate")
+     	      	}
             }
 
             // Read the key/ cert pair to create tls certificate
@@ -163,6 +185,54 @@ func ReadStatistics(log *logger.Logger) {
                     ServerName: aceAdminServerName,
                 },
             }
+
+            // Retrieve session if the webusers exist
+            contentBytes, err := ioutil.ReadFile("/home/aceuser/initial-config/webusers/admin-users.txt")
+            if err != nil {
+                log.Printf("Cannot find admin-users.txt file, not retrieving session cookie")
+            } else {
+            	log.Printf("Using provided webusers/admin-users.txt for basic auth session cookie")
+                userPassword := strings.Fields(string(contentBytes))
+                username := userPassword[0]
+                password := userPassword[1]
+
+				var conn *tls.Conn
+                httpUrl := url.URL{Scheme: "https", Host: *addr, Path: "/"}
+				tlsConfig := &tls.Config{
+                                RootCAs: caCertPool,
+                                Certificates: []tls.Certificate{adminServerCerts},
+                                ServerName: aceAdminServerName,
+                              }
+                client := &http.Client{
+					        Transport: &http.Transport{
+                                DialTLS: func(network, addr string) (net.Conn, error) {
+                                    conn, err = tls.Dial(network, addr, tlsConfig)
+                                    return conn, err
+                                },
+                            },
+
+                }
+                req, _ := http.NewRequest("GET", httpUrl.String(), nil)
+                req.SetBasicAuth(username, password)
+                resp, err := client.Do(req)
+                if err != nil{
+                    log.Errorf("Error retrieving session: %s", err)
+                }
+
+                jar, _ := cookiejar.New(nil)
+                if (resp != nil) {
+                    cookies := resp.Cookies()
+                    jar.SetCookies(&httpUrl, cookies)
+                }
+
+                if (jar.Cookies(&httpUrl) != nil) {
+                    log.Printf("Connecting to %s using session cookie and SSL", u.String())
+                    d.Jar = jar
+                } else {
+                    log.Printf("Connecting to %s with SSL", u.String())
+                }
+            }
+
             // Create the websocket connection
             c, _, dialError = d.Dial(u.String(), http.Header{"Origin": {u.String()}})
         } else {
@@ -176,13 +246,14 @@ func ReadStatistics(log *logger.Logger) {
             if err != nil {
                 log.Printf("Cannot find admin-users.txt file, not retrieving session")
             } else {
+            	log.Printf("Using provided webusers/admin-users.txt for basic auth session cookie")
                 userPassword := strings.Fields(string(contentBytes))
                 username := userPassword[0]
                 password := userPassword[1]
 
                 httpUrl := url.URL{Scheme: "http", Host: *addr, Path: "/"}
                 client := &http.Client{}
-                req, err := http.NewRequest("GET", httpUrl.String(), nil)
+                req, _ := http.NewRequest("GET", httpUrl.String(), nil)
                 req.SetBasicAuth(username, password)
                 resp, err := client.Do(req)
                 if err != nil{

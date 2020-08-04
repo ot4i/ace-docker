@@ -40,12 +40,6 @@ docker login -u ${ARTIFACTORY_USER} -p ${ARTIFACTORY_PASS} appconnect-docker-loc
 # tag is timestamp, e.g. "20150917-154801"
 TAG=${BUILD_TIMESTAMP}
 
-# or "20150917-154801-personal" for personal builds
-if [ "$PERSONAL_BUILD" = "true" ]; then
-  TAG="$TAG-personal"
-  echo "Your personal build tag will be: ${TAG}"
-fi
-
 awk -v my_image=${APP_NAME} -v my_tag=${TAG} '/FROM \$BASE_IMAGE/{ print; print "RUN echo \"" my_image ":" my_tag" \" >/etc/debian_chroot"; next }1' $BASE_OS/Dockerfile.aceonly > $BASE_OS/Dockerfile.aceonly_tmp &&
   mv $BASE_OS/Dockerfile.aceonly_tmp $BASE_OS/Dockerfile.aceonly
 
@@ -139,16 +133,16 @@ if [ "${ARCHITECTURE}" == "amd64" ]; then
   echo "Images pushed:"
   if [ -z "$ACE_DEV_BUILD" ]
   then
-	 echo "   * ${operatorregistry}/${prodimage}:${TAG_VERSION}-${TAG}-${ARCHITECTURE}"
-     if [ "${BRANCH_TO_BUILD}" == "master" ]; then
-		echo "   * ${operatorregistry}/${prodimage}:latest-${ARCHITECTURE}"
-     fi
+    echo "   * ${operatorregistry}/${prodimage}:${TAG_VERSION}-${TAG}-${ARCHITECTURE}"
+    if [ "${BRANCH_TO_BUILD}" == "master" ]; then
+      echo "   * ${operatorregistry}/${prodimage}:latest-${ARCHITECTURE}"
+    fi
   else
-	 echo "   * ${operatorregistry}/${devimage}:${TAG_VERSION}-${TAG}-${ARCHITECTURE}"
-     echo "   * ${operatorregistry}/${devimage}:${TAG_VERSION}-${TAG}-${ARCHITECTURE}"
-     if [ "${BRANCH_TO_BUILD}" == "master" ]; then
-       echo "   * ${operatorregistry}/${prodimage}:latest-${ARCHITECTURE}"
-       echo "   * ${operatorregistry}/${prodimage}:latest-${ARCHITECTURE}"
-     fi
+    echo "   * ${operatorregistry}/${devimage}:${TAG_VERSION}-${TAG}-${ARCHITECTURE}"
+    echo "   * ${operatorregistry}/${devimage}:${TAG_VERSION}-${TAG}-${ARCHITECTURE}"
+    if [ "${BRANCH_TO_BUILD}" == "master" ]; then
+      echo "   * ${operatorregistry}/${prodimage}:latest-${ARCHITECTURE}"
+      echo "   * ${operatorregistry}/${prodimage}:latest-${ARCHITECTURE}"
+    fi
   fi
 fi
