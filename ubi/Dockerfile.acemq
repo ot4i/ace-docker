@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ibmcom/mq:9.1.5.0
+ARG BASE_IMAGE=ibmcom/mq:9.1.4.0-r1
 
 FROM golang:1.14.2 as builder
 
