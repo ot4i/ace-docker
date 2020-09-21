@@ -3,7 +3,7 @@
 
 <img src="./app_connect_light_256x256.png" width="100" alt="IBM ACE logo"/>
 
-Run [IBM® App Connect Enterprise](https://www.ibm.com/cloud/app-connect/enterprise) in a container.
+Run [IBM® App Connect Enterprise](https://developer.ibm.com/integration/docs/app-connect-enterprise/faq/) in a container.
 
 You can build an image containing one of the following combinations:
 - IBM App Connect Enterprise
