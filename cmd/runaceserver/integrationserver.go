@@ -99,7 +99,7 @@ func initialIntegrationServerConfig() error {
 				}
 				log.LogDirect(out)
 			} else {
-				cmd := exec.Command("ace_config_"+file.Name()+".sh")
+				cmd := exec.Command("ace_config_" + file.Name() + ".sh")
 				out, _, err := command.RunCmd(cmd)
 				if err != nil {
 					log.LogDirect(out)
@@ -376,27 +376,27 @@ func addAdminsslToServerConf(serverconfContent []byte) ([]byte, error) {
 	// so we don't overwrite any customer provided configuration
 	if serverconfMap["RestAdminListener"] == nil {
 		serverconfMap["RestAdminListener"] = map[string]interface{}{
-			"sslCertificate" : cert,
-			"sslPassword" : key,
-			"requireClientCert" : isTrue,
-			"caPath" : cacert,
+			"sslCertificate":    cert,
+			"sslPassword":       key,
+			"requireClientCert": isTrue,
+			"caPath":            cacert,
 		}
 		log.Printf("Admin Server Security updating RestAdminListener using ACE_ADMIN_SERVER environment variables")
 	} else {
 		restAdminListener := serverconfMap["RestAdminListener"].(map[interface{}]interface{})
 
-    	if restAdminListener["sslCertificate"] == nil {
-    		restAdminListener["sslCertificate"] =  cert
-    	}
-    	if restAdminListener["sslPassword"] == nil {
-    		restAdminListener["sslPassword"] =  key
-    	}
-    	if restAdminListener["requireClientCert"] == nil {
-    		restAdminListener["requireClientCert"] = isTrue
-    	}
-    	if restAdminListener["caPath"] == nil {
-    		restAdminListener["caPath"] = cacert
-    	}
+		if restAdminListener["sslCertificate"] == nil {
+			restAdminListener["sslCertificate"] = cert
+		}
+		if restAdminListener["sslPassword"] == nil {
+			restAdminListener["sslPassword"] = key
+		}
+		if restAdminListener["requireClientCert"] == nil {
+			restAdminListener["requireClientCert"] = isTrue
+		}
+		if restAdminListener["caPath"] == nil {
+			restAdminListener["caPath"] = cacert
+		}
 		log.Printf("Admin Server Security merging RestAdminListener using ACE_ADMIN_SERVER environment variables")
 	}
 
@@ -545,6 +545,25 @@ func startIntegrationServer() command.BackgroundCmd {
 		defaultAppName = serverName
 	}
 
+	vaultKey, err := name.GetIntegrationServerVaultKey()
+	if err != nil {
+		log.Printf("Error getting integration server vault key:s %v", err)
+		returnErr := command.BackgroundCmd{}
+		returnErr.ReturnCode = -1
+		returnErr.ReturnError = err
+		return returnErr
+	}
+
+	args := []string{
+		"-w", "/home/aceuser/ace-server",
+		"--name", serverName,
+		"--log-output-format", logOutputFormat, "--console-log",
+		"--default-application-name", defaultAppName,
+	}
+	if vaultKey != "" {
+		args = append(args, []string{"--vault-key", vaultKey}...)
+	}
+
 	if qmgr.UseQueueManager() {
 		qmgrName, err := name.GetQueueManagerName()
 		if err != nil {
@@ -554,7 +573,8 @@ func startIntegrationServer() command.BackgroundCmd {
 			returnErr.ReturnError = err
 			return returnErr
 		}
-		return command.RunAsUserBackground("mqm", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
+		args = append(args, []string{"--mq-queue-manager-name", qmgrName}...)
+		return command.RunAsUserBackground("mqm", "ace_integration_server.sh", log, args...)
 	}
 
 	thisUser, err := user.Current()
@@ -566,7 +586,7 @@ func startIntegrationServer() command.BackgroundCmd {
 		return returnErr
 	}
 
-	return command.RunAsUserBackground(thisUser.Username, "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
+	return command.RunAsUserBackground(thisUser.Username, "ace_integration_server.sh", log, args...)
 }
 
 func waitForIntegrationServer() error {

@@ -18,6 +18,8 @@ limitations under the License.
 package name
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 )
@@ -58,4 +60,28 @@ func GetIntegrationServerName() (string, error) {
 		name = sanitizeName(name)
 	}
 	return name, nil
+}
+
+// GetIntegrationServerVaultKey resolves the integration server Vault key to use.
+// If error, configuration was wrong.
+// If empty and no error, there was nothing configured.
+func GetIntegrationServerVaultKey() (string, error) {
+	var path string
+	var err error
+	path, ok := os.LookupEnv("ACE_VAULT_KEY_FILE")
+	if !ok || path == "" {
+		return "", nil
+	}
+	stat, err := os.Stat(path)
+	if err != nil {
+		return "", err
+	}
+	if stat.IsDir() {
+		return "", fmt.Errorf("vault key file is a directory: %s", path)
+	}
+	bytes, readErr := ioutil.ReadFile(path)
+	if readErr != nil {
+		return "", readErr
+	}
+	return string(bytes), nil
 }
