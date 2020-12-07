@@ -3,14 +3,15 @@ package configuration
 import (
 	"encoding/base64"
 	"errors"
-	"github.com/ot4i/ace-docker/internal/logger"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/client-go/dynamic"
 	"os"
 	"testing"
+
+	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
 )
 
 const testBaseDir = "/tmp/tests"
@@ -29,11 +30,13 @@ var setupClientsRestore = setupClients
 var getAllConfigurationsRestore = getAllConfigurations
 var osOpenFileRestore = osOpenFile
 var ioCopyRestore = ioCopy
-var RunCommandRestore = internalRunCommand
+var RunCommandRestore = internalRunSetdbparmsCommand
+var RunKeytoolCommandRestore = internalRunKeytoolCommand
 
 const policyProjectContent = "UEsDBAoAAAAAAFelclAAAAAAAAAAAAAAAAAJABwAcHJvamVjdDEvVVQJAAPFh3JeyIdyXnV4CwABBPUBAAAEFAAAAFBLAwQUAAAACABgpHJQn5On0w0AAAARAAAAEQAcAHByb2plY3QxL3Rlc3QueG1sVVQJAAPzhXJeHoZyXnV4CwABBPUBAAAEFAAAALMpSS0usQMRNvpgJgBQSwECHgMKAAAAAABXpXJQAAAAAAAAAAAAAAAACQAYAAAAAAAAABAA7UEAAAAAcHJvamVjdDEvVVQFAAPFh3JedXgLAAEE9QEAAAQUAAAAUEsBAh4DFAAAAAgAYKRyUJ+Tp9MNAAAAEQAAABEAGAAAAAAAAQAAAKSBQwAAAHByb2plY3QxL3Rlc3QueG1sVVQFAAPzhXJedXgLAAEE9QEAAAQUAAAAUEsFBgAAAAACAAIApgAAAJsAAAAAAA=="
 const genericContent = "UEsDBAoAAAAAAFelclAAAAAAAAAAAAAAAAAJABwAcHJvamVjdDEvVVQJAAPFh3JeyIdyXnV4CwABBPUBAAAEFAAAAFBLAwQUAAAACABgpHJQn5On0w0AAAARAAAAEQAcAHByb2plY3QxL3Rlc3QueG1sVVQJAAPzhXJeHoZyXnV4CwABBPUBAAAEFAAAALMpSS0usQMRNvpgJgBQSwECHgMKAAAAAABXpXJQAAAAAAAAAAAAAAAACQAYAAAAAAAAABAA7UEAAAAAcHJvamVjdDEvVVQFAAPFh3JedXgLAAEE9QEAAAQUAAAAUEsBAh4DFAAAAAgAYKRyUJ+Tp9MNAAAAEQAAABEAGAAAAAAAAQAAAKSBQwAAAHByb2plY3QxL3Rlc3QueG1sVVQFAAPzhXJedXgLAAEE9QEAAAQUAAAAUEsFBgAAAAACAAIApgAAAJsAAAAAAA=="
 const adminsslcontent = "UEsDBAoAAAAAAD1epVBBsFEJCgAAAAoAAAAGABwAY2EuY3J0VVQJAAPWRLFe1kSxXnV4CwABBPUBAAAEFAAAAGZha2UgY2VydApQSwECHgMKAAAAAAA9XqVQQbBRCQoAAAAKAAAABgAYAAAAAAABAAAApIEAAAAAY2EuY3J0VVQFAAPWRLFedXgLAAEE9QEAAAQUAAAAUEsFBgAAAAABAAEATAAAAEoAAAAAAA=="
+const loopbackdatasourcecontent = "UEsDBBQAAAAIALhhL1E16fencwAAAKQAAAAQABwAZGF0YXNvdXJjZXMuanNvblVUCQAD7KFgX+yhYF91eAsAAQT1AQAABBQAAACrVsrNz0vPT0lSsqpWykvMTVWyUoAJxaeklinpKCXn5+WlJpfkFyFJAYUz8otLQCKGRuZ6BkBoqKSjoFSQXwQSNDI3MDTXUUpJLElMSiwGmwk0y8UJpKS0OLUIZhFQMBTIBetMLC4uzy9KgQoHwLi1tVwAUEsDBAoAAAAAAH1hL1EAAAAAAAAAAAAAAAAGABwAbW9uZ28vVVQJAAN9oWBffaFgX3V4CwABBPUBAAAEFAAAAFBLAQIeAxQAAAAIALhhL1E16fencwAAAKQAAAAQABgAAAAAAAEAAACkgQAAAABkYXRhc291cmNlcy5qc29uVVQFAAPsoWBfdXgLAAEE9QEAAAQUAAAAUEsBAh4DCgAAAAAAfWEvUQAAAAAAAAAAAAAAAAYAGAAAAAAAAAAQAO1BvQAAAG1vbmdvL1VUBQADfaFgX3V4CwABBPUBAAAEFAAAAFBLBQYAAAAAAgACAKIAAAD9AAAAAAA="
 
 func restore() {
 	osMkdirAll = osMkdirAllRestore
@@ -44,7 +47,8 @@ func restore() {
 	setupClients = setupClientsRestore
 	osOpenFile = osOpenFileRestore
 	ioCopy = ioCopyRestore
-	internalRunCommand = RunCommandRestore
+	internalRunSetdbparmsCommand = RunCommandRestore
+	internalRunKeytoolCommand = RunKeytoolCommandRestore
 }
 
 func reset() {
@@ -71,7 +75,11 @@ func reset() {
 		panic("Should be mocked")
 	}
 
-	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
+		panic("Should be mocked")
+	}
+
+	internalRunKeytoolCommand = func(log *logger.Logger, params []string) error {
 		panic("Should be mocked")
 	}
 
@@ -252,8 +260,8 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"bad.type"}, testBaseDir)
-		if assert.Error(t, err, "A configuration must have a contents") {
-			assert.Equal(t, errors.New("A configuration must have a contents"), err)
+		if assert.Error(t, err, "A configuration with type: serverconf must has a contents field") {
+			assert.Equal(t, errors.New("A configuration with type: serverconf must has a contents field"), err)
 		}
 	}
 	// Test missing secret fails
@@ -276,8 +284,8 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"bad.type"}, testBaseDir)
-		if assert.Error(t, err, "A configuration must have a secret") {
-			assert.Equal(t, errors.New("A configuration must have a secretName"), err)
+		if assert.Error(t, err, "A configuration with type: setdbparms must have a secretName field") {
+			assert.Equal(t, errors.New("A configuration with type: setdbparms must have a secretName field"), err)
 		}
 	} // Test secret file is missing
 	getSecret = func(basdir string, name string) ([]byte, error) {
@@ -330,9 +338,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"bad.type"}, testBaseDir)
-		if assert.Error(t, err, "Fails due to invalid type") {
-			assert.Equal(t, errors.New("Unknown configuration type"), err)
-		}
+		assert.Equal(t, errors.New("Unknown configuration type"), err)
 	}
 	// Test base64 decode fails of content
 	reset()
@@ -361,36 +367,6 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		}
 	}
 
-	// Test server.conf.yaml
-	reset()
-	osMkdirAll = func(path string, perm os.FileMode) error {
-		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"overrides", path)
-		return nil
-	}
-	ioutilWriteFile = func(fn string, data []byte, perm os.FileMode) error {
-		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"overrides"+string(os.PathSeparator)+"server.conf.yaml", fn)
-		return nil
-	}
-
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
-		assert.Equal(t, cn[0], "server.conf.yaml")
-		return []*unstructured.Unstructured{
-			{
-				Object: map[string]interface{}{
-					"kind":       "Configurations",
-					"apiVersion": "v1",
-					"metadata": map[string]interface{}{
-						"name": "server.conf.yaml",
-					},
-					"spec": map[string]interface{}{
-						"type":     "serverconf",
-						"contents": configContents,
-					},
-				},
-			},
-		}, nil
-	}
-	assert.Nil(t, SetupConfigurationsFilesInternal(testLogger, []string{"server.conf.yaml"}, testBaseDir))
 	// Test accounts.yaml
 	reset()
 	getSecret = func(basdir string, name string) ([]byte, error) {
@@ -453,7 +429,42 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		}, nil
 	}
 	assert.Nil(t, SetupConfigurationsFilesInternal(testLogger, []string{"agentx-1"}, testBaseDir))
-	// Test odbc.ini
+	// Test agenta.json
+	reset()
+	osMkdirAll = func(path string, perm os.FileMode) error {
+		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agenta", path)
+		return nil
+	}
+	ioutilWriteFile = func(fn string, data []byte, perm os.FileMode) error {
+		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agenta"+string(os.PathSeparator)+"agenta.json", fn)
+		return nil
+	}
+	getSecret = func(basdir string, name string) ([]byte, error) {
+
+		assert.Equal(t, name, secretName)
+		return testSecretValue, nil
+	}
+	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+		assert.Equal(t, cn[0], "agenta-1")
+
+		return []*unstructured.Unstructured{
+			{
+				Object: map[string]interface{}{
+					"kind":       "Configurations",
+					"apiVersion": "v1",
+					"metadata": map[string]interface{}{
+						"name": "agenta-1",
+					},
+					"spec": map[string]interface{}{
+						"type":       "agenta",
+						"secretName": secretName,
+					},
+				},
+			},
+		}, nil
+	}
+	assert.Nil(t, SetupConfigurationsFilesInternal(testLogger, []string{"agenta-1"}, testBaseDir))
+	// Test odbc.ini using contents field
 	reset()
 	osMkdirAll = func(path string, perm os.FileMode) error {
 		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName, path)
@@ -575,9 +586,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"setdbparms.txt"}, testBaseDir)
-		if assert.Error(t, err, "Fails due to invalid setdbparms command") {
-			assert.Equal(t, errors.New("Invalid mqsisetdbparms entry - too few parameters"), err)
-		}
+		assert.Equal(t, errors.New("Invalid mqsisetdbparms entry - too few parameters"), err)
 	}
 	// Test setdbparms with too many parameters
 	getSecret = func(basdir string, name string) ([]byte, error) {
@@ -586,16 +595,14 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"setdbparms.txt"}, testBaseDir)
-		if assert.Error(t, err, "Fails due to invalid setdbparms command") {
-			assert.Equal(t, errors.New("Invalid mqsisetdbparms entry - too many parameters"), err)
-		}
+		assert.Equal(t, errors.New("Invalid mqsisetdbparms entry - too many parameters"), err)
 	}
 	// Test setdbparms with just name, user and password but command fails
 	getSecret = func(basdir string, name string) ([]byte, error) {
 		assert.Equal(t, name, secretName)
 		return []byte("name user pass"), nil
 	}
-	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -603,16 +610,14 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"setdbparms.txt"}, testBaseDir)
-		if assert.Error(t, err, "Fails due to invalid setdbparms command") {
-			assert.Equal(t, errors.New("command fails"), err)
-		}
+		assert.Equal(t, errors.New("command fails"), err)
 	}
 	// Test setdbparms with full command but command fails
 	getSecret = func(basdir string, name string) ([]byte, error) {
 		assert.Equal(t, name, secretName)
 		return []byte("mqsisetdbparms    -n name    -u    user     -p        pass    -w    /tmp/tests/ace-server"), nil
 	}
-	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -620,16 +625,14 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"setdbparms.txt"}, testBaseDir)
-		if assert.Error(t, err, "Fails due to invalid setdbparms command") {
-			assert.Equal(t, errors.New("command fails"), err)
-		}
+		assert.Equal(t, errors.New("command fails"), err)
 	}
 	// Test setdbparms with just name, user and password
 	getSecret = func(basdir string, name string) ([]byte, error) {
 		assert.Equal(t, name, secretName)
 		return []byte("name user pass"), nil
 	}
-	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -643,7 +646,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		return []byte("\n   name1    user1     pass1   \n  name2    user2     pass2'  "), nil
 
 	}
-	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		var testParams []string
 		if params[1] == "'name1'" {
@@ -662,7 +665,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("mqsisetdbparms -n name -u user -p pass"), nil
 	}
-	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -676,52 +679,14 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("mqsisetdbparms    -n name    -u    user     -p        pass    -w    /tmp/tests/ace-server"), nil
 	}
-	internalRunCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
 		return nil
 	}
 	assert.Nil(t, SetupConfigurationsFilesInternal(testLogger, []string{"setdbparms.txt"}, testBaseDir))
-	// Test Policy Project
-	reset()
-	osMkdirAll = func(path string, perm os.FileMode) error {
-		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"overrides"+string(os.PathSeparator)+"project1", path)
-		return nil
-	}
-	osOpenFile = func(name string, flat int, perm os.FileMode) (*os.File, error) {
-		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"overrides"+string(os.PathSeparator)+"project1"+string(os.PathSeparator)+"test.xml", name)
-		return &os.File{}, nil
-	}
 
-	ioCopy = func(dst io.Writer, src io.Reader) (written int64, err error) {
-		b, err := ioutil.ReadAll(src)
-		assert.Equal(t, "<test>test</test>", string(b))
-		return 12, nil
-	}
-	getSecret = func(basdir string, name string) ([]byte, error) {
-		assert.Equal(t, name, secretName)
-		return testSecretValue, nil
-	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
-		assert.Equal(t, cn[0], "policy-project")
-		return []*unstructured.Unstructured{
-			{
-				Object: map[string]interface{}{
-					"kind":       "Configurations",
-					"apiVersion": "v1",
-					"metadata": map[string]interface{}{
-						"name": "policy-project",
-					},
-					"spec": map[string]interface{}{
-						"type":     "policyproject",
-						"contents": policyProjectContent,
-					},
-				},
-			},
-		}, nil
-	}
-	assert.Nil(t, SetupConfigurationsFilesInternal(testLogger, []string{"policy-project"}, testBaseDir))
 	// policy project with an invalid zip file
 	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "policy-project")
@@ -743,9 +708,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"policy-project"}, testBaseDir)
-		if assert.Error(t, err, "Fails due to invalid zip file") {
-			assert.Equal(t, errors.New("zip: not a valid zip file"), err)
-		}
+		assert.Equal(t, errors.New("zip: not a valid zip file"), err)
 	}
 	// Test adminssl
 	reset()
@@ -786,7 +749,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		}, nil
 	}
 	assert.Nil(t, SetupConfigurationsFilesInternal(testLogger, []string{"adminssl1"}, testBaseDir))
-	// Test generic with invalid zip file
+	// Test adminssl with invalid zip file
 	getSecret = func(basdir string, name string) ([]byte, error) {
 		assert.Equal(t, name, secretName)
 		return []byte("not a zip"), nil
@@ -794,9 +757,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"adminssl1"}, testBaseDir)
-		if assert.Error(t, err, "Fails due to invalid zip file") {
-			assert.Equal(t, errors.New("zip: not a valid zip file"), err)
-		}
+		assert.Equal(t, errors.New("zip: not a valid zip file"), err)
 	}
 	reset()
 	// Test generic
@@ -845,10 +806,119 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 
 	{
 		err := SetupConfigurationsFilesInternal(testLogger, []string{"generic1"}, testBaseDir)
-		if assert.Error(t, err, "Fails due to invalid zip file") {
-			assert.Equal(t, errors.New("zip: not a valid zip file"), err)
-		}
+		assert.Equal(t, errors.New("zip: not a valid zip file"), err)
 	}
+	reset()
+	// Test loopbackdatasource
+	countMkDir := 0
+	osMkdirAll = func(path string, perm os.FileMode) error {
+		if countMkDir == 0 {
+			assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config"+string(os.PathSeparator)+"connectors"+string(os.PathSeparator)+"loopback", path)
+		} else {
+			assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config"+string(os.PathSeparator)+"connectors"+string(os.PathSeparator)+"loopback"+string(os.PathSeparator)+"mongo", path)
+		}
+		countMkDir++
+		return nil
+	}
+	osOpenFile = func(name string, flat int, perm os.FileMode) (*os.File, error) {
+		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config"+string(os.PathSeparator)+"connectors"+string(os.PathSeparator)+"loopback"+string(os.PathSeparator)+"datasources.json", name)
+		return &os.File{}, nil
+	}
+
+	ioCopy = func(dst io.Writer, src io.Reader) (written int64, err error) {
+		b, err := ioutil.ReadAll(src)
+		assert.Equal(t, "{\"mongodb\":{\"name\": \"mongodb_dev\",\"connector\": \"mongodb\",\"host\": \"127.0.0.1\", \"port\": 27017,\"database\": \"devDB\", \"username\": \"devUser\", \"password\": \"devPassword\"}}\n", string(b))
+		return 12, nil
+	}
+	getSecret = func(basdir string, name string) ([]byte, error) {
+		assert.Equal(t, name, secretName)
+		return base64.StdEncoding.DecodeString(loopbackdatasourcecontent)
+	}
+	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+		assert.Equal(t, cn[0], "loopback1")
+		return []*unstructured.Unstructured{
+			{
+				Object: map[string]interface{}{
+					"kind":       "Configurations",
+					"apiVersion": "v1",
+					"metadata": map[string]interface{}{
+						"name": "loopback1",
+					},
+					"spec": map[string]interface{}{
+						"type":       "loopbackdatasource",
+						"secretName": secretName,
+					},
+				},
+			},
+		}, nil
+	}
+	assert.Nil(t, SetupConfigurationsFilesInternal(testLogger, []string{"loopback1"}, testBaseDir))
+	// Test loopbackdatasource with invalid zip file
+	getSecret = func(basdir string, name string) ([]byte, error) {
+		assert.Equal(t, name, secretName)
+		return []byte("not a zip"), nil
+	}
+
+	{
+		err := SetupConfigurationsFilesInternal(testLogger, []string{"loopback1"}, testBaseDir)
+
+		assert.Equal(t, errors.New("zip: not a valid zip file"), err)
+
+	}
+
+	// Test truststore certificates
+	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+		assert.Equal(t, cn[0], "truststorecert")
+		return []*unstructured.Unstructured{
+			{
+				Object: map[string]interface{}{
+					"kind":       "Configurations",
+					"apiVersion": "v1",
+					"metadata": map[string]interface{}{
+						"name": "truststorecert",
+					},
+					"spec": map[string]interface{}{
+						"type":       "truststorecertificate",
+						"secretName": secretName,
+					},
+				},
+			},
+		}, nil
+	}
+	getSecret = func(basdir string, name string) ([]byte, error) {
+		assert.Equal(t, name, secretName)
+		return testSecretValue, nil
+	}
+
+	// Test keytool command to be called with the correct params
+	internalRunKeytoolCommandCallCount := 0
+	internalRunKeytoolCommand = func(log *logger.Logger, params []string) error {
+		testParams := []string{"-import", "-file", "-alias", "truststorecert", "-keystore", "$MQSI_JREPATH/lib/security/cacerts", "-storepass", "changeit", "-noprompt", "-storetype", "JKS"}
+		for i := range params {
+			if i < 2 {
+				assert.Equal(t, params[i], testParams[i])
+			} else if i > 2 {
+				assert.Equal(t, params[i], testParams[i-1])
+			}
+		}
+		internalRunKeytoolCommandCallCount++
+		return nil
+	}
+	{
+		err := SetupConfigurationsFilesInternal(testLogger, []string{"truststorecert"}, testBaseDir)
+		assert.Equal(t, 1, internalRunKeytoolCommandCallCount)
+		assert.Equal(t, nil, err)
+	}
+
+	// Test keytool command throw an error
+	internalRunKeytoolCommand = func(log *logger.Logger, params []string) error {
+		return errors.New("command fails")
+	}
+	{
+		err := SetupConfigurationsFilesInternal(testLogger, []string{"truststorecert"}, testBaseDir)
+		assert.Equal(t, errors.New("command fails"), err)
+	}
+
 	// restore
 	restore()
 }

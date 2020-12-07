@@ -157,7 +157,6 @@ func getAllConfigurationsImpl(log *logger.Logger, namespace string, configuratio
 
 		res := dynamicClient.Resource(configurationClassGVR).Namespace(namespace)
 		configuration, err := res.Get(configurationName, metav1.GetOptions{})
-
 		if err != nil {
 			log.Printf("%s: %#v", "Failed to get configuration: "+configurationName, err)
 			return nil, err
@@ -190,21 +189,28 @@ func parseConfigurationList(log *logger.Logger, basedir string, list []*unstruct
 		case "policyproject", "odbc", "serverconf":
 			fld, exists, err := unstructured.NestedString(item.Object, "spec", "contents")
 			if !exists || err != nil {
-				log.Printf("%s: %#v", "A configuration must has a contents", errors.New("A configuration must has a contents"))
-				return nil, errors.New("A configuration must have a contents")
+				log.Printf("%s: %#v", "A configuration with type: "+configType+" must has a contents field", errors.New("A configuration with type: "+configType+" must has a contents field"))
+				return nil, errors.New("A configuration with type: " + configType + " must has a contents field")
 			}
 			contents, err := base64.StdEncoding.DecodeString(fld)
-
 			if err != nil {
 				log.Printf("%s: %#v", "Failed to decode contents", err)
 				return nil, errors.New("Failed to decode contents")
 			}
 			output[index] = configurationObject{name: name, configType: configType, contents: contents}
-		case "truststore", "keystore", "setdbparms", "generic", "adminssl", "agentx":
+		case "truststorecertificate", "truststore", "keystore", "setdbparms", "generic", "adminssl", "agentx", "agenta", "accounts", "loopbackdatasource":
+			if configType == "accounts" {
+				designerAuthMode, ok := os.LookupEnv("DEVELOPMENT_MODE")
+				if ok && designerAuthMode == "true" {
+					log.Println("Ignore accounts.yaml configuration in designer authoring integration server")
+					output[index] = configurationObject{name: name, configType: configType, contents: nil}
+					break
+				}
+			}
 			secretName, exists, err := unstructured.NestedString(item.Object, "spec", "secretName")
 			if !exists || err != nil {
-				log.Printf("%s: %#v", "A configuration must have secretName", errors.New("A configuration must have secretName"))
-				return nil, errors.New("A configuration must have a secretName")
+				log.Printf("%s: %#v", "A configuration with type: "+configType+" must have a secretName field", errors.New("A configuration with type: "+configType+" must have a secretName field"))
+				return nil, errors.New("A configuration with type: " + configType + " must have a secretName field")
 			}
 			secretVal, err := getSecret(basedir, secretName)
 			if err != nil {
@@ -212,9 +218,6 @@ func parseConfigurationList(log *logger.Logger, basedir string, list []*unstruct
 				return nil, err
 			}
 			output[index] = configurationObject{name: name, configType: configType, contents: secretVal}
-		case "accounts":
-			log.Println("Ignore accounts.yaml configuration in integration server")
-			output[index] = configurationObject{name: name, configType: configType, contents: nil}
 		}
 	}
 	return output, nil
@@ -299,13 +302,24 @@ func constructConfigurationsOnFileSystem(log *logger.Logger, basedir string, con
 		return executeSetDbParms(log, basedir, contents)
 	case "generic":
 		return constructGenericOnFileSystem(log, basedir, contents)
+	case "loopbackdatasource":
+		return constructLoopbackDataSourceOnFileSystem(log, basedir, contents)
 	case "adminssl":
 		return constructAdminSSLOnFileSystem(log, basedir, contents)
 	case "accounts":
-		// no action required for this type as already mounted
-		return nil
+		designerAuthMode, ok := os.LookupEnv("DEVELOPMENT_MODE")
+		if ok && designerAuthMode == "true" {
+			// no mount required for this type as already mounted
+			return nil
+		} else {
+			return SetupTechConnectorsConfigurations(log, basedir, contents)
+		}
 	case "agentx":
 		return constructAgentxOnFileSystem(log, basedir, contents)
+	case "agenta":
+		return constructAgentaOnFileSystem(log, basedir, contents)
+	case "truststorecertificate":
+		return addTrustCertificateToCAcerts(log, basedir, configName, contents)
 	default:
 		return errors.New("Unknown configuration type")
 	}
@@ -335,6 +349,12 @@ func constructGenericOnFileSystem(log *logger.Logger, basedir string, contents [
 	log.Println("Construct generic files on the filesystem")
 	return unzip(log, basedir+string(os.PathSeparator)+genericName, contents)
 }
+
+func constructLoopbackDataSourceOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
+	log.Println("Construct loopback connector files on the filesystem")
+	return unzip(log, basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config"+string(os.PathSeparator)+"connectors"+string(os.PathSeparator)+"loopback", contents)
+}
+
 func constructAdminSSLOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
 	log.Println("Construct adminssl on the filesystem")
 	return unzip(log, basedir+string(os.PathSeparator)+adminsslName, contents)
@@ -344,9 +364,44 @@ func constructServerConfYamlOnFileSystem(log *logger.Logger, basedir string, con
 	log.Println("Construct serverconfyaml on the filesystem")
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"overrides", "server.conf.yaml", contents)
 }
+
 func constructAgentxOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
 	log.Println("Construct agentx on the filesystem")
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agentx", "agentx.json", contents)
+}
+
+func constructAgentaOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
+	log.Println("Construct agenta on the filesystem")
+	return writeConfigurationFile(basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agenta", "agenta.json", contents)
+}
+
+func addTrustCertificateToCAcerts(log *logger.Logger, basedir string, name string, contents []byte) error {
+	log.Println("Adding trust certificate to CAcerts")
+	// creating temporary file based on the content
+	tmpFile := creatingTempFile(log, contents, name)
+	// cleans up the file afterwards
+	defer os.Remove(tmpFile.Name())
+	// adding this file to CAcerts
+	commandCreateArgsJKS := []string{"-import", "-file", tmpFile.Name(), "-alias", name, "-keystore", "$MQSI_JREPATH/lib/security/cacerts", "-storepass", "changeit", "-noprompt", "-storetype", "JKS"}
+	return internalRunKeytoolCommand(log, commandCreateArgsJKS)
+}
+
+func creatingTempFile(log *logger.Logger, contents []byte, name string) *os.File {
+	tmpFile, err := ioutil.TempFile(os.TempDir(), name)
+	if err != nil {
+		log.Println("Cannot create temporary file", err)
+	}
+
+	// writing content to the file
+	if _, err = tmpFile.Write(contents); err != nil {
+		log.Println("Failed to write to temporary file", err)
+	}
+
+	// Close the file
+	if err := tmpFile.Close(); err != nil {
+		log.Println("Failed to close the file", err)
+	}
+	return tmpFile
 }
 
 func executeSetDbParms(log *logger.Logger, basedir string, contents []byte) error {
@@ -367,13 +422,13 @@ func executeSetDbParms(log *logger.Logger, basedir string, contents []byte) erro
 						trimmedArray = append(trimmedArray, "'-w'")
 						trimmedArray = append(trimmedArray, "'"+basedir+string(os.PathSeparator)+workdirName+"'")
 					}
-					err := internalRunCommand(log, "mqsisetdbparms", trimmedArray[1:])
+					err := internalRunSetdbparmsCommand(log, "mqsisetdbparms", trimmedArray[1:])
 					if err != nil {
 						return err
 					}
 				} else if len(trimmedArray) == 3 {
 					args := []string{"'-n'", trimmedArray[0], "'-u'", trimmedArray[1], "'-p'", trimmedArray[2], "'-w'", "'" + basedir + string(os.PathSeparator) + workdirName + "'"}
-					err := internalRunCommand(log, "mqsisetdbparms", args)
+					err := internalRunSetdbparmsCommand(log, "mqsisetdbparms", args)
 					if err != nil {
 						return err
 					}
@@ -388,26 +443,36 @@ func executeSetDbParms(log *logger.Logger, basedir string, contents []byte) erro
 	return nil
 
 }
+func runSetdbparmsCommand(log *logger.Logger, command string, params []string) error {
+	realCommand := command
+	return runCommand(log, realCommand, params)
+}
+
 func runCommand(log *logger.Logger, command string, params []string) error {
-	realCommand := "source " + aceInstall + "/mqsiprofile && " + command + " "
-	realCommand += strings.Join(params[:], " ")
+	realCommand := "source " + aceInstall + "/mqsiprofile && " + command + " " + strings.Join(params[:], " ")
 	cmd := exec.Command("/bin/sh", "-c", realCommand)
 	cmd.Stdin = strings.NewReader("some input")
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
-	error := cmd.Run()
-	if error != nil {
+	err := cmd.Run()
+	if err != nil {
 		log.Printf("Error executing command: %s %s", stdout.String(), stderr.String())
 	} else {
 		log.Printf("Successfully executed command.")
 	}
-	return error
+	return err
 
 }
 
-var internalRunCommand = runCommand
+func runKeytoolCommand(log *logger.Logger, params []string) error {
+	return runCommand(log, "keytool", params)
+
+}
+
+var internalRunSetdbparmsCommand = runSetdbparmsCommand
+var internalRunKeytoolCommand = runKeytoolCommand
 
 func Contains(a []string, x string) bool {
 	for _, n := range a {

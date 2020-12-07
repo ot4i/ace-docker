@@ -22,6 +22,11 @@ if [ -s "/home/aceuser/initial-config/agent/agentx.json" ]; then
   cp /home/aceuser/initial-config/agent/agentx.json /home/aceuser/ace-server/config/iibswitch/agentx/agentx.json
 fi
 
+if [ -s "/home/aceuser/initial-config/agent/agenta.json" ]; then
+  mkdir -p /home/aceuser/ace-server/config/iibswitch/agenta
+  cp /home/aceuser/initial-config/agent/agenta.json /home/aceuser/ace-server/config/iibswitch/agenta/agenta.json
+fi
+
 if [ -s "/home/aceuser/initial-config/agent/agentp.json" ]; then
   mkdir -p /home/aceuser/ace-server/config/iibswitch/agentp
   cp /home/aceuser/initial-config/agent/agentp.json /home/aceuser/ace-server/config/iibswitch/agentp/agentp.json

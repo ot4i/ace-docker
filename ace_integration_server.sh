@@ -15,9 +15,9 @@ if [ -s /home/aceuser/ace-server/odbc.ini ]; then
   export ODBCINI=/home/aceuser/ace-server/odbc.ini
 fi
 
-if ! [[ -z "${ACE_HTTP_ROUTE_NAME}" ]] || ! [[ -z "${ACE_HTTPS_ROUTE_NAME}" ]] ; then
-  . /home/aceuser/portOverrides
-elif ! [[ -z "${KUBERNETES_PORT}" ]] && ! [[ -z "${SERVICE_NAME}" ]] ; then
+# We need to keep the kubernetes port overrides as customers could be running ace in docker themselves
+# but we need to allow the ports to be overwritten in the pod environment if set by the operator
+if ! [[ -z "${KUBERNETES_PORT}" ]] && ! [[ -z "${SERVICE_NAME}" ]] && ! [[ -z "${MQSI_OVERRIDE_HTTP_PORT}" ]] && ! [[ -z "${MQSI_OVERRIDE_HTTPS_PORT}" ]] ; then
   . /home/aceuser/portOverrides
 fi
 

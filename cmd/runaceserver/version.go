@@ -20,6 +20,7 @@ import (
 	"errors"
 	"regexp"
 	"strings"
+	"runtime"
 
 	"github.com/ot4i/ace-docker/internal/command"
 )
@@ -98,9 +99,16 @@ func logACEVersion() {
 	log.Printf("ACE build type: %v", buildType)
 }
 
+func logGoVersion() {
+	log.Printf("Go Version: %s", runtime.Version())
+	log.Printf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH)
+}
+
+
 func logVersionInfo() {
 	logDateStamp()
 	logGitRepo()
 	logGitCommit()
 	logACEVersion()
+	logGoVersion()
 }

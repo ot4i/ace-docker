@@ -7,24 +7,31 @@ pipeline {
             timestamps ()
         }
     stages {
-        stage('amd64 image build') {
-            when {
-                expression { params.BUILD_PLATFORM == 'amd64-only' || params.BUILD_PLATFORM == 'both' }
-            }
-            agent { label 'cf_slave' }
+        stage('Build') {
+            agent { label 'label_firefly_build' }
             steps {
-                echo BRANCH_TO_BUILD
-                deleteDir()
-                checkout scm
-                dir('ot4i-ace-docker') {
-                    git credentialsId: 'ffbld01_git_key', poll: false, url: 'git@github.ibm.com:Cloud-Integration/ot4i-ace-docker.git', branch: "${params.BRANCH_TO_BUILD}"
+                script {
+                    echo "Updating Job Description"
+                    currentBuild.description = sh(returnStdout: true, script: 'echo "<b>Branch:</b> ${BRANCH_TO_BUILD}<br>"')
+                    if ( params.BRANCH_TO_BUILD == 'master' && params.BUILD_PLATFORM != 'both') {
+                        echo "Options error - you are building from master branch, but did not select to build both platforms. You must build both if you are building master."
+                        error message: "Options error - you are building from master branch, but did not select to build both platforms. You must build both if you are building master."
+                    }
                 }
                 dir('hip-pipeline-common') {
                     git credentialsId: 'ffbld01_git_key', poll: false, url: 'git@github.ibm.com:Cloud-Integration/hip-pipeline-common.git', branch: 'master'
                 }
-                dir('firefly-software-build-scripts') {
-                    git credentialsId: 'ffbld01_git_key', poll: false, url: 'git@github.ibm.com:Cloud-Integration/firefly-software-build-scripts.git', branch: "${params.FIREFLY_SOFTWARE_BUILD_SCRIPTS_BRANCH}"
-                }
+                stash includes: '**/*', name: 'repo'
+            }
+        }
+        stage('amd64 image build') {
+            when {
+                expression { params.BUILD_PLATFORM == 'amd64-only' || params.BUILD_PLATFORM == 'both' }
+            }
+            agent { label 'label_firefly_build' }
+            steps {
+                echo BRANCH_TO_BUILD
+                unstash 'repo'
                 withCredentials([usernamePassword(credentialsId: 'cf78bbfd-e303-4969-8cfd-cd57c3902f12', passwordVariable: 'ARTIFACTORY_PASS', usernameVariable: 'ARTIFACTORY_USER'), usernamePassword(credentialsId: '37361c4d-f3f7-4bf4-97a0-48463a5d2091', passwordVariable: 'GITHUB_API_TOKEN', usernameVariable: 'GITHUB_API_USER'), usernamePassword(credentialsId: 'cf78bbfd-e303-4969-8cfd-cd57c3902f12', passwordVariable: 'NPM_PASS', usernameVariable: 'NPM_USER'), string(credentialsId: 'APPCONNECT_NPM_AUTH', variable: 'NPM_AUTH')]) {
                   sh '''
                     bash -c "
@@ -41,20 +48,10 @@ pipeline {
             when {
                 expression { params.BUILD_PLATFORM == 's390x-only' || params.BUILD_PLATFORM == 'both' }
             }
-            agent { label 'zlinux-ACEcc' }
+            agent { label 'zlinux-ubuntu' }
             steps {
                 echo BRANCH_TO_BUILD
-                deleteDir()
-                checkout scm
-                dir('ot4i-ace-docker') {
-                    git credentialsId: 'ffbld01_git_key', poll: false, url: 'git@github.ibm.com:Cloud-Integration/ot4i-ace-docker.git', branch: "${params.BRANCH_TO_BUILD}"
-                }
-                dir('hip-pipeline-common') {
-                    git credentialsId: 'ffbld01_git_key', poll: false, url: 'git@github.ibm.com:Cloud-Integration/hip-pipeline-common.git', branch: 'master'
-                }
-                dir('firefly-software-build-scripts') {
-                    git credentialsId: 'ffbld01_git_key', poll: false, url: 'git@github.ibm.com:Cloud-Integration/firefly-software-build-scripts.git', branch: "${params.FIREFLY_SOFTWARE_BUILD_SCRIPTS_BRANCH}"
-                }
+                unstash 'repo'
                 withCredentials([usernamePassword(credentialsId: 'cf78bbfd-e303-4969-8cfd-cd57c3902f12', passwordVariable: 'ARTIFACTORY_PASS', usernameVariable: 'ARTIFACTORY_USER'), usernamePassword(credentialsId: '37361c4d-f3f7-4bf4-97a0-48463a5d2091', passwordVariable: 'GITHUB_API_TOKEN', usernameVariable: 'GITHUB_API_USER'), usernamePassword(credentialsId: 'cf78bbfd-e303-4969-8cfd-cd57c3902f12', passwordVariable: 'NPM_PASS', usernameVariable: 'NPM_USER'), string(credentialsId: 'APPCONNECT_NPM_AUTH', variable: 'NPM_AUTH')]) {
                   sh '''
                     bash -c "
@@ -68,21 +65,13 @@ pipeline {
             }
         }
         stage('Create Docker Manifests') {
-            agent { label 'cf_slave' }
+            agent { label 'label_firefly_build' }
             steps {
                 echo BRANCH_TO_BUILD
                 deleteDir()
                 checkout scm
                 withCredentials([usernamePassword(credentialsId: 'cf78bbfd-e303-4969-8cfd-cd57c3902f12', passwordVariable: 'ARTIFACTORY_PASS', usernameVariable: 'ARTIFACTORY_USER')]) {
                     sh '''
-                        # the docker manifest command is an experimental feature
-                        # so need to enable the docker client side experimental feature
-                        mkdir /home/jenkins/.docker
-                        echo '
-                        {
-                            "experimental": "enabled"
-                        }
-                        ' > /home/jenkins/.docker/config.json
                         bash -c "
                         pwd
                         ls -la

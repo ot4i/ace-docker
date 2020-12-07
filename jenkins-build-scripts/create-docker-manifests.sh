@@ -102,19 +102,23 @@ do
 done
 
 sudo docker manifest push ${operatorregistry}/${prodimage}:$TAG --purge
+skopeo copy --all docker://${operatorregistry}/${prodimage}:$TAG docker://${operatorregistry}/${prodimage}:$TAG
 for arch in "${ARCH_ARRAY[@]}"
 do
   if [ "$arch" == "amd64" ] ; then
     sudo docker manifest push ${operatorregistry}/${devimage}:$TAG --purge
+    skopeo copy --all docker://${operatorregistry}/${devimage}:$TAG docker://${operatorregistry}/${devimage}:$TAG
   fi
 done
 
 if [ "${BRANCH_TO_BUILD}" == "master" ] ; then
   sudo docker manifest push ${operatorregistry}/${prodimage}:latest --purge
+  skopeo copy --all docker://${operatorregistry}/${prodimage}:latest docker://${operatorregistry}/${prodimage}:latest
   for arch in "${ARCH_ARRAY[@]}"
   do
     if [ "$arch" == "amd64" ] ; then
       sudo docker manifest push ${operatorregistry}/${devimage}:latest --purge
+      skopeo copy --all docker://${operatorregistry}/${devimage}:latest docker://${operatorregistry}/${devimage}:latest
     fi
   done
 fi

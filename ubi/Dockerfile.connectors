@@ -1,0 +1,13 @@
+ARG BASE_IMAGE=ibmcom/ace
+FROM $BASE_IMAGE
+
+USER root
+# Add in connectors to node_modules that are accessible from ace
+RUN mkdir -p /opt/ibm/ace-11/node_modules
+COPY deps/package-connectors.json /opt/ibm/ace-11/package.json
+RUN export PATH=$PATH:/opt/ibm/ace-11/common/node/bin \
+    && cd /opt/ibm/ace-11/node_modules \
+    && npm install loopback-connector-mongodb loopback-connector-postgresql --save
+RUN chown -R aceuser:mqbrkrs /opt/ibm/ace-11/node_modules
+
+USER aceuser

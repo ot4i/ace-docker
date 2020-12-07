@@ -4,6 +4,8 @@ The sample folder contains Docker files that build a sample image containing sam
 
 ## Build the sample image
 
+You need to assign everyone with read+write permissions for all files that you ADD/COPY into your custom image. The same goes for any files generated from running a script inside your custom image. This is to support the container being run under the OCP "restricted" ID.
+
 ### Sample based on the ACE & MQ image
 
 First [build the ACE & MQ image](../README.md#build-an-image-with-app-connect-enterprise-and-message-queue).

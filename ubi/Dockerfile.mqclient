@@ -1,6 +1,32 @@
 
 ARG BASE_IMAGE=ibmcom/ace
-FROM $BASE_IMAGE
+FROM $BASE_IMAGE as truststore-builder
+
+USER root
+
+# The MQ packages to install - see install-mq.sh for default value
+ARG MQ_URL
+ARG MQ_URL_USER
+ARG MQ_URL_PASS
+ARG MQ_PACKAGES="MQSeriesRuntime*.rpm MQSeriesJava*.rpm MQSeriesGSKit*.rpm MQSeriesClient*.rpm MQSeriesJRE*.rpm"
+
+ARG MQM_UID=888
+
+COPY ubi/install-mq.sh /usr/local/bin/
+COPY ubi/install-mq-client-prereqs.sh /usr/local/bin/
+# Install MQ.  To avoid a "text file busy" error here, we sleep before installing.
+RUN chmod u+x /usr/local/bin/install-*.sh \
+  && sleep 1 \
+  && install-mq-client-prereqs.sh $MQM_UID \
+  && install-mq.sh $MQM_UID
+
+RUN . /opt/ibm/ace-11/server/bin/mqsiprofile \
+     && echo $MQSI_JREPATH \
+     && /opt/mqm/bin/runmqckm -keydb -convert -db $MQSI_JREPATH/lib/security/cacerts -old_format jks -new_format kdb -pw changeit -target /tmp/mqcacerts.kdb -stash
+
+FROM $BASE_IMAGE as clientimage
+
+USER root
 
 # The MQ packages to install - see install-mq.sh for default value
 ARG MQ_URL
@@ -10,8 +36,6 @@ ARG MQ_PACKAGES="MQSeriesRuntime*.rpm MQSeriesJava*.rpm MQSeriesGSKit*.rpm MQSer
 
 ARG MQM_UID=888
 
-USER root
-
 COPY ubi/install-mq.sh /usr/local/bin/
 COPY ubi/install-mq-client-prereqs.sh /usr/local/bin/
 # Install MQ.  To avoid a "text file busy" error here, we sleep before installing.
@@ -19,6 +43,12 @@ RUN chmod u+x /usr/local/bin/install-*.sh \
   && sleep 1 \
   && install-mq-client-prereqs.sh $MQM_UID \
   && install-mq.sh $MQM_UID
+
+RUN mkdir /home/aceuser/truststores
+COPY --from=truststore-builder /tmp/mqcacerts.kdb /home/aceuser/truststores/mqcacerts.kdb
+RUN chmod -R 777 /home/aceuser/truststores
+# Set the integration server to use it by default. A user provided server.conf.yaml will override this behaviour if the mqKeyRepository property is set.
+RUN sed -i 's/#.*mqKeyRepository:.*/mqKeyRepository: \/home\/aceuser\/truststores\/mqcacerts/g' /home/aceuser/ace-server/server.conf.yaml
   
 ENV MQCERTLABL=aceclient
 

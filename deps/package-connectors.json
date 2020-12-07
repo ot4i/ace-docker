@@ -1,0 +1,10 @@
+{
+    "name": "ace",
+    "version": "1.0.0",
+    "description": "ace",
+    "private": true,
+    "dependencies": {
+        "loopback-connector-mongodb": "5.4.0",
+        "loopback-connector-postgresql": "5.1.0"
+    }
+}
