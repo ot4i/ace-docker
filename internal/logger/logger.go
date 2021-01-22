@@ -47,6 +47,22 @@ type Logger struct {
 	user        *user.User
 }
 
+// Define the interface to keep the internal and external loggers in sync
+// Every reference to logger in the code must reference this interface
+// Every function used by the logger must be defined in the interface
+type LoggerInterface interface {
+	LogDirect(string)
+	Debug(...interface{})
+	Debugf(string, ...interface{})
+	Print(...interface{})
+	Println(...interface{})
+	Printf(string, ...interface{})
+	PrintString(string)
+	Error(...interface{})
+	Errorf(string, ...interface{})
+	Fatalf(string, ...interface{})
+}
+
 // NewLogger creates a new logger
 func NewLogger(writer io.Writer, debug bool, json bool, serverName string) (*Logger, error) {
 	hostname, err := os.Hostname()
@@ -156,7 +172,7 @@ func (l *Logger) PrintString(msg string) {
 	l.log(infoLevel, msg)
 }
 
-// Errorf logs a message as error
+// Error logs a message as error
 func (l *Logger) Error(args ...interface{}) {
 	l.log(errorLevel, fmt.Sprint(args...))
 }

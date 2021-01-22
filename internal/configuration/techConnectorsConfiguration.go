@@ -61,7 +61,7 @@ func convertToNumber(unknown interface{}) float64 {
 	}
 }
 
-func setDSNForJDBCApplication(log *logger.Logger, basedir string, jsonContentsObjForCredParse *Accounts) error {
+func setDSNForJDBCApplication(log logger.LoggerInterface, basedir string, jsonContentsObjForCredParse *Accounts) error {
 	log.Println("#setDSNForJDBCApplication: Execute mqsisetdbparms command	")
 	if _, ok := jsonContentsObjForCredParse.Accounts["jdbc"]; ok {
 		jdbcAccountsToGetActCred := jsonContentsObjForCredParse.Accounts["jdbc"]
@@ -94,7 +94,7 @@ func setDSNForJDBCApplication(log *logger.Logger, basedir string, jsonContentsOb
 }
 
 // SetupTechConnectorsConfigurations entry point for all technology connector configurations
-func SetupTechConnectorsConfigurations(log *logger.Logger, basedir string, contents []byte) error {
+func SetupTechConnectorsConfigurations(log logger.LoggerInterface, basedir string, contents []byte) error {
 	log.Println("#SetupTechConnectorsConfigurations: extracting accounts info")
 	jsonContents, err := yaml.YAMLToJSON(contents)
 	if err != nil {
@@ -127,7 +127,7 @@ func SetupTechConnectorsConfigurations(log *logger.Logger, basedir string, conte
 	return nil
 }
 
-func buildJDBCPolicies(log *logger.Logger, basedir string, jsonContentsObjForCredParse *Accounts) error {
+func buildJDBCPolicies(log logger.LoggerInterface, basedir string, jsonContentsObjForCredParse *Accounts) error {
 	var supportedDBs = map[string]string{
 		"IBM Db2 Linux, UNIX, or Windows (LUW) - client managed": "db2luw",
 		"IBM Db2 Linux, UNIX, or Windows (LUW) - IBM Cloud":      "db2cloud",
@@ -258,7 +258,7 @@ func buildJDBCPolicies(log *logger.Logger, basedir string, jsonContentsObjForCre
 	return nil
 }
 
-func getJDBCPolicyAttributes(log *logger.Logger, dbType, hostname, port, dbName, additonalParams string) (map[string]string, error) {
+func getJDBCPolicyAttributes(log logger.LoggerInterface, dbType, hostname, port, dbName, additonalParams string) (map[string]string, error) {
 
 	var policyAttributes = make(map[string]string)
 	var classNames = map[string]string{

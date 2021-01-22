@@ -26,6 +26,7 @@ import (
 	"github.com/ot4i/ace-docker/internal/metrics"
 	"github.com/ot4i/ace-docker/internal/name"
 	"github.com/ot4i/ace-docker/internal/qmgr"
+	"github.com/ot4i/ace-docker/internal/designer"
 )
 
 func doMain() error {
@@ -134,6 +135,22 @@ func doMain() error {
 		return err
 	}
 
+	log.Println("Validating flows deployed to the integration server before starting")
+	licenseToggles, err := designer.GetLicenseTogglesFromEnvironmentVariables()
+	if err != nil {
+		logTermination(err)
+		performShutdown()
+		return err
+	}
+	designer.InitialiseLicenseToggles(licenseToggles)
+
+	err = designer.ValidateFlows(log, "/home/aceuser")
+	if err != nil {
+		logTermination(err)
+		performShutdown()
+		return err
+	}
+	
 	log.Println("Starting integration server")
 	integrationServerProcess = startIntegrationServer()
 	if integrationServerProcess.ReturnError != nil {

@@ -40,10 +40,10 @@ type exporter struct {
 	counterMap   map[string]*prometheus.CounterVec
 	gaugeMap     map[string]*prometheus.GaugeVec
 	firstCollect bool
-	log          *logger.Logger
+	log          logger.LoggerInterface
 }
 
-func newExporter(serverName string, log *logger.Logger) *exporter {
+func newExporter(serverName string, log logger.LoggerInterface) *exporter {
 	return &exporter{
 		serverName: serverName,
 		counterMap: make(map[string]*prometheus.CounterVec),

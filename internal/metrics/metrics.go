@@ -39,7 +39,7 @@ var (
 )
 
 // GatherMetrics gathers metrics for the integration server
-func GatherMetrics(serverName string, log *logger.Logger) {
+func GatherMetrics(serverName string, log logger.LoggerInterface) {
 	log.Println("Gathering Metrics...")
 	metricsEnabled = true
 
@@ -51,7 +51,7 @@ func GatherMetrics(serverName string, log *logger.Logger) {
 }
 
 // startMetricsGathering starts gathering metrics for the integration server
-func startMetricsGathering(serverName string, log *logger.Logger) error {
+func startMetricsGathering(serverName string, log logger.LoggerInterface) error {
 
 	defer func() {
 		if r := recover(); r != nil {

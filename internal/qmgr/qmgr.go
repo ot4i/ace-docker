@@ -39,7 +39,7 @@ func DevManager() bool {
 
 // StartQueueManager launches the runmqserver process in the background as the user "root".
 // This returns a BackgroundCmd, wrapping the backgrounded process.
-func StartQueueManager(log *logger.Logger) command.BackgroundCmd {
+func StartQueueManager(log logger.LoggerInterface) command.BackgroundCmd {
 	if DevManager() {
 		return command.RunBackground("runmqdevserver", log)
 	} else {
@@ -50,7 +50,7 @@ func StartQueueManager(log *logger.Logger) command.BackgroundCmd {
 
 // WaitForQueueManager will run the "chkmqready" command every 2 seconds until it returns
 // an RC of zero, to indicate that the queue manager is ready.
-func WaitForQueueManager(log *logger.Logger) error {
+func WaitForQueueManager(log logger.LoggerInterface) error {
 	for {
 		_, rc, err := command.RunAsUser("mqm", "chkmqready")
 		if rc != 0 || err != nil {

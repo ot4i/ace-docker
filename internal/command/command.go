@@ -76,7 +76,7 @@ func Run(name string, arg ...string) (string, int, error) {
 // It returns a BackgroundCmd, containing the os/exec/cmd, an int channel
 // and error channel that will have the return code and error written respectively,
 // when the process exits
-func RunCmdBackground(cmd *exec.Cmd, log *logger.Logger) BackgroundCmd {
+func RunCmdBackground(cmd *exec.Cmd, log logger.LoggerInterface) BackgroundCmd {
 	bgCmd := BackgroundCmd{cmd, 0, nil, false, false, make(chan bool)}
 
 	stdoutChildPipe, err := cmd.StdoutPipe()
@@ -162,7 +162,7 @@ func WaitOnBackground(bgCmd BackgroundCmd) {
 // RunBackground runs an OS command.  On Linux it runs the command in the background
 // and returns a channel to int that will have the return code written when
 // the process exits
-func RunBackground(name string, log *logger.Logger, arg ...string) BackgroundCmd {
+func RunBackground(name string, log logger.LoggerInterface, arg ...string) BackgroundCmd {
 	return RunCmdBackground(exec.Command(name, arg...), log)
 }
 
@@ -189,7 +189,7 @@ func RunAsUser(username string, name string, arg ...string) (string, int, error)
 // It returns a BackgroundCmd, containing the os/exec/cmd, an int channel
 // and error channel that will have the return code and error written respectively,
 // when the process exits
-func RunAsUserBackground(username string, name string, log *logger.Logger, arg ...string) BackgroundCmd {
+func RunAsUserBackground(username string, name string, log logger.LoggerInterface, arg ...string) BackgroundCmd {
 	cmd := exec.Command(name, arg...)
 	thisUser, err := user.Current()
 	if err != nil {

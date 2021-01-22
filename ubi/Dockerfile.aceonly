@@ -89,6 +89,13 @@ RUN /opt/ibm/ace-11/ace make registry global accept license silently \
   && chmod -R 777 /var/mqsi \
   && su - -c '. /opt/ibm/ace-11/server/bin/mqsiprofile && echo $MQSI_JREPATH && chmod g+w $MQSI_JREPATH/lib/security/cacerts'
 
+RUN mkdir /home/aceuser/temp
+RUN mkdir /home/aceuser/temp/gen
+COPY ubi/generic_invalid/invalid_license.msgflow /home/aceuser/temp/gen
+COPY ubi/generic_invalid/InvalidLicenseJava.jar /home/aceuser/temp/gen
+COPY ubi/generic_invalid/application.descriptor /home/aceuser/temp
+RUN chmod -R 777 /home/aceuser/temp
+
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
 ENV BASH_ENV=/usr/local/bin/ace_env.sh
 

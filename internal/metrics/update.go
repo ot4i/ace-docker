@@ -98,7 +98,7 @@ func (md *metricData) Normalise(value int) float64 {
     return f
 }
 
-func ReadStatistics(log *logger.Logger) {
+func ReadStatistics(log logger.LoggerInterface) {
     // Check if the admin server is secure so we know whether to connect with wss or ws
     aceAdminServerSecurity := os.Getenv("ACE_ADMIN_SERVER_SECURITY")
     if aceAdminServerSecurity == "" {
@@ -303,7 +303,7 @@ func ReadStatistics(log *logger.Logger) {
 }
 
 // processMetrics processes publications of metric data and handles describe/collect/stop requests
-func processMetrics(log *logger.Logger, serverName string) {
+func processMetrics(log logger.LoggerInterface, serverName string) {
     log.Println("Processing metrics...")
 
     metrics := initialiseMetrics(log)
@@ -332,7 +332,7 @@ func processMetrics(log *logger.Logger, serverName string) {
 }
 
 // initialiseMetrics sets initial details for all available metrics
-func initialiseMetrics(log *logger.Logger) *MetricsMap {
+func initialiseMetrics(log logger.LoggerInterface) *MetricsMap {
 
     metrics := NewMetricsMap()
     msgFlowMetricNamesMap, msgFlowNodeMetricNamesMap := generateMetricNamesMap()
@@ -393,7 +393,7 @@ func initialiseMetrics(log *logger.Logger) *MetricsMap {
     return metrics
 }
 
-func parseMetrics(log *logger.Logger, m *StatisticsDataStruct) (*MetricsMap, error) {
+func parseMetrics(log logger.LoggerInterface, m *StatisticsDataStruct) (*MetricsMap, error) {
     if m.Event == ResourceStatisticsData {
         return parseResourceMetrics(log, m)
     } else if m.Event == AccountingAndStatisticsData {
@@ -403,7 +403,7 @@ func parseMetrics(log *logger.Logger, m *StatisticsDataStruct) (*MetricsMap, err
     }
 }
 
-func parseAccountingMetrics(log *logger.Logger, m *StatisticsDataStruct) (*MetricsMap, error) {
+func parseAccountingMetrics(log logger.LoggerInterface, m *StatisticsDataStruct) (*MetricsMap, error) {
     parsedMetrics := NewMetricsMap()
 
     msgFlowMetricNamesMap, msgFlowNodeMetricNamesMap := generateMetricNamesMap()
@@ -499,7 +499,7 @@ func parseAccountingMetrics(log *logger.Logger, m *StatisticsDataStruct) (*Metri
     return parsedMetrics, nil
 }
 
-func parseResourceMetrics(log *logger.Logger, m *StatisticsDataStruct) (*MetricsMap, error) {
+func parseResourceMetrics(log logger.LoggerInterface, m *StatisticsDataStruct) (*MetricsMap, error) {
     parsedResourceMetrics := NewMetricsMap()
 
     serverName := m.Data.ResourceStatistics.ExecutionGroupName
@@ -555,7 +555,7 @@ func parseResourceMetrics(log *logger.Logger, m *StatisticsDataStruct) (*Metrics
 }
 
 // updateMetrics updates values for all available metrics
-func updateMetrics(log *logger.Logger, mm1 *MetricsMap, mm2 *MetricsMap) {
+func updateMetrics(log logger.LoggerInterface, mm1 *MetricsMap, mm2 *MetricsMap) {
     mm1.Lock()
     mm2.Lock()
     defer mm1.Unlock()

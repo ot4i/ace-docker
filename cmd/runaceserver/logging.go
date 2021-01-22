@@ -23,7 +23,7 @@ import (
 	"github.com/ot4i/ace-docker/internal/logger"
 )
 
-var log *logger.Logger
+var log logger.LoggerInterface
 
 func logTerminationf(format string, args ...interface{}) {
 	logTermination(fmt.Sprintf(format, args...))

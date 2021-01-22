@@ -16,12 +16,9 @@ limitations under the License.
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"os/user"
@@ -30,6 +27,7 @@ import (
 	"github.com/ot4i/ace-docker/internal/command"
 	"github.com/ot4i/ace-docker/internal/name"
 	"github.com/ot4i/ace-docker/internal/qmgr"
+	"github.com/ot4i/ace-docker/internal/contentserver"
 	"gopkg.in/yaml.v2"
 )
 
@@ -464,57 +462,24 @@ func getConfigurationFromContentServer() error {
 			return errors.New("CONTENT_SERVER_CA not defined")
 		}
 	}
+
 	log.Printf("Using ca file %s", contentServerCACert)
 	caCert, err := ioutil.ReadFile(contentServerCACert)
 	if err != nil {
 		log.Errorf("Error reading CA Certificate")
 		return errors.New("Error reading CA Certificate")
 	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
 
-	// If provided read the key pair to create certificate
 	contentServerCert := os.Getenv("CONTENT_SERVER_CERT")
 	contentServerKey := os.Getenv("CONTENT_SERVER_KEY")
-	cert, err := tls.LoadX509KeyPair(contentServerCert, contentServerKey)
-	if err != nil {
-		if contentServerCert != "" && contentServerKey != "" {
-			log.Errorf("Error reading Certificates: %s", err)
-			return errors.New("Error reading Certificates")
-		}
-	} else {
-		log.Printf("Using certs for mutual auth")
-	}
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs:      caCertPool,
-				Certificates: []tls.Certificate{cert},
-				ServerName:   serverName,
-			},
-		},
-	}
-
-	request, err := http.NewRequest("GET", url, nil)
+	bar, err := contentserver.GetBAR(url, serverName, token, caCert, contentServerCert, contentServerKey, log)
 	if err != nil {
-		log.Errorf("Error creating request for content server")
 		return err
 	}
+	defer bar.Close()
 
-	request.Header.Set("x-ibm-ace-directory-token", token)
-	response, err := client.Do(request)
-	if err != nil {
-		log.Errorf("Error downloading from %v: %v", url, err)
-		return err
-	}
-	if response.StatusCode != 200 {
-		log.Errorf("Error downloading from %v: %v", url, response.Status)
-		return err
-	}
-
-	defer response.Body.Close()
-	_, err = io.Copy(file, response.Body)
+	_, err = io.Copy(file, bar)
 	if err != nil {
 		log.Errorf("Error writing file %v: %v", file, err)
 		return err

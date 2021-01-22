@@ -24,7 +24,7 @@ import (
 	"github.com/ot4i/ace-docker/internal/logger"
 )
 
-func getTestLogger() *logger.Logger {
+func getTestLogger() logger.LoggerInterface {
 	log, _ := logger.NewLogger(os.Stdout, false, false, "test")
 	return log
 }

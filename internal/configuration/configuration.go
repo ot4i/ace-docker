@@ -75,7 +75,7 @@ func writeConfigurationFile(dir string, fileName string, contents []byte) error 
 var osOpenFile = os.OpenFile
 var ioCopy = io.Copy
 
-func unzip(log *logger.Logger, dir string, contents []byte) error {
+func unzip(log logger.LoggerInterface, dir string, contents []byte) error {
 	var filenames []string
 	zipReader, err := zip.NewReader(bytes.NewReader(contents), int64(len(contents)))
 	if err != nil {
@@ -150,7 +150,7 @@ type configurationObject struct {
 	contents   []byte
 }
 
-func getAllConfigurationsImpl(log *logger.Logger, namespace string, configurationsNames []string, dynamicClient dynamic.Interface) ([]*unstructured.Unstructured, error) {
+func getAllConfigurationsImpl(log logger.LoggerInterface, namespace string, configurationsNames []string, dynamicClient dynamic.Interface) ([]*unstructured.Unstructured, error) {
 
 	list := make([]*unstructured.Unstructured, len(configurationsNames))
 	for index, configurationName := range configurationsNames {
@@ -175,7 +175,7 @@ func getSecretImpl(basedir string, secretName string) ([]byte, error) {
 
 var getSecret = getSecretImpl
 
-func parseConfigurationList(log *logger.Logger, basedir string, list []*unstructured.Unstructured) ([]configurationObject, error) {
+func parseConfigurationList(log logger.LoggerInterface, basedir string, list []*unstructured.Unstructured) ([]configurationObject, error) {
 	output := make([]configurationObject, len(list))
 	for index, item := range list {
 		name := item.GetName()
@@ -243,7 +243,7 @@ func setupClientsImpl() (dynamic.Interface, error) {
 
 var setupClients = setupClientsImpl
 
-func SetupConfigurationsFiles(log *logger.Logger, basedir string) error {
+func SetupConfigurationsFiles(log logger.LoggerInterface, basedir string) error {
 	configurationNames, ok := os.LookupEnv("ACE_CONFIGURATIONS")
 	if ok && configurationNames != "" {
 		log.Printf("Setup configuration files - configuration names: %s", configurationNames)
@@ -253,7 +253,7 @@ func SetupConfigurationsFiles(log *logger.Logger, basedir string) error {
 		return nil
 	}
 }
-func SetupConfigurationsFilesInternal(log *logger.Logger, configurationNames []string, basedir string) error {
+func SetupConfigurationsFilesInternal(log logger.LoggerInterface, configurationNames []string, basedir string) error {
 	// set up k8s client
 	dynamicClient, err := setupClients()
 	if err != nil {
@@ -285,7 +285,7 @@ func SetupConfigurationsFilesInternal(log *logger.Logger, configurationNames []s
 	return nil
 }
 
-func constructConfigurationsOnFileSystem(log *logger.Logger, basedir string, configName string, configType string, contents []byte) error {
+func constructConfigurationsOnFileSystem(log logger.LoggerInterface, basedir string, configName string, configType string, contents []byte) error {
 	log.Printf("Construct a configuration on the filesystem - configuration name: %s type: %s", configName, configType)
 	switch configType {
 	case "policyproject":
@@ -325,57 +325,57 @@ func constructConfigurationsOnFileSystem(log *logger.Logger, basedir string, con
 	}
 }
 
-func constructPolicyProjectOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
+func constructPolicyProjectOnFileSystem(log logger.LoggerInterface, basedir string, contents []byte) error {
 	log.Println("Construct policy project on the filesystem")
 	return unzip(log, basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"overrides", contents)
 }
 
-func constructTrustStoreOnFileSystem(log *logger.Logger, basedir string, name string, contents []byte) error {
+func constructTrustStoreOnFileSystem(log logger.LoggerInterface, basedir string, name string, contents []byte) error {
 	log.Printf("Construct truststore on the filesystem - Truststore name: %s", name)
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+truststoresName, name, contents)
 }
 
-func constructKeyStoreOnFileSystem(log *logger.Logger, basedir string, name string, contents []byte) error {
+func constructKeyStoreOnFileSystem(log logger.LoggerInterface, basedir string, name string, contents []byte) error {
 	log.Printf("Construct keystore on the filesystem - Keystore name: %s", name)
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+keystoresName, name, contents)
 }
 
-func constructOdbcIniOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
+func constructOdbcIniOnFileSystem(log logger.LoggerInterface, basedir string, contents []byte) error {
 	log.Println("Construct odbc.Ini on the filesystem")
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+workdirName, "odbc.ini", contents)
 }
 
-func constructGenericOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
+func constructGenericOnFileSystem(log logger.LoggerInterface, basedir string, contents []byte) error {
 	log.Println("Construct generic files on the filesystem")
 	return unzip(log, basedir+string(os.PathSeparator)+genericName, contents)
 }
 
-func constructLoopbackDataSourceOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
+func constructLoopbackDataSourceOnFileSystem(log logger.LoggerInterface, basedir string, contents []byte) error {
 	log.Println("Construct loopback connector files on the filesystem")
 	return unzip(log, basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config"+string(os.PathSeparator)+"connectors"+string(os.PathSeparator)+"loopback", contents)
 }
 
-func constructAdminSSLOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
+func constructAdminSSLOnFileSystem(log logger.LoggerInterface, basedir string, contents []byte) error {
 	log.Println("Construct adminssl on the filesystem")
 	return unzip(log, basedir+string(os.PathSeparator)+adminsslName, contents)
 }
 
-func constructServerConfYamlOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
+func constructServerConfYamlOnFileSystem(log logger.LoggerInterface, basedir string, contents []byte) error {
 	log.Println("Construct serverconfyaml on the filesystem")
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"overrides", "server.conf.yaml", contents)
 }
 
-func constructAgentxOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
+func constructAgentxOnFileSystem(log logger.LoggerInterface, basedir string, contents []byte) error {
 	log.Println("Construct agentx on the filesystem")
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agentx", "agentx.json", contents)
 }
 
-func constructAgentaOnFileSystem(log *logger.Logger, basedir string, contents []byte) error {
+func constructAgentaOnFileSystem(log logger.LoggerInterface, basedir string, contents []byte) error {
 	log.Println("Construct agenta on the filesystem")
 	return writeConfigurationFile(basedir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"config/iibswitch/agenta", "agenta.json", contents)
 }
 
-func addTrustCertificateToCAcerts(log *logger.Logger, basedir string, name string, contents []byte) error {
+func addTrustCertificateToCAcerts(log logger.LoggerInterface, basedir string, name string, contents []byte) error {
 	log.Println("Adding trust certificate to CAcerts")
 	// creating temporary file based on the content
 	tmpFile := creatingTempFile(log, contents, name)
@@ -386,7 +386,7 @@ func addTrustCertificateToCAcerts(log *logger.Logger, basedir string, name strin
 	return internalRunKeytoolCommand(log, commandCreateArgsJKS)
 }
 
-func creatingTempFile(log *logger.Logger, contents []byte, name string) *os.File {
+func creatingTempFile(log logger.LoggerInterface, contents []byte, name string) *os.File {
 	tmpFile, err := ioutil.TempFile(os.TempDir(), name)
 	if err != nil {
 		log.Println("Cannot create temporary file", err)
@@ -404,7 +404,7 @@ func creatingTempFile(log *logger.Logger, contents []byte, name string) *os.File
 	return tmpFile
 }
 
-func executeSetDbParms(log *logger.Logger, basedir string, contents []byte) error {
+func executeSetDbParms(log logger.LoggerInterface, basedir string, contents []byte) error {
 	log.Println("Execute mqsisetdbparms command")
 	for index, m := range strings.Split(string(contents), "\n") {
 		// ignore empty lines
@@ -443,12 +443,12 @@ func executeSetDbParms(log *logger.Logger, basedir string, contents []byte) erro
 	return nil
 
 }
-func runSetdbparmsCommand(log *logger.Logger, command string, params []string) error {
+func runSetdbparmsCommand(log logger.LoggerInterface, command string, params []string) error {
 	realCommand := command
 	return runCommand(log, realCommand, params)
 }
 
-func runCommand(log *logger.Logger, command string, params []string) error {
+func runCommand(log logger.LoggerInterface, command string, params []string) error {
 	realCommand := "source " + aceInstall + "/mqsiprofile && " + command + " " + strings.Join(params[:], " ")
 	cmd := exec.Command("/bin/sh", "-c", realCommand)
 	cmd.Stdin = strings.NewReader("some input")
@@ -466,7 +466,7 @@ func runCommand(log *logger.Logger, command string, params []string) error {
 
 }
 
-func runKeytoolCommand(log *logger.Logger, params []string) error {
+func runKeytoolCommand(log logger.LoggerInterface, params []string) error {
 	return runCommand(log, "keytool", params)
 
 }

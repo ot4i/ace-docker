@@ -62,7 +62,7 @@ func reset() {
 	getSecret = func(basedir string, secretName string) ([]byte, error) {
 		panic("Should be mocked")
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 
 		panic("Should be mocked")
 	}
@@ -75,11 +75,11 @@ func reset() {
 		panic("Should be mocked")
 	}
 
-	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log logger.LoggerInterface, command string, params []string) error {
 		panic("Should be mocked")
 	}
 
-	internalRunKeytoolCommand = func(log *logger.Logger, params []string) error {
+	internalRunKeytoolCommand = func(log logger.LoggerInterface, params []string) error {
 		panic("Should be mocked")
 	}
 
@@ -173,7 +173,7 @@ func TestSetupConfigurationsFiles(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return testSecretValue, nil
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, "server.conf.yaml", cn[0])
 		assert.Equal(t, "odbc.ini", cn[1])
 		return []*unstructured.Unstructured{
@@ -219,7 +219,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 
 	configContents := "ZmFrZUZpbGUK"
 	// Test missing type fails
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "bad.type")
 		return []*unstructured.Unstructured{
 			{
@@ -241,7 +241,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		}
 	}
 	// Test missing contents fails
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "bad.type")
 		return []*unstructured.Unstructured{
 			{
@@ -265,7 +265,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		}
 	}
 	// Test missing secret fails
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "bad.type")
 		return []*unstructured.Unstructured{
 			{
@@ -292,7 +292,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return nil, errors.New("missing secret file")
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "bad.type")
 		return []*unstructured.Unstructured{
 			{
@@ -318,7 +318,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 	// Test invalid type fails
 	reset()
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "bad.type")
 		return []*unstructured.Unstructured{
 			{
@@ -342,7 +342,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 	// Test base64 decode fails of content
 	reset()
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "server.conf.yaml")
 		return []*unstructured.Unstructured{
 			{
@@ -374,7 +374,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return testSecretValue, nil
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "accounts-1")
 
 		return []*unstructured.Unstructured{
@@ -409,7 +409,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return testSecretValue, nil
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "agentx-1")
 
 		return []*unstructured.Unstructured{
@@ -444,7 +444,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return testSecretValue, nil
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "agenta-1")
 
 		return []*unstructured.Unstructured{
@@ -474,7 +474,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, testBaseDir+string(os.PathSeparator)+workdirName+string(os.PathSeparator)+"odbc.ini", fn)
 		return nil
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "odbc-ini")
 		return []*unstructured.Unstructured{
 			{
@@ -508,7 +508,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return testSecretValue, nil
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "truststore-1")
 		return []*unstructured.Unstructured{
 			{
@@ -541,7 +541,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return testSecretValue, nil
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "keystore-1")
 		return []*unstructured.Unstructured{
 			{
@@ -562,7 +562,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	assert.Nil(t, SetupConfigurationsFilesInternal(testLogger, []string{"keystore-1"}, testBaseDir))
 	// Test setdbparms.txt
 	reset()
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "setdbparms.txt")
 		return []*unstructured.Unstructured{
 			{
@@ -602,7 +602,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("name user pass"), nil
 	}
-	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log logger.LoggerInterface, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -617,7 +617,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("mqsisetdbparms    -n name    -u    user     -p        pass    -w    /tmp/tests/ace-server"), nil
 	}
-	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log logger.LoggerInterface, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -632,7 +632,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("name user pass"), nil
 	}
-	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log logger.LoggerInterface, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -646,7 +646,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		return []byte("\n   name1    user1     pass1   \n  name2    user2     pass2'  "), nil
 
 	}
-	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log logger.LoggerInterface, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		var testParams []string
 		if params[1] == "'name1'" {
@@ -665,7 +665,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("mqsisetdbparms -n name -u user -p pass"), nil
 	}
-	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log logger.LoggerInterface, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -679,7 +679,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return []byte("mqsisetdbparms    -n name    -u    user     -p        pass    -w    /tmp/tests/ace-server"), nil
 	}
-	internalRunSetdbparmsCommand = func(log *logger.Logger, command string, params []string) error {
+	internalRunSetdbparmsCommand = func(log logger.LoggerInterface, command string, params []string) error {
 		assert.Equal(t, command, "mqsisetdbparms")
 		testParams := []string{"'-n'", "'name'", "'-u'", "'user'", "'-p'", "'pass'", "'-w'", "'/tmp/tests/ace-server'"}
 		assert.Equal(t, params, testParams)
@@ -688,7 +688,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	assert.Nil(t, SetupConfigurationsFilesInternal(testLogger, []string{"setdbparms.txt"}, testBaseDir))
 
 	// policy project with an invalid zip file
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "policy-project")
 		return []*unstructured.Unstructured{
 			{
@@ -730,7 +730,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return base64.StdEncoding.DecodeString(adminsslcontent)
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "adminssl1")
 		return []*unstructured.Unstructured{
 			{
@@ -779,7 +779,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return base64.StdEncoding.DecodeString(genericContent)
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "generic1")
 		return []*unstructured.Unstructured{
 			{
@@ -834,7 +834,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 		assert.Equal(t, name, secretName)
 		return base64.StdEncoding.DecodeString(loopbackdatasourcecontent)
 	}
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "loopback1")
 		return []*unstructured.Unstructured{
 			{
@@ -867,7 +867,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 
 	// Test truststore certificates
-	getAllConfigurations = func(log *logger.Logger, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
+	getAllConfigurations = func(log logger.LoggerInterface, ns string, cn []string, dc dynamic.Interface) ([]*unstructured.Unstructured, error) {
 		assert.Equal(t, cn[0], "truststorecert")
 		return []*unstructured.Unstructured{
 			{
@@ -892,7 +892,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 
 	// Test keytool command to be called with the correct params
 	internalRunKeytoolCommandCallCount := 0
-	internalRunKeytoolCommand = func(log *logger.Logger, params []string) error {
+	internalRunKeytoolCommand = func(log logger.LoggerInterface, params []string) error {
 		testParams := []string{"-import", "-file", "-alias", "truststorecert", "-keystore", "$MQSI_JREPATH/lib/security/cacerts", "-storepass", "changeit", "-noprompt", "-storetype", "JKS"}
 		for i := range params {
 			if i < 2 {
@@ -911,7 +911,7 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	}
 
 	// Test keytool command throw an error
-	internalRunKeytoolCommand = func(log *logger.Logger, params []string) error {
+	internalRunKeytoolCommand = func(log logger.LoggerInterface, params []string) error {
 		return errors.New("command fails")
 	}
 	{

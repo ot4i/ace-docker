@@ -99,6 +99,13 @@ USER mqm
 WORKDIR /home/aceuser
 RUN mkdir /home/aceuser/initial-config && chown mqm:mqm /home/aceuser/initial-config
 
+RUN mkdir /home/aceuser/temp
+RUN mkdir /home/aceuser/temp/gen
+COPY ubi/generic_invalid/invalid_license.msgflow /home/aceuser/temp/gen
+COPY ubi/generic_invalid/InvalidLicenseJava.jar /home/aceuser/temp/gen
+COPY ubi/generic_invalid/application.descriptor /home/aceuser/temp
+RUN chmod -R 777 /home/aceuser/temp
+
 ENV USE_QMGR=true LOG_FORMAT=basic
 
 # Set entrypoint to run management script
