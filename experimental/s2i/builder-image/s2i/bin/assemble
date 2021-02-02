@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cd $S2I_DESTINATION/src/
+
+echo "Looking for ace-build.sh/pom.xml/build.gradle . . ."
+pwd
+ls -l
+id
+# TODO: implement a real build!
+
+./ace-build.sh $S2I_DESTINATION

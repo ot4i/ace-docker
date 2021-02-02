@@ -1,0 +1,4 @@
+#!/bin/bash
+
+. /opt/ibm/ace-11/server/bin/mqsiprofile
+IntegrationServer -w /home/aceuser/ace-server --no-nodejs

@@ -1,11 +1,11 @@
 FROM ubuntu:20.04
 
-# docker build -t ace-minimal:11.0.0.9-ubuntu -f Dockerfile.ubuntu .
+# docker build -t ace-minimal:11.0.0.11-ubuntu -f Dockerfile.ubuntu .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.9-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-11.0.0.9
+ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
+ARG PRODUCT_LABEL=ace-11.0.0.11
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive

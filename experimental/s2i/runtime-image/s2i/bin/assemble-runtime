@@ -1,0 +1,5 @@
+#!/bin/bash
+
+ls -l $S2I_DESTINATION
+
+cp -r $S2I_DESTINATION/ace-server/run/* /home/aceuser/ace-server/run/

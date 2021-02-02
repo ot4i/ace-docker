@@ -1,11 +1,11 @@
 FROM ibmjava:8-sfj-alpine
 
-# docker build -t ace-minimal:11.0.0.9-alpine -f Dockerfile.alpine .
+# docker build -t ace-minimal:11.0.0.11-alpine -f Dockerfile.alpine .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.9-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-11.0.0.9
+ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
+ARG PRODUCT_LABEL=ace-11.0.0.11
 
 
 RUN apk --update add --no-cache --virtual .build-deps curl binutils zstd \
@@ -48,7 +48,7 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # FTE is optional
     cat /tmp/excludes-fte.txt >> /tmp/all-excludes.txt && \
 # GlobalCache is optional; set MQSI_NO_CACHE_SUPPORT=1
-#    cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
+    cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
 # IMS is optional
     cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
 # JDK provided by base layer; use MQSI_SIGNAL_EXCLUSIONS=11 and 

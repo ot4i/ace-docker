@@ -1,12 +1,12 @@
 FROM alpine:3.12
 
-# docker build -t ace-minimal:11.0.0.9-alpine-openjdk14 -f Dockerfile.alpine-openjdk14 .
+# docker build -t ace-minimal:11.0.0.11-alpine-openjdk14 -f Dockerfile.alpine-openjdk14 .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
 ARG LICENSE
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.9-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-11.0.0.9
+ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
+ARG PRODUCT_LABEL=ace-11.0.0.11
 ARG JDK_DOWNLOAD_URL=https://download.java.net/java/GA/jdk14.0.1/664493ef4a6946b186ff29eb326336a2/7/GPL/openjdk-14.0.1_linux-x64_bin.tar.gz
 ARG JDK_LABEL=jdk-14.0.1
 
@@ -60,7 +60,7 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # Kafka has log4j-1.2.17
     cat /tmp/excludes-kafka.txt >> /tmp/all-excludes.txt && \
 # node.js support is optional; use --no-nodejs on server start line
-#    cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
+    cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
     cat /tmp/excludes-npm.txt >> /tmp/all-excludes.txt && \
 # ODBC drivers are optional
@@ -91,7 +91,7 @@ RUN mkdir -p /opt/ibm && \
     apk del --purge binutils zip curl ncurses-terminfo-base ncurses-libs
 
 
-# Install ACE v11.0.0.9
+# Install ACE v11.0.0.11
 RUN mkdir -p /opt/ibm && \
     apk add binutils zip bash curl && \
     cd /opt && \

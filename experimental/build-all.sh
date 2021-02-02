@@ -1,7 +1,8 @@
 #!/bin/bash
-export PRODUCT_VERSION=11.0.0.9
+export PRODUCT_VERSION=11.0.0.11
 export PRODUCT_LABEL=ace-${PRODUCT_VERSION}
-export DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.9-ACE-LINUX64-DEVELOPER.tar.gz
+export DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
+export DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.0.11.tar.gz
 
 cd ace-minimal
 docker build --build-arg DOWNLOAD_URL --build-arg PRODUCT_LABEL -t ace-minimal:${PRODUCT_VERSION}-alpine -f Dockerfile.alpine .

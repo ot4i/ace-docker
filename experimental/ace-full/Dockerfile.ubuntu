@@ -1,15 +1,15 @@
 FROM ubuntu:20.04
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-# docker build -t ace-full:11.0.0.9-ubuntu -f Dockerfile.ubuntu .
+# docker build -t ace-full:11.0.0.11-ubuntu -f Dockerfile.ubuntu .
 
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.9-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-11.0.0.9
+ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
+ARG PRODUCT_LABEL=ace-11.0.0.11
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
 
-# Install ACE v11.0.0.9 and accept the license
+# Install ACE v11.0.0.11 and accept the license
 RUN apt-get update && apt-get install -y --no-install-recommends curl && \
     mkdir /opt/ibm && echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} | tar zx --directory /opt/ibm && \

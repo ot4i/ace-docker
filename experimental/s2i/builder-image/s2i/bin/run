@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo "IBM App Connect Enterprise S2I Builder image - use this image to build and runtime-image to run the result."
