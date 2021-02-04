@@ -10,6 +10,13 @@ id
 
 ./ace-build.sh $S2I_DESTINATION
 
-cd  $S2I_DESTINATION
+cd  $S2I_DESTINATION/ace-server
 
-tar -cf - ace-server/* | ( cd /home/aceuser/ace-server && tar -xf - )
+echo "In ace-server"
+ls -l
+echo "Copying contents to /home/aceuser/ace-server"
+
+tar -cf - * | ( cd /home/aceuser/ace-server && tar -xvf - )
+
+echo "Contents of /home/aceuser/ace-server: "
+find /home/aceuser/ace-server -ls
