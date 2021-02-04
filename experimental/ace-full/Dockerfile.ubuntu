@@ -27,9 +27,10 @@ RUN apt-get -y install libgtk2.0-0 libxtst6 xvfb
 ENV BASH_ENV=/opt/ibm/ace-11/server/bin/mqsiprofile
 
 # Create a user to run as, create the ace workdir, and chmod script files
-RUN useradd --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \
+RUN useradd --uid 1001 --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \
   && su - aceuser -c "export LICENSE=accept && . /opt/ibm/ace-11/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server" \
   && echo ". /opt/ibm/ace-11/server/bin/mqsiprofile" >> /home/aceuser/.bashrc
 
-USER aceuser
+# aceuser
+USER 1001
 ENTRYPOINT ["bash"]

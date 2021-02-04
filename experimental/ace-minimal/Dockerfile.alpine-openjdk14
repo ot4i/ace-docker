@@ -116,7 +116,7 @@ RUN bash -c '. /etc/profile.d/openjdk14-paths.sh && /opt/ibm/ace-11/ace make reg
 ENV BASH_ENV=/etc/profile.d/profile-with-openjdk14-paths.sh
 
 # Create a user to run as, create the ace workdir, and chmod script files
-RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \
+RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001  -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \
     adduser aceuser mqbrkrs && \
     ( chmod 664 /etc/profile.d/* || /bin/true ) && \
     cat /etc/profile.d/openjdk14-paths.sh >> /home/aceuser/.bashrc && \
@@ -125,5 +125,6 @@ RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -h /home/aceuser -s /bin/bas
     su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-openjdk14-paths.sh && mqsicreateworkdir /home/aceuser/ace-server" && \
     echo ". /etc/profile.d/profile-with-openjdk14-paths.sh" >> /home/aceuser/.bashrc
 
-USER aceuser
+# aceuser
+USER 1001
 ENTRYPOINT ["bash"]
