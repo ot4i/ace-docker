@@ -1,0 +1,93 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  creationTimestamp: '2021-02-04T19:14:46Z'
+  generation: 9
+  managedFields:
+    - apiVersion: tekton.dev/v1beta1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:spec':
+          .: {}
+          'f:params': {}
+          'f:resources': {}
+          'f:tasks': {}
+          'f:workspaces': {}
+      manager: Mozilla
+      operation: Update
+      time: '2021-02-04T20:27:47Z'
+  name: new-pipeline
+  namespace: default
+  resourceVersion: '51359'
+  selfLink: /apis/tekton.dev/v1beta1/namespaces/default/pipelines/new-pipeline
+  uid: ae4ba226-a1f7-4f92-b4dc-6800c5d0ea1e
+spec:
+  resources:
+    - name: somestorage
+      type: storage
+  tasks:
+    - name: git-clone
+      params:
+        - name: url
+          value: 'https://github.com/tdolby-at-uk-ibm-com/ace-s2i-demo.git'
+        - name: submodules
+          value: 'true'
+        - name: depth
+          value: '1'
+        - name: sslVerify
+          value: 'true'
+        - name: deleteExisting
+          value: 'true'
+        - name: verbose
+          value: 'true'
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+    - name: s2i-ace-11
+      params:
+        - name: PATH_CONTEXT
+          value: .
+        - name: LICENSE
+          value: accept
+        - name: TLSVERIFY
+          value: 'false'
+        - name: IMAGE
+          value: >-
+            image-registry.openshift-image-registry.svc:5000/default/ace-pipeline-demo
+        - name: BUILDER_IMAGE
+          value: 'quay.io/buildah/stable:v1.17.0'
+      runAfter:
+        - git-clone
+      taskRef:
+        kind: Task
+        name: s2i-ace-11
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: apply-manifests
+      taskRef:
+        name: apply-manifests
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      runAfter:
+        - s2i-ace-11
+    - name: update-deployment
+      taskRef:
+        name: update-deployment
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: deployment
+          value: 'ace-s2i-deployment-name'
+        - name: IMAGE
+          value: >-
+            image-registry.openshift-image-registry.svc:5000/default/ace-pipeline-demo
+      runAfter:
+        - apply-manifests
+  workspaces:
+    - name: shared-workspace
