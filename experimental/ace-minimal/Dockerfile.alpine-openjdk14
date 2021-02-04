@@ -70,7 +70,7 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # Toolkit is optional
     cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt && \
 # Web UI support optional; use --admin-rest-api -1 on server start line
-#    cat /tmp/excludes-webui.txt >> /tmp/all-excludes.txt && \
+    cat /tmp/excludes-webui.txt >> /tmp/all-excludes.txt && \
 # WSRR nodes are optional
     cat /tmp/excludes-wsrr.txt >> /tmp/all-excludes.txt && \
 # XSLT nodes are optional
