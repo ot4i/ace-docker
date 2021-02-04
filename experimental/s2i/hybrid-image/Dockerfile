@@ -17,6 +17,9 @@ ENV STI_SCRIPTS_PATH="/usr/local/s2i" \
 
 COPY ./s2i/bin/ /usr/local/s2i
 
+# Buildah seems to look here
+COPY ./s2i/bin/ /usr/libexec/s2i
+
 ## openshift gets confused by entrypoints
 # ENTRYPOINT ["/usr/local/s2i/run"]
 # ENTRYPOINT [""]
