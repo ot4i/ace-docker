@@ -2,6 +2,9 @@ FROM ace-minimal:11.0.0.11-alpine
 
 LABEL maintainer="Trevor Dolby"
 
+# docker build -t tdolby/experimental:ace-s2i-hybrid-image .
+# docker push tdolby/experimental:ace-s2i-hybrid-image
+
 ENV BUILDER_VERSION="0.0.1" LANG="en_US.UTF-8"
 
 LABEL io.k8s.description="App Connect Enterprise S2I Hybrid build/runtime Image" \
