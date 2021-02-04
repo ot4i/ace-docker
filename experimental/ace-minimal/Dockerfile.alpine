@@ -106,4 +106,6 @@ RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001 -h /home/aceuser -s 
 
 # aceuser
 USER 1001
-ENTRYPOINT ["bash"]
+
+# Leaving this blank to avoid issues with openshift
+#ENTRYPOINT ["bash"]

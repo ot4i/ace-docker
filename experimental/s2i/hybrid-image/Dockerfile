@@ -17,5 +17,6 @@ ENV STI_SCRIPTS_PATH="/usr/local/s2i" \
 
 COPY ./s2i/bin/ /usr/local/s2i
 
+## openshift gets confused by entrypoints
 # ENTRYPOINT ["/usr/local/s2i/run"]
-ENTRYPOINT [""]
+# ENTRYPOINT [""]
