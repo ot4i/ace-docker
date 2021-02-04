@@ -19,4 +19,4 @@ echo "Copying contents to /home/aceuser/ace-server"
 tar -cf - * | ( cd /home/aceuser/ace-server && tar -xvf - )
 
 echo "Contents of /home/aceuser/ace-server: "
-find /home/aceuser/ace-server -ls
+find /home/aceuser/ace-server -print
