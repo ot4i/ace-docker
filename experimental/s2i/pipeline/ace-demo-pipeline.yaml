@@ -77,7 +77,7 @@ spec:
         name: update-deployment
       params:
         - name: deployment
-          value: 'ace-s2i-deployment-name'
+          value: 'ace-s2i'
         - name: IMAGE
           value: >-
             image-registry.openshift-image-registry.svc:5000/default/ace-pipeline-demo
