@@ -16,15 +16,12 @@ metadata:
       manager: Mozilla
       operation: Update
       time: '2021-02-04T20:27:47Z'
-  name: new-pipeline
+  name: ace-demo-pipeline
   namespace: default
   resourceVersion: '51359'
-  selfLink: /apis/tekton.dev/v1beta1/namespaces/default/pipelines/new-pipeline
-  uid: ae4ba226-a1f7-4f92-b4dc-6800c5d0ea1e
+  selfLink: /apis/tekton.dev/v1beta1/namespaces/default/pipelines/ace-demo-pipeline
+  uid: ae4ba226-a1f7-4f92-b4dc-6800c5d0ea1f
 spec:
-  resources:
-    - name: somestorage
-      type: storage
   tasks:
     - name: git-clone
       params:
