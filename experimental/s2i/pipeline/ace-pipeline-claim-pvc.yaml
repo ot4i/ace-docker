@@ -4,9 +4,9 @@ metadata:
   annotations:
     pv.kubernetes.io/bind-completed: 'yes'
     pv.kubernetes.io/bound-by-controller: 'yes'
-  selfLink: /api/v1/namespaces/default/persistentvolumeclaims/pipeline-claim
+  selfLink: /api/v1/namespaces/default/persistentvolumeclaims/ace-pipeline-claim
   resourceVersion: '39270'
-  name: pipeline-claim
+  name: ace-pipeline-claim
   uid: a40a6713-7946-488b-9e62-05af863fdad3
   creationTimestamp: '2021-02-04T19:24:26Z'
   managedFields:
