@@ -51,7 +51,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  volumeName: pv0016
+  volumeName: pv9876
   volumeMode: Filesystem
 status:
   phase: Bound
