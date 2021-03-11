@@ -23,11 +23,11 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # FTE is optional
     cat /tmp/excludes-fte.txt >> /tmp/all-excludes.txt && \
 # GlobalCache is optional; set MQSI_NO_CACHE_SUPPORT=1
-#    cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
+    cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
 # IMS is optional
     cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
 # node.js support is optional; use --no-nodejs on server start line
-#    cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
+    cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
     cat /tmp/excludes-npm.txt >> /tmp/all-excludes.txt && \
 # ODBC drivers are optional
@@ -35,11 +35,13 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # Toolkit is optional
     cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt && \
 # Web UI support optional; use --admin-rest-api -1 on server start line
-#    cat /tmp/excludes-webui.txt >> /tmp/all-excludes.txt && \
+    cat /tmp/excludes-webui.txt >> /tmp/all-excludes.txt && \
 # WSRR nodes are optional
     cat /tmp/excludes-wsrr.txt >> /tmp/all-excludes.txt && \
 # XSLT nodes are optional
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
+
+ENV MQSI_NO_CACHE_SUPPORT 1
 
 # Install ACE and accept the license
 RUN apt-get install -y zip binutils && \
@@ -73,4 +75,4 @@ RUN useradd --uid 1001 --create-home --home-dir /home/aceuser --shell /bin/bash 
 
 # aceuser
 USER 1001
-ENTRYPOINT ["bash"]
+#ENTRYPOINT ["bash"]

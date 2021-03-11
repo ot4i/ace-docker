@@ -1,4 +1,10 @@
-FROM ace-minimal:11.0.0.11-alpine-openjdk14
+# FROM ace-minimal:11.0.0.11-alpine-openjdk14
+FROM ace-minimal:11.0.0.11-alpine
+
+# docker build -t ace-s2i-runtime-image .
+
+# docker build -t tdolby/experimental:ace-s2i-runtime-image .
+# docker push tdolby/experimental:ace-s2i-runtime-image
 
 LABEL maintainer="Trevor Dolby"
 

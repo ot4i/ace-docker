@@ -1,4 +1,4 @@
-FROM ace-minimal:11.0.0.11-alpine
+FROM ace-minimal:11.0.0.11-ubuntu
 
 LABEL maintainer="Trevor Dolby"
 
@@ -23,6 +23,15 @@ COPY ./s2i/bin/ /usr/local/s2i
 # Buildah seems to look here
 COPY ./s2i/bin/ /usr/libexec/s2i
 
+USER 0
+
+RUN cd /opt && \
+    curl -k https://apache.mirrors.nublue.co.uk/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz | tar -xzf - && \
+    ln -s /opt/apache-maven-3.6.3/bin/mvn /usr/local/bin/mvn
+    
+# aceuser
+USER 1001
+
 ## openshift gets confused by entrypoints
 # ENTRYPOINT ["/usr/local/s2i/run"]
-# ENTRYPOINT [""]
+#ENTRYPOINT [""]
