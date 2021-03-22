@@ -27,7 +27,7 @@ import (
 	"github.com/ot4i/ace-docker/internal/command"
 	"github.com/ot4i/ace-docker/internal/name"
 	"github.com/ot4i/ace-docker/internal/qmgr"
-	"github.com/ot4i/ace-docker/internal/contentserver"
+	"github.com/ot4i/ace-docker/common/contentserver"
 	"gopkg.in/yaml.v2"
 )
 

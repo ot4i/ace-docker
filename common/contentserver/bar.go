@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"io"
 
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 )
 
 var loadX509KeyPair = tls.LoadX509KeyPair
@@ -69,6 +69,7 @@ func GetBAR(url string, serverName string, token string, contentServerCACert []b
 	}
 	// TODO: this doesn't actually return an error
 	if response.StatusCode != 200 {
+		log.Printf("Call to retrieve BAR file from content server failed with response code: %v", response.StatusCode)
 		return nil, err
 	}
 

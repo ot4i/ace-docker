@@ -11,7 +11,7 @@ import (
 
 	"github.com/aymerick/raymond"
 	"github.com/ghodss/yaml"
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 )
 
 // Credentials structure for jdbc credentials object, can be extended for other tech connectors
