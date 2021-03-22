@@ -34,7 +34,7 @@ import (
     "strings"
     "sync"
 
-    "github.com/ot4i/ace-docker/internal/logger"
+    "github.com/ot4i/ace-docker/common/logger"
 
     "github.com/gorilla/websocket"
     "github.com/prometheus/client_golang/prometheus"

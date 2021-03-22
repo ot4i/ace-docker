@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/ot4i/ace-docker/internal/command"
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 )
 
 // UseQueueManager returns a boolean for whether or not the system is using a queue manager.

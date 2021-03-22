@@ -18,7 +18,7 @@ limitations under the License.
 package metrics
 
 import (
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

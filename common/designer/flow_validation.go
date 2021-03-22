@@ -25,7 +25,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/ot4i/ace-docker/internal/command"
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 )
 
 var runAsUser = command.RunAsUser
@@ -140,27 +140,26 @@ func getConnectorLicenseToggleName(name string) string {
 // findDisabledConnectorInFlow returns the first disabled connector it finds
 // if it doesn't find a disabled connector, it returns an empty string
 var findDisabledConnectorInFlow = func (flowDocument flowDocument, log logger.LoggerInterface) string {
+	disabledConnectors := make([]string, 0)
+
 	// read the connector-type field under each interface
 	// and check if the license toggle for that connector is enabled
-	findDisabledConnector := func (interfaces map[string]flowInterface) string {
+	findDisabledConnector := func(interfaces map[string]flowInterface) {
 		for _, i := range interfaces {
 			connector := i.ConnectorType
 			if connector != "" {
 				log.Printf("Checking if connector %v is supported under the current license.", connector)
 				if !isLicenseToggleEnabled(getConnectorLicenseToggleName(connector)) {
-					return connector
+					disabledConnectors = append(disabledConnectors, connector)
 				}
 			}
 		}
-		return ""
 	}
 
-	disabledTriggerConnector := findDisabledConnector(flowDocument.Integration.TriggerInterfaces)
-	if disabledTriggerConnector != "" {
-		return disabledTriggerConnector
-	}
-	disabledActionConnector := findDisabledConnector(flowDocument.Integration.ActionInterfaces)
-	return disabledActionConnector
+	findDisabledConnector(flowDocument.Integration.TriggerInterfaces)
+	findDisabledConnector(flowDocument.Integration.ActionInterfaces)
+
+	return strings.Join(disabledConnectors[:], ", ")
 }
 
 // IsFlowValid checks if a single flow is valid
@@ -172,11 +171,11 @@ var IsFlowValid = func(log logger.LoggerInterface, flow string, flowFile []byte)
 		return false, err
 	}
 
-	disabledConnector := findDisabledConnectorInFlow(flowDocument, log)
-	if disabledConnector != "" {
-		log.Errorf("Flow %v contains a %v connector, which isn't supported under the current license. Please update your license to enable this flow to run.", flow, disabledConnector)
+	disabledConnectors := findDisabledConnectorInFlow(flowDocument, log)
+	if disabledConnectors != "" {
+		log.Errorf("Flow %v contains one or more connectors, which aren't supported under the current license. Please update your license to enable this flow to run. The unsupported connectors are: %v.", flow, disabledConnectors)
 	}
-	return disabledConnector == "", nil
+	return disabledConnectors == "", nil
 }
 
 // ValidateFlows checks if the flows in the /run directory are valid

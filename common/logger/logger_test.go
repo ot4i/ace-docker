@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 )
 
 func TestJSONLogger(t *testing.T) {

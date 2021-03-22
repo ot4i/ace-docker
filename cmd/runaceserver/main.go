@@ -26,7 +26,7 @@ import (
 	"github.com/ot4i/ace-docker/internal/metrics"
 	"github.com/ot4i/ace-docker/internal/name"
 	"github.com/ot4i/ace-docker/internal/qmgr"
-	"github.com/ot4i/ace-docker/internal/designer"
+	"github.com/ot4i/ace-docker/common/designer"
 )
 
 func doMain() error {
