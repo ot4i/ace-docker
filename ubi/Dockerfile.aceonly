@@ -61,6 +61,9 @@ RUN microdnf update && microdnf install findutils util-linux unzip python3 tar p
    && ln -s /usr/bin/python3 /usr/local/bin/python \
    && mkdir /etc/ACEOpenTracing /opt/ACEOpenTracing /var/log/ACEOpenTracing && chmod 777 /var/log/ACEOpenTracing /etc/ACEOpenTracing
 
+# Force reinstall tzdata package to get zoneinfo files
+RUN microdnf reinstall tzdata -y
+
 # Create OpenTracing directories, update permissions and copy in any library or configuration files needed
 COPY deps/OpenTracing/library/* ./opt/ACEOpenTracing/
 COPY deps/OpenTracing/config/* ./etc/ACEOpenTracing/

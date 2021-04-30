@@ -22,17 +22,40 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/ot4i/ace-docker/internal/command"
 	"github.com/ot4i/ace-docker/internal/qmgr"
 )
 
+const restartIsTimeoutInSeconds = 60
+
 func main() {
 	// Check if the integration server has started the admin REST endpoint
 	conn, err := net.Dial("tcp", "127.0.0.1:7600")
+
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+
+		fmt.Println("REST endpoint failed" + err.Error())
+
+		fileInfo, statErr := os.Stat("/tmp/integration_server_restart.timestamp")
+
+		if statErr != nil {
+			fmt.Println(statErr)
+			os.Exit(1)
+		} else {
+			fmt.Println("Integration server restart file found")
+			timeNow := time.Now()
+			timeDiff := timeNow.Sub(fileInfo.ModTime())
+
+			if timeDiff.Seconds() < restartIsTimeoutInSeconds {
+				fmt.Println("Integration server is restarting")
+				os.Exit(0)
+			} else {
+				fmt.Println("Integration restart time elapsed")
+				os.Exit(1)
+			}
+		}
 	}
 	conn.Close()
 

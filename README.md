@@ -218,6 +218,12 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
   - A pem file called 'ca.crt' will be extracted into the directory `/home/aceuser/ace-server/ssl`
   - A pem file called 'tls.key' will be extracted into the directory `/home/aceuser/ace-server/ssl`
   - A pem file called 'tls.cert' will be extracted into the directory `/home/aceuser/ace-server/ssl`
+- `/home/aceuser/initial-config/bar_overrides`
+  - For any parameters that need to be set via `mqsiapplybaroverride` include text files with extension `.properties` Eg:
+   ```script
+   sampleFlow#MQInput.queueName=NEWC
+   ```
+
 
 ## Logging
 

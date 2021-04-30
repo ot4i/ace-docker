@@ -173,7 +173,7 @@ var IsFlowValid = func(log logger.LoggerInterface, flow string, flowFile []byte)
 
 	disabledConnectors := findDisabledConnectorInFlow(flowDocument, log)
 	if disabledConnectors != "" {
-		log.Errorf("Flow %v contains one or more connectors, which aren't supported under the current license. Please update your license to enable this flow to run. The unsupported connectors are: %v.", flow, disabledConnectors)
+		log.Errorf("Flow %v contains one or more connectors that aren't supported under the current license. Please update your license to enable this flow to run. The unsupported connectors are: %v.", flow, disabledConnectors)
 	}
 	return disabledConnectors == "", nil
 }
