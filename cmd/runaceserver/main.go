@@ -19,14 +19,16 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 
+	"github.com/ot4i/ace-docker/common/designer"
 	"github.com/ot4i/ace-docker/internal/command"
 	"github.com/ot4i/ace-docker/internal/configuration"
+	iscommandsapi "github.com/ot4i/ace-docker/internal/isCommandsApi"
 	"github.com/ot4i/ace-docker/internal/metrics"
 	"github.com/ot4i/ace-docker/internal/name"
 	"github.com/ot4i/ace-docker/internal/qmgr"
-	"github.com/ot4i/ace-docker/common/designer"
 )
 
 func doMain() error {
@@ -57,6 +59,7 @@ func doMain() error {
 	}
 
 	performShutdown := func() {
+
 		metrics.StopMetricsGathering()
 
 		log.Print("Stopping Integration Server")
@@ -69,7 +72,39 @@ func doMain() error {
 
 		checkLogs()
 
+		iscommandsapi.StopCommandsAPIServer()
 		log.Print("Shutdown complete")
+	}
+
+	restartIntegrationServer := func() error {
+		err := ioutil.WriteFile("/tmp/integration_server_restart.timestamp", []byte(""), 0755)
+
+		if err != nil {
+			log.Print("RestartIntegrationServer - Creating restart file failed")
+			return err
+		}
+
+		log.Print("RestartIntegrationServer - Stopping integration server")
+		stopIntegrationServer(integrationServerProcess)
+		log.Println("RestartIntegrationServer - Starting integration server")
+
+		integrationServerProcess = startIntegrationServer()
+		err = integrationServerProcess.ReturnError
+
+		if integrationServerProcess.ReturnError == nil {
+			log.Println("RestartIntegrationServer - Waiting for integration server")
+			err = waitForIntegrationServer()
+		}
+
+		if err != nil {
+			logTermination(err)
+			performShutdown()
+			return err
+		}
+
+		log.Println("RestartIntegrationServer - Integration server is ready")
+
+		return nil
 	}
 
 	// Start signal handler
@@ -120,7 +155,7 @@ func doMain() error {
 		return err
 	}
 
-    // Note: this will do nothing if there are no crs set in the environment
+	// Note: this will do nothing if there are no crs set in the environment
 	err = configuration.SetupConfigurationsFiles(log, "/home/aceuser")
 	if err != nil {
 		logTermination(err)
@@ -150,7 +185,7 @@ func doMain() error {
 		performShutdown()
 		return err
 	}
-	
+
 	log.Println("Starting integration server")
 	integrationServerProcess = startIntegrationServer()
 	if integrationServerProcess.ReturnError != nil {
@@ -172,6 +207,15 @@ func doMain() error {
 		go metrics.GatherMetrics(name, log)
 	} else {
 		log.Println("Metrics are disabled")
+	}
+
+	log.Println("Starting integration server commands API server")
+	err = iscommandsapi.StartCommandsAPIServer(log, 7980, restartIntegrationServer)
+
+	if err != nil {
+		log.Println("Failed to start isapi server " + err.Error())
+	} else {
+		log.Println("Integration API started")
 	}
 
 	// Start reaping zombies from now on.

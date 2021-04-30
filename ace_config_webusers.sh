@@ -28,6 +28,8 @@ if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $EDITORUSERSFILE 
 
   OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r admin -p all+ 2>&1)
   logAndExitIfError $? "${OUTPUT}"
+  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r admin -o Data -p all+ 2>&1)
+  logAndExitIfError $? "${OUTPUT}"
 
   OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r operator -p read+,write-,execute+ 2>&1)
   logAndExitIfError $? "${OUTPUT}"

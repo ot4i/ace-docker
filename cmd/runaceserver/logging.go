@@ -50,7 +50,7 @@ func getLogOutputFormat() string {
 	case "json":
 		return "ibmjson"
 	case "basic":
-		return "text"
+		return "idText"
 	default:
 		return "ibmjson"
 	}
