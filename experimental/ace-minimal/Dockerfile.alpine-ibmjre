@@ -1,4 +1,4 @@
-FROM alpine:3.13
+FROM ibmjava:8-sfj-alpine
 
 # docker build -t ace-minimal:11.0.0.11-alpine -f Dockerfile.alpine .
 
@@ -53,8 +53,9 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
 # IMS is optional
     cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
-# JDK provided by the product
-#    cat /tmp/excludes-jdk.txt >> /tmp/all-excludes.txt && \
+# JDK provided by base layer; use MQSI_SIGNAL_EXCLUSIONS=11 and 
+# MQSI_NON_IBM_JAVA=1 for non-IBM Java layers
+    cat /tmp/excludes-jdk.txt >> /tmp/all-excludes.txt && \
 # node.js support is optional; use --no-nodejs on server start line
     cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
@@ -71,8 +72,8 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
 # Set the env vars mentioned above
-COPY profile-with-product-java-paths.sh /etc/profile.d/profile-with-product-java-paths.sh
-COPY product-java-paths.sh /etc/profile.d/product-java-paths.sh
+COPY profile-with-ibmjava-paths.sh /etc/profile.d/profile-with-ibmjava-paths.sh
+COPY ibmjava-paths.sh /etc/profile.d/ibmjava-paths.sh
 
 # Install ACE 
 RUN mkdir -p /opt/ibm && \
@@ -88,22 +89,22 @@ RUN mkdir -p /opt/ibm && \
     zip -d /opt/ibm/ace-11/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     apk del --purge binutils zip && \
     addgroup mqbrkrs && \
-    cat /etc/profile.d/product-java-paths.sh >> /root/.bashrc && \
+    cat /etc/profile.d/ibmjava-paths.sh >> /root/.bashrc && \
     ln -s /opt/ibm/java /opt/ibm/ace-11/common/jdk
 
-RUN bash -c '. /etc/profile.d/product-java-paths.sh && /opt/ibm/ace-11/ace make registry global accept license deferred'
+RUN bash -c '. /etc/profile.d/ibmjava-paths.sh && /opt/ibm/ace-11/ace make registry global accept license deferred'
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
-ENV BASH_ENV=/etc/profile.d/profile-with-product-java-paths.sh
+ENV BASH_ENV=/etc/profile.d/profile-with-ibmjava-paths.sh
 
 # Create a user to run as, create the ace workdir, and chmod script files
 RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001 -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \
     adduser aceuser mqbrkrs && \
-    cat /etc/profile.d/product-java-paths.sh >> /home/aceuser/.bashrc && \
+    cat /etc/profile.d/ibmjava-paths.sh >> /home/aceuser/.bashrc && \
     chown aceuser /home/aceuser/.bashrc && \
     chmod 664 /home/aceuser/.bashrc && \
-    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-product-java-paths.sh && mqsicreateworkdir /home/aceuser/ace-server" && \
-    echo ". /etc/profile.d/profile-with-product-java-paths.sh" >> /home/aceuser/.bashrc
+    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-ibmjava-paths.sh && mqsicreateworkdir /home/aceuser/ace-server" && \
+    echo ". /etc/profile.d/profile-with-ibmjava-paths.sh" >> /home/aceuser/.bashrc
 
 # aceuser
 USER 1001
