@@ -104,6 +104,9 @@ RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001 -h /home/aceuser -s 
     su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-product-java-paths.sh && mqsicreateworkdir /home/aceuser/ace-server" && \
     echo ". /etc/profile.d/profile-with-product-java-paths.sh" >> /home/aceuser/.bashrc
 
+# Temporary
+RUN ls -l /opt/ibm/ace-11/common && ls -l /opt/ibm/ace-11/common/jdk && ls -l /opt/ibm/ace-11/common/jdk/bin
+
 # aceuser
 USER 1001
 
