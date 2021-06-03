@@ -22,7 +22,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -80,7 +80,8 @@ func TestFindDisabledConnectorInFlow(t *testing.T) {
 				},
 			},
 		}
-		require.Equal(t, "foo", findDisabledConnectorInFlow(testFlowDocument, testLogger))
+		disabledConnectors := findDisabledConnectorInFlow(testFlowDocument, testLogger)
+		require.Equal(t, "foo", disabledConnectors)
 	})
 
 	t.Run("When there are unsupported connectors in the action interface", func(t *testing.T) {
@@ -101,7 +102,8 @@ func TestFindDisabledConnectorInFlow(t *testing.T) {
 				},
 			},
 		}
-		require.Equal(t, "bar", findDisabledConnectorInFlow(testFlowDocument, testLogger))
+		disabledConnectors := findDisabledConnectorInFlow(testFlowDocument, testLogger)
+		require.Equal(t, "bar", disabledConnectors)
 	})
 
 	t.Run("When there are unsupported connectors in both the trigger interface and the action interface", func(t *testing.T) {
@@ -125,7 +127,8 @@ func TestFindDisabledConnectorInFlow(t *testing.T) {
 				},
 			},
 		}
-		require.Equal(t, "foo", findDisabledConnectorInFlow(testFlowDocument, testLogger))
+		disabledConnectors := findDisabledConnectorInFlow(testFlowDocument, testLogger)
+		require.Equal(t, "foo, bar", disabledConnectors)
 	})
 
 	isLicenseToggleEnabled = oldIsLicenseToggleEnabled
