@@ -1,7 +1,7 @@
 FROM ace-full:11.0.0.11-ubuntu
 
 # docker build -t ace-s2i-builder-image .
-
+#
 # docker build -t tdolby/experimental:ace-s2i-builder-image .
 # docker push tdolby/experimental:ace-s2i-builder-image
 

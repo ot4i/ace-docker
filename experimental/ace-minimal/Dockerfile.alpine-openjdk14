@@ -1,16 +1,12 @@
-FROM alpine:3.12
+FROM alpine:3.13
 
 # docker build -t ace-minimal:11.0.0.11-alpine-openjdk14 -f Dockerfile.alpine-openjdk14 .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
 ARG LICENSE
-#ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
-#ARG PRODUCT_LABEL=ace-11.0.0.11
-
-ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/v12beta1/ace-12.1222.0.0.tar.gz
-ARG PRODUCT_LABEL=ace-12.1222.0.0
-
+ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
+ARG PRODUCT_LABEL=ace-11.0.0.11
 ARG JDK_DOWNLOAD_URL=https://download.java.net/java/GA/jdk14.0.1/664493ef4a6946b186ff29eb326336a2/7/GPL/openjdk-14.0.1_linux-x64_bin.tar.gz
 ARG JDK_LABEL=jdk-14.0.1
 
@@ -120,7 +116,7 @@ RUN bash -c '. /etc/profile.d/openjdk14-paths.sh && /opt/ibm/ace-11/ace make reg
 ENV BASH_ENV=/etc/profile.d/profile-with-openjdk14-paths.sh
 
 # Create a user to run as, create the ace workdir, and chmod script files
-RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001  -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \
+RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001 -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \
     adduser aceuser mqbrkrs && \
     ( chmod 664 /etc/profile.d/* || /bin/true ) && \
     cat /etc/profile.d/openjdk14-paths.sh >> /home/aceuser/.bashrc && \
@@ -131,4 +127,6 @@ RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001  -h /home/aceuser -s
 
 # aceuser
 USER 1001
-ENTRYPOINT ["bash"]
+
+# Leaving this blank to avoid issues with openshift
+#ENTRYPOINT ["bash"]

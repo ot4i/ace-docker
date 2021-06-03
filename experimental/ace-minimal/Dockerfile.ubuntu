@@ -4,13 +4,13 @@ FROM ubuntu:20.04
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-11.0.0.11
+#ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
+#ARG PRODUCT_LABEL=ace-11.0.0.11
+ARG PRODUCT_LABEL=ace-12.0.1.0
+ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-12.0.1.0.tar.gz
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
-
-RUN apt-get update && apt-get install -y --no-install-recommends curl
 
 # Set up exclusions
 COPY excludes*txt /tmp/
@@ -41,10 +41,8 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # XSLT nodes are optional
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
-ENV MQSI_NO_CACHE_SUPPORT 1
-
 # Install ACE and accept the license
-RUN apt-get install -y zip binutils && \
+RUN apt-get update && apt-get install -y --no-install-recommends curl zip binutils && \
     mkdir /opt/ibm && \
     echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} \
@@ -56,6 +54,7 @@ RUN apt-get install -y zip binutils && \
     ( strip /opt/ibm/ace-11/server/bin/* 2>/dev/null || /bin/true ) && \
     zip -d /opt/ibm/ace-11/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     if [ $(uname -m) = x86_64 ]; then apt-get remove -y zip binutils binutils-common libbinutils binutils-x86-64-linux-gnu; else apt-get remove -y zip binutils binutils-common libbinutils; fi && \
+    rm -rf /var/lib/apt/lists/*  && \
     /opt/ibm/ace-11/ace make registry global accept license deferred
 
 # Configure the system and increase security
@@ -69,10 +68,25 @@ RUN echo "ACE_11:" > /etc/debian_chroot \
 ENV BASH_ENV=/opt/ibm/ace-11/server/bin/mqsiprofile
 
 # Create a user to run as, create the ace workdir, and chmod script files
-RUN useradd --uid 1001 --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \
+RUN useradd  --uid 1001 --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \
   && su - aceuser -c "export LICENSE=accept && . /opt/ibm/ace-11/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server" \
   && echo ". /opt/ibm/ace-11/server/bin/mqsiprofile" >> /home/aceuser/.bashrc
 
+# Install useful utilities, and the latest of everything to keep security scanners happy
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    tzdata \
+    unzip \
+    zip \
+  && apt-get -y  dist-upgrade \
+  && rm -rf /var/lib/apt/lists/* 
+
 # aceuser
 USER 1001
+
+# Only needed if CacheSupport is disabled above
+ENV MQSI_NO_CACHE_SUPPORT=1
+
+# Leaving this blank to avoid issues with openshift
 #ENTRYPOINT ["bash"]
