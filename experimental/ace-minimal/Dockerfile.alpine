@@ -1,11 +1,11 @@
 FROM ibmjava:8-sfj-alpine
 
-# docker build -t ace-minimal:12.1222.0.0-alpine -f Dockerfile.alpine .
+# docker build -t ace-minimal:11.0.0.12-alpine -f Dockerfile.alpine .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/v12beta1/ace-12.1222.0.0.tar.gz
-ARG PRODUCT_LABEL=ace-12.1222.0.0
+ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.0.12.tar.gz
+ARG PRODUCT_LABEL=ace-11.0.0.12
 
 RUN apk --update add --no-cache --virtual .build-deps curl binutils zstd \
     && GLIBC_VER="2.31-r0" \

@@ -32,6 +32,9 @@ RUN cd /opt && \
 # aceuser
 USER 1001
 
+# This is needed because "oc new-app" seems to have issues propagating env vars . . .
+ENV LICENSE accept
+
 ## openshift gets confused by entrypoints
 # ENTRYPOINT ["/usr/local/s2i/run"]
 #ENTRYPOINT [""]
