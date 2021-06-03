@@ -88,8 +88,7 @@ RUN mkdir -p /opt/ibm && \
     zip -d /opt/ibm/ace-11/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     apk del --purge binutils zip && \
     addgroup mqbrkrs && \
-    cat /etc/profile.d/product-java-paths.sh >> /root/.bashrc && \
-    ln -s /opt/ibm/java /opt/ibm/ace-11/common/jdk
+    cat /etc/profile.d/product-java-paths.sh >> /root/.bashrc
 
 RUN bash -c '. /etc/profile.d/product-java-paths.sh && /opt/ibm/ace-11/ace make registry global accept license deferred'
 
