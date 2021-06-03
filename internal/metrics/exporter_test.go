@@ -21,7 +21,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 )
 
 func getTestLogger() logger.LoggerInterface {

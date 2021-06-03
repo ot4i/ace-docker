@@ -28,7 +28,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 )
 
 // A BackgroundCmd provides a handle to a backgrounded command and its completion state.

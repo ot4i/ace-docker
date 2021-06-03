@@ -5,14 +5,13 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -49,8 +48,6 @@ var (
 * START: FUNCTIONS CREATES EXTERNAL REQUESTS
  */
 
-var ioutilReadFile = ioutil.ReadFile
-
 func getPodNamespace() (string, error) {
 	if data, err := ioutilReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
 		if ns := strings.TrimSpace(string(data)); len(ns) > 0 {
@@ -61,9 +58,6 @@ func getPodNamespace() (string, error) {
 	return "default", nil
 }
 
-var osMkdirAll = os.MkdirAll
-var ioutilWriteFile = ioutil.WriteFile
-
 func writeConfigurationFile(dir string, fileName string, contents []byte) error {
 	makeDirErr := osMkdirAll(dir, 0740)
 	if makeDirErr != nil {
@@ -71,9 +65,6 @@ func writeConfigurationFile(dir string, fileName string, contents []byte) error 
 	}
 	return ioutilWriteFile(dir+string(os.PathSeparator)+fileName, contents, 0740)
 }
-
-var osOpenFile = os.OpenFile
-var ioCopy = io.Copy
 
 func unzip(log logger.LoggerInterface, dir string, contents []byte) error {
 	var filenames []string

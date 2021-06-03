@@ -27,7 +27,7 @@ import (
 	"io/ioutil"
     "bytes"
 
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 
 	"github.com/stretchr/testify/assert"
 	"testing"

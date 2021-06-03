@@ -123,6 +123,7 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
   - You can place multiple sets of files, each with a different file name/alias; each `.crt` file must have an associated `.key` file, and a `.pass` file must be present if the private key has a passphrase.
 - `/home/aceuser/initial-config/odbcini`
   - A text file called `odbc.ini`. This must be an `odbc.ini` file suitable for the Integration Server to use when connecting to a database.  This will be copied to `/home/aceuser/ace-server/odbc.ini`.
+  - To enabled an ODBC trace, follow the steps [here](https://community.ibm.com/community/user/integration/blogs/amar-shah1/2021/05/10/enabling-odbc-trace-for-integration-server-running)
 - `/home/aceuser/initial-config/policy`
   - A set of `.policyxml` files, each with the suffix `.policyxml`, and a single `policy.descriptor` file.  These will be copied to `/home/aceuser/ace-server/overrides/DefaultPolicies/`. They should be specified in the `server.conf.yaml` section in order to be used.
 - `/home/aceuser/initial-config/serverconf`
@@ -218,6 +219,12 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
   - A pem file called 'ca.crt' will be extracted into the directory `/home/aceuser/ace-server/ssl`
   - A pem file called 'tls.key' will be extracted into the directory `/home/aceuser/ace-server/ssl`
   - A pem file called 'tls.cert' will be extracted into the directory `/home/aceuser/ace-server/ssl`
+- `/home/aceuser/initial-config/bar_overrides`
+  - For any parameters that need to be set via `mqsiapplybaroverride` include text files with extension `.properties` Eg:
+   ```script
+   sampleFlow#MQInput.queueName=NEWC
+   ```
+
 
 ## Logging
 

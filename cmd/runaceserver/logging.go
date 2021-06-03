@@ -20,7 +20,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/ot4i/ace-docker/internal/logger"
+	"github.com/ot4i/ace-docker/common/logger"
 )
 
 var log logger.LoggerInterface
@@ -50,7 +50,7 @@ func getLogOutputFormat() string {
 	case "json":
 		return "ibmjson"
 	case "basic":
-		return "text"
+		return "idText"
 	default:
 		return "ibmjson"
 	}

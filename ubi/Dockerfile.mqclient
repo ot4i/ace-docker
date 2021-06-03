@@ -42,14 +42,13 @@ COPY ubi/install-mq-client-prereqs.sh /usr/local/bin/
 RUN chmod u+x /usr/local/bin/install-*.sh \
   && sleep 1 \
   && install-mq-client-prereqs.sh $MQM_UID \
-  && install-mq.sh $MQM_UID
-
-RUN mkdir /home/aceuser/truststores
+  && install-mq.sh $MQM_UID \
+  && mkdir /home/aceuser/truststores
 COPY --from=truststore-builder /tmp/mqcacerts.kdb /home/aceuser/truststores/mqcacerts.kdb
-RUN chmod -R 777 /home/aceuser/truststores
+RUN chmod -R 777 /home/aceuser/truststores \
 # Set the integration server to use it by default. A user provided server.conf.yaml will override this behaviour if the mqKeyRepository property is set.
-RUN sed -i 's/#.*mqKeyRepository:.*/mqKeyRepository: \/home\/aceuser\/truststores\/mqcacerts/g' /home/aceuser/ace-server/server.conf.yaml
+  && sed -i 's/#.*mqKeyRepository:.*/mqKeyRepository: \/home\/aceuser\/truststores\/mqcacerts/g' /home/aceuser/ace-server/server.conf.yaml
   
 ENV MQCERTLABL=aceclient
 
-USER aceuser
+USER 1000
