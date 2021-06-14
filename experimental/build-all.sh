@@ -1,14 +1,15 @@
 #!/bin/bash
 export PRODUCT_VERSION=12.0.1.0
 export PRODUCT_LABEL=ace-${PRODUCT_VERSION}
-#export DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
-export DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-12.0.1.0.tar.gz
+export DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.1.0-ACE-LINUX64-DEVELOPER.tar.gz
 
 cd ace-minimal
 docker build --build-arg DOWNLOAD_URL --build-arg PRODUCT_LABEL -t ace-minimal:${PRODUCT_VERSION}-alpine -f Dockerfile.alpine .
 docker build --build-arg DOWNLOAD_URL --build-arg PRODUCT_LABEL -t ace-minimal:${PRODUCT_VERSION}-ubuntu -f Dockerfile.ubuntu .
 # Highly experimental!
 docker build --build-arg DOWNLOAD_URL --build-arg PRODUCT_LABEL -t ace-minimal:${PRODUCT_VERSION}-alpine-openjdk14 -f Dockerfile.alpine-openjdk14 .
+
+docker build --build-arg DOWNLOAD_URL --build-arg PRODUCT_LABEL -t ace-minimal:${PRODUCT_VERSION}-alpine-openjdk16 -f Dockerfile.alpine-openjdk16 .
 
 cd ../ace-full
 docker build --build-arg DOWNLOAD_URL --build-arg PRODUCT_LABEL -t ace-full:${PRODUCT_VERSION}-ubuntu -f Dockerfile.ubuntu .

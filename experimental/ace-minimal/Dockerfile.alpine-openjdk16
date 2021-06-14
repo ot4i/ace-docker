@@ -5,7 +5,7 @@ FROM alpine:3.13
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
 ARG LICENSE
-ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-12.0.1.0.tar.gz
+ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.1.0-ACE-LINUX64-DEVELOPER.tar.gz
 ARG PRODUCT_LABEL=ace-12.0.1.0
 ARG JDK_DOWNLOAD_URL=https://download.java.net/java/GA/jdk16.0.1/7147401fd7354114ac51ef3e1328291f/9/GPL/openjdk-16.0.1_linux-x64_bin.tar.gz
 ARG JDK_LABEL=jdk-16.0.1
