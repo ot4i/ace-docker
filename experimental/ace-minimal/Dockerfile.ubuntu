@@ -1,11 +1,11 @@
 FROM ubuntu:20.04
 
-# docker build -t ace-minimal:11.0.0.11-ubuntu -f Dockerfile.ubuntu .
+# docker build -t ace-minimal:12.0.1.0-ubuntu -f Dockerfile.ubuntu .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-#ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
-#ARG PRODUCT_LABEL=ace-11.0.0.11
+#ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.1.0-ACE-LINUX64-DEVELOPER.tar.gz
+#ARG PRODUCT_LABEL=ace-12.0.1.0
 ARG PRODUCT_LABEL=ace-12.0.1.0
 ARG DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-12.0.1.0.tar.gz
 
@@ -47,30 +47,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl zip binuti
     echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} \
     | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
-    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-11 && \
+    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-12 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
-    ( strip /opt/ibm/ace-11/server/bin/* 2>/dev/null || /bin/true ) && \
-    zip -d /opt/ibm/ace-11/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
+    ( strip /opt/ibm/ace-12/server/bin/* 2>/dev/null || /bin/true ) && \
+    zip -d /opt/ibm/ace-12/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     if [ $(uname -m) = x86_64 ]; then apt-get remove -y zip binutils binutils-common libbinutils binutils-x86-64-linux-gnu; else apt-get remove -y zip binutils binutils-common libbinutils; fi && \
     rm -rf /var/lib/apt/lists/*  && \
-    /opt/ibm/ace-11/ace make registry global accept license deferred
+    /opt/ibm/ace-12/ace make registry global accept license deferred
 
 # Configure the system and increase security
-RUN echo "ACE_11:" > /etc/debian_chroot \
+RUN echo "ACE_12:" > /etc/debian_chroot \
   && sed -i 's/sha512/sha512 minlen=8/' /etc/pam.d/common-password \
   && sed -i 's/PASS_MIN_DAYS\t0/PASS_MIN_DAYS\t1/' /etc/login.defs \
   && sed -i 's/PASS_MAX_DAYS\t99999/PASS_MAX_DAYS\t90/' /etc/login.defs \
-  && echo ". /opt/ibm/ace-11/server/bin/mqsiprofile" >> /root/.bashrc
+  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /root/.bashrc
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
-ENV BASH_ENV=/opt/ibm/ace-11/server/bin/mqsiprofile
+ENV BASH_ENV=/opt/ibm/ace-12/server/bin/mqsiprofile
 
 # Create a user to run as, create the ace workdir, and chmod script files
 RUN useradd  --uid 1001 --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \
-  && su - aceuser -c "export LICENSE=accept && . /opt/ibm/ace-11/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server" \
-  && echo ". /opt/ibm/ace-11/server/bin/mqsiprofile" >> /home/aceuser/.bashrc
+  && su - aceuser -c "export LICENSE=accept && . /opt/ibm/ace-12/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server" \
+  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/aceuser/.bashrc
 
 # Install useful utilities, and the latest of everything to keep security scanners happy
 RUN apt-get update && apt-get install -y --no-install-recommends \

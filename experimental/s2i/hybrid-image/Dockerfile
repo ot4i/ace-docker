@@ -1,4 +1,4 @@
-FROM ace-minimal:11.0.0.11-ubuntu
+FROM ace-minimal:12.0.1.0-ubuntu
 
 LABEL maintainer="Trevor Dolby"
 

@@ -46,7 +46,7 @@ spec:
       workspaces:
         - name: output
           workspace: shared-workspace
-    - name: s2i-ace-11
+    - name: s2i-ace-12
       params:
         - name: PATH_CONTEXT
           value: .
@@ -63,13 +63,13 @@ spec:
         - git-clone
       taskRef:
         kind: Task
-        name: s2i-ace-11
+        name: s2i-ace-12
       workspaces:
         - name: source
           workspace: shared-workspace
     - name: apply-manifests
       runAfter:
-        - s2i-ace-11
+        - s2i-ace-12
       taskRef:
         kind: Task
         name: apply-manifests

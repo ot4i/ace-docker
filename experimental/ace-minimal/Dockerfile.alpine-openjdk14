@@ -1,12 +1,12 @@
 FROM alpine:3.13
 
-# docker build -t ace-minimal:11.0.0.11-alpine-openjdk14 -f Dockerfile.alpine-openjdk14 .
+# docker build -t ace-minimal:12.0.1.0-alpine-openjdk14 -f Dockerfile.alpine-openjdk14 .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
 ARG LICENSE
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.11-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-11.0.0.11
+ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.1.0-ACE-LINUX64-DEVELOPER.tar.gz
+ARG PRODUCT_LABEL=ace-12.0.1.0
 ARG JDK_DOWNLOAD_URL=https://download.java.net/java/GA/jdk14.0.1/664493ef4a6946b186ff29eb326336a2/7/GPL/openjdk-14.0.1_linux-x64_bin.tar.gz
 ARG JDK_LABEL=jdk-14.0.1
 
@@ -91,26 +91,26 @@ RUN mkdir -p /opt/ibm && \
     apk del --purge binutils zip curl ncurses-terminfo-base ncurses-libs
 
 
-# Install ACE v11.0.0.11
+# Install ACE v12.0.1.0
 RUN mkdir -p /opt/ibm && \
     apk add binutils zip bash curl && \
     cd /opt && \
     echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} \
     | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
-    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-11 && \
+    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-12 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
-    ( strip /opt/ibm/ace-11/server/bin/* 2>/dev/null || /bin/true ) && \
-    zip -d /opt/ibm/ace-11/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
+    ( strip /opt/ibm/ace-12/server/bin/* 2>/dev/null || /bin/true ) && \
+    zip -d /opt/ibm/ace-12/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     apk del --purge binutils zip curl ncurses-terminfo-base ncurses-libs && \
     addgroup mqbrkrs && \
     cat /etc/profile.d/openjdk14-paths.sh >> /root/.bashrc && \
-    mkdir /opt/ibm/ace-11/common/jdk && \
-    ln -s /opt/openjdk-14 /opt/ibm/ace-11/common/jdk/jre
+    mkdir /opt/ibm/ace-12/common/jdk && \
+    ln -s /opt/openjdk-14 /opt/ibm/ace-12/common/jdk/jre
 
-RUN bash -c '. /etc/profile.d/openjdk14-paths.sh && /opt/ibm/ace-11/ace make registry global accept license deferred'
+RUN bash -c '. /etc/profile.d/openjdk14-paths.sh && /opt/ibm/ace-12/ace make registry global accept license deferred'
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
 ENV BASH_ENV=/etc/profile.d/profile-with-openjdk14-paths.sh

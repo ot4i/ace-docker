@@ -55,7 +55,7 @@ RUN mkdir -p /opt/ibm && \
 RUN apk add binutils zip bash curl && \
     addgroup mqbrkrs
 
-# ln -s /opt/openjdk-14 /opt/ibm/ace-11/common/jdk/jre
+# ln -s /opt/openjdk-14 /opt/ibm/ace-12/common/jdk/jre
 
 # Create a user to run as, create the ace workdir, and chmod script files
 RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \

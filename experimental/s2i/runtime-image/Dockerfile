@@ -1,5 +1,5 @@
-# FROM ace-minimal:11.0.0.11-alpine-openjdk14
-FROM ace-minimal:11.0.0.11-alpine
+# FROM ace-minimal:12.0.1.0-alpine-openjdk14
+FROM ace-minimal:12.0.1.0-alpine
 
 # docker build -t ace-s2i-runtime-image .
 

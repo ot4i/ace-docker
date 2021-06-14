@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. /opt/ibm/ace-11/server/bin/mqsiprofile
+. /opt/ibm/ace-12/server/bin/mqsiprofile
 
 if [[ -e /home/aceuser/ace-server/ace-startup-script.sh ]]
 then

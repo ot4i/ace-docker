@@ -1,4 +1,4 @@
-FROM ace-full:11.0.0.11-ubuntu
+FROM ace-full:12.0.1.0-ubuntu
 
 # docker build -t ace-s2i-builder-image .
 #

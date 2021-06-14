@@ -18,15 +18,15 @@ metadata:
       manager: Mozilla
       operation: Update
       time: '2021-02-05T16:22:14Z'
-  name: s2i-ace-11
+  name: s2i-ace-12
   namespace: default
   resourceVersion: '85012'
-  selfLink: /apis/tekton.dev/v1beta1/namespaces/default/tasks/s2i-ace-11
+  selfLink: /apis/tekton.dev/v1beta1/namespaces/default/tasks/s2i-ace-12
   uid: cae07417-e01f-4458-96d9-41e7af690e11
 spec:
   description: >-
-    s2i-ace-11 task clones a Git repository and builds and pushes a container
-    image using S2I and an ACE 11 builder image. Credit to
+    s2i-ace-12 task clones a Git repository and builds and pushes a container
+    image using S2I and an ACE 12 builder image. Credit to
     https://github.com/openshift/pipelines-catalog/blob/master/task/s2i-java-11/0.1/s2i-java-11.yaml
   params:
     - default: .
