@@ -186,6 +186,14 @@ func doMain() error {
 		return err
 	}
 
+	// Apply any WorkdirOverrides provided
+	err = applyWorkdirOverrides()
+	if err != nil {
+		logTermination(err)
+		performShutdown()
+		return err
+	}
+
 	log.Println("Starting integration server")
 	integrationServerProcess = startIntegrationServer()
 	if integrationServerProcess.ReturnError != nil {

@@ -77,7 +77,7 @@ func checkLicense() (bool, error) {
 	case ok && lic == "accept":
 		return true, nil
 	case ok && lic == "view":
-		file := filepath.Join("/opt/ibm/ace-11/license", resolveLicenseFile())
+		file := filepath.Join("/opt/ibm/ace-12/license", resolveLicenseFile())
 		buf, err := ioutil.ReadFile(file)
 		if err != nil {
 			log.Println(err)

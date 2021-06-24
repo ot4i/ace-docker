@@ -8,7 +8,7 @@
 # http://www.eclipse.org/legal/epl-v20.html
 
 if [ -z "$MQSI_VERSION" ]; then
-  source /opt/ibm/ace-11/server/bin/mqsiprofile
+  source /opt/ibm/ace-12/server/bin/mqsiprofile
 fi
 
 if ls /home/aceuser/bars/*.bar >/dev/null 2>&1; then

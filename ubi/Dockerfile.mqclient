@@ -20,7 +20,7 @@ RUN chmod u+x /usr/local/bin/install-*.sh \
   && install-mq-client-prereqs.sh $MQM_UID \
   && install-mq.sh $MQM_UID
 
-RUN . /opt/ibm/ace-11/server/bin/mqsiprofile \
+RUN . /opt/ibm/ace-12/server/bin/mqsiprofile \
      && echo $MQSI_JREPATH \
      && /opt/mqm/bin/runmqckm -keydb -convert -db $MQSI_JREPATH/lib/security/cacerts -old_format jks -new_format kdb -pw changeit -target /tmp/mqcacerts.kdb -stash
 

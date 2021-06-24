@@ -23,14 +23,14 @@ do
   ifixname="${ifixlink##*/}"
   ifixname="${ifixname%.tar*}" 
   
-  ./mqsifixinst.sh /opt/ibm/ace-11 install $ifixname
+  ./mqsifixinst.sh /opt/ibm/ace-12 install $ifixname
   
   #Delete directory
   cd ..
   rm -rf ./fix
   
-  rm -rf /opt/ibm/ace-11/fix-backups.11.0.0.10
-  rm /opt/ibm/ace-11/mqsifixinst.log
-  rm /opt/ibm/ace-11/mqsifixinst.sh
+  rm -rf /opt/ibm/ace-12/fix-backups.12.0.1.0
+  rm /opt/ibm/ace-12/mqsifixinst.log
+  rm /opt/ibm/ace-12/mqsifixinst.sh
   
 done

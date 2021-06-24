@@ -28,22 +28,10 @@ import (
 var (
 	// ImageCreated is the date the image was built
 	ImageCreated = "Not specified"
-	// ImageRevision is the source control revision identifier
-	ImageRevision = "Not specified"
-	// ImageSource is the URL to get source code for building the image
-	ImageSource = "Not specified"
 )
 
 func logDateStamp() {
 	log.Printf("Image created: %v", ImageCreated)
-}
-
-func logGitRepo() {
-	log.Printf("Image revision: %v", ImageRevision)
-}
-
-func logGitCommit() {
-	log.Printf("Image source: %v", ImageSource)
 }
 
 func extractVersion(mqsiversion string) (string, error) {
@@ -107,8 +95,6 @@ func logGoVersion() {
 
 func logVersionInfo() {
 	logDateStamp()
-	logGitRepo()
-	logGitCommit()
 	logACEVersion()
 	logGoVersion()
 }

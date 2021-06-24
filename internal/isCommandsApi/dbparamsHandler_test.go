@@ -195,47 +195,4 @@ func TestDbParamsHandlerExecute(t *testing.T) {
 		assert.Equal(t, commandErrorInternal, cmdError.errorCode)
 		assert.Equal(t, "Internal error", cmdError.error)
 	})
-
-	t.Run("When setdbparams command returns error, returns internal error", func(t *testing.T) {
-		reset()
-		defer restore()
-
-		runCommand = func(cmdName string, cmdArguments ...string) (string, int, error) {
-			if cmdArguments[0] == "setdbparms" {
-				return "", 0, errors.New("command failed")
-			}
-
-			return "", 0, nil
-		}
-
-		validJSON := `{"resourceType":"mq","resourceName":"123","UserName":"abc","Password":"xyz"}`
-
-		_, cmdError := DbParamsHandler{}.execute(testLogger, strings.NewReader(validJSON))
-
-		assert.NotNil(t, cmdError)
-		assert.Equal(t, commandErrorInternal, cmdError.errorCode)
-		assert.Equal(t, "Internal error", cmdError.error)
-	})
-
-	t.Run("When setdbparms command exited with non zero, returns internal error", func(t *testing.T) {
-
-		reset()
-		defer restore()
-
-		runCommand = func(cmdName string, cmdArguments ...string) (string, int, error) {
-			if cmdArguments[0] == "setdbparms" {
-				return "", 1, nil
-			}
-
-			return "", 0, nil
-		}
-
-		validJSON := `{"resourceType":"mq","resourceName":"123","UserName":"abc","Password":"xyz"}`
-
-		_, cmdError := DbParamsHandler{}.execute(testLogger, strings.NewReader(validJSON))
-
-		assert.NotNil(t, cmdError)
-		assert.Equal(t, commandErrorInternal, cmdError.errorCode)
-		assert.Equal(t, "Internal error", cmdError.error)
-	})
 }

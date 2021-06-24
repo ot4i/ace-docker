@@ -16,7 +16,7 @@ else
 fi
 
 docker create --name builder ace/builder:11.0.0.4
-docker cp builder:/opt/ibm/ace-11 ./rhel/ace-11
+docker cp builder:/opt/ibm/ace-12 ./rhel/ace-12
 docker cp builder:/go/src/github.com/ot4i/ace-docker/runaceserver ./rhel/runaceserver
 docker cp builder:/go/src/github.com/ot4i/ace-docker/chkaceready ./rhel/chkaceready
 docker cp builder:/go/src/github.com/ot4i/ace-docker/chkacehealthy ./rhel/chkacehealthy
