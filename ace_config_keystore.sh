@@ -22,9 +22,9 @@ if ls /home/aceuser/initial-config/keystore/*.key >/dev/null 2>&1; then
   fi
 
   IFS=$'\n'
-  KEYTOOL=/opt/ibm/ace-11/common/jdk/jre/bin/keytool
+  KEYTOOL=/opt/ibm/ace-12/common/jdk/jre/bin/keytool
   if [ ! -f "$KEYTOOL" ]; then
-    KEYTOOL=/opt/ibm/ace-11/common/jre/bin/keytool
+    KEYTOOL=/opt/ibm/ace-12/common/jre/bin/keytool
   fi
   for keyfile in `ls /home/aceuser/initial-config/keystore/*.key`; do
     if [ -s "${keyfile}" ]; then

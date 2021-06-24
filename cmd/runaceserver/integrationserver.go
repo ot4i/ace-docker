@@ -23,13 +23,25 @@ import (
 	"os/exec"
 	"os/user"
 	"time"
+	"strings"
+	"path"
+	"net/url"
+	"sort"
+	"fmt"
 
+	"github.com/ot4i/ace-docker/common/contentserver"
 	"github.com/ot4i/ace-docker/internal/command"
+	"github.com/ot4i/ace-docker/internal/configuration"
 	"github.com/ot4i/ace-docker/internal/name"
 	"github.com/ot4i/ace-docker/internal/qmgr"
-	"github.com/ot4i/ace-docker/common/contentserver"
 	"gopkg.in/yaml.v2"
 )
+
+var osMkdir = os.Mkdir
+var osCreate = os.Create
+var ioutilReadFile = ioutil.ReadFile
+var ioCopy = io.Copy
+var contentserverGetBAR = contentserver.GetBAR
 
 // createSystemQueues creates the default MQ service queues used by the Integration Server
 func createSystemQueues() error {
@@ -40,7 +52,7 @@ func createSystemQueues() error {
 		return err
 	}
 
-	out, _, err := command.Run("bash", "/opt/ibm/ace-11/server/sample/wmq/iib_createqueues.sh", name, "mqbrkrs")
+	out, _, err := command.Run("bash", "/opt/ibm/ace-12/server/sample/wmq/iib_createqueues.sh", name, "mqbrkrs")
 	if err != nil {
 		log.Errorf("Error creating system queues: %v", string(out))
 		return err
@@ -55,10 +67,12 @@ func createSystemQueues() error {
 func initialIntegrationServerConfig() error {
 	log.Printf("Performing initial configuration of integration server")
 
-	getConfError := getConfigurationFromContentServer()
-	if getConfError != nil {
-		log.Errorf("Error getting configuration from content server: %v", getConfError)
-		return getConfError
+	if configuration.ContentServer {
+		getConfError := getConfigurationFromContentServer()
+		if getConfError != nil {
+			log.Errorf("Error getting configuration from content server: %v", getConfError)
+			return getConfError
+		}
 	}
 
 	fileList, err := ioutil.ReadDir("/home/aceuser")
@@ -85,8 +99,11 @@ func initialIntegrationServerConfig() error {
 		return err
 	}
 
+	// Sort filelist to server.conf.yaml gets written before webusers are processedconfigDirExists
+	SortFileNameAscend(fileList)
+
 	for _, file := range fileList {
-		if file.IsDir() && file.Name() != "mqsc" {
+		if file.IsDir() && file.Name() != "mqsc" && file.Name() != "workdir_overrides"  {
 			log.Printf("Processing configuration in folder %v", file.Name())
 			if qmgr.UseQueueManager() {
 				out, _, err := command.RunAsUser("mqm", "ace_config_"+file.Name()+".sh")
@@ -97,7 +114,14 @@ func initialIntegrationServerConfig() error {
 				}
 				log.LogDirect(out)
 			} else {
-				cmd := exec.Command("ace_config_"+file.Name()+".sh")
+				if file.Name() == "webusers" {
+					updateServerConf := createSHAServerConfYaml()
+					if updateServerConf != nil {
+						log.Errorf("Error setting webadmin SHA server.conf.yaml: %v", updateServerConf)
+						return updateServerConf
+					}
+				}
+				cmd := exec.Command("ace_config_" + file.Name() + ".sh")
 				out, _, err := command.RunCmd(cmd)
 				if err != nil {
 					log.LogDirect(out)
@@ -149,6 +173,59 @@ func initialIntegrationServerConfig() error {
 
 	return nil
 }
+
+func SortFileNameAscend(files []os.FileInfo) {
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Name() < files[j].Name()
+	})
+}
+
+func createSHAServerConfYaml() error {
+
+	oldserverconfContent, readError := readServerConfFile()
+	if readError != nil {
+		if !os.IsNotExist(readError) {
+			// Error is different from file not existing (if the file does not exist we will create it ourselves)
+			log.Errorf("Error reading server.conf.yaml: %v", readError)
+			return readError
+		}
+	}
+
+	serverconfMap := make(map[interface{}]interface{})
+	unmarshallError := yaml.Unmarshal([]byte(oldserverconfContent), &serverconfMap)
+	if unmarshallError != nil {
+		log.Errorf("Error unmarshalling server.conf.yaml: %v", unmarshallError)
+		return unmarshallError
+	}
+
+	if serverconfMap["RestAdminListener"] == nil {
+		serverconfMap["RestAdminListener"] = map[string]interface{}{
+			"webUserPasswordHashAlgorithm":    "SHA-1",
+		}
+		log.Printf("Updating RestAdminListener/webUserPasswordHashAlgorithm")
+	} else {
+		restAdminListener := serverconfMap["RestAdminListener"].(map[interface{}]interface{})
+		if restAdminListener["webUserPasswordHashAlgorithm"] == nil {
+			restAdminListener["webUserPasswordHashAlgorithm"] = "SHA-1"
+			log.Printf("Updating RestAdminListener/webUserPasswordHashAlgorithm")
+		}
+
+	}
+
+	serverconfYaml, marshallError := yaml.Marshal(&serverconfMap)
+	if marshallError != nil {
+		log.Errorf("Error marshalling server.conf.yaml: %v", marshallError)
+		return marshallError
+	}
+	writeError := writeServerConfFile(serverconfYaml)
+	if writeError != nil {
+		return writeError
+	}
+
+	return nil
+
+}
+
 
 // enableMetricsInServerConf adds Statistics fields to the server.conf.yaml in overrides
 // If the file does not exist already it gets created.
@@ -285,10 +362,20 @@ func addMetricsToServerConf(serverconfContent []byte) ([]byte, error) {
 
 		if statistics["Snapshot"] != nil {
 			snapshot := statistics["Snapshot"].(map[interface{}]interface{})
-			snapshot["publicationOn"] = "active"
-			snapshot["nodeDataLevel"] = "basic"
-			snapshot["outputFormat"] = "json"
-			snapshot["threadDataLevel"] = "none"
+			if snapshot["publicationOn"] == nil {
+				snapshot["publicationOn"] = "active"
+			}
+			if snapshot["nodeDataLevel"] == nil {
+				snapshot["nodeDataLevel"] = "basic"
+			}
+			if snapshot["outputFormat"] == nil {
+				snapshot["outputFormat"] = "json"
+			} else {
+				snapshot["outputFormat"] = fmt.Sprintf("%v", snapshot["outputFormat"]) + ",json"
+			}
+			if snapshot["threadDataLevel"] == nil {
+				snapshot["threadDataLevel"] = "none"
+			}
 		} else {
 			statistics["Snapshot"] = snapshotObj
 		}
@@ -374,27 +461,27 @@ func addAdminsslToServerConf(serverconfContent []byte) ([]byte, error) {
 	// so we don't overwrite any customer provided configuration
 	if serverconfMap["RestAdminListener"] == nil {
 		serverconfMap["RestAdminListener"] = map[string]interface{}{
-			"sslCertificate" : cert,
-			"sslPassword" : key,
-			"requireClientCert" : isTrue,
-			"caPath" : cacert,
+			"sslCertificate":    cert,
+			"sslPassword":       key,
+			"requireClientCert": isTrue,
+			"caPath":            cacert,
 		}
 		log.Printf("Admin Server Security updating RestAdminListener using ACE_ADMIN_SERVER environment variables")
 	} else {
 		restAdminListener := serverconfMap["RestAdminListener"].(map[interface{}]interface{})
 
-    	if restAdminListener["sslCertificate"] == nil {
-    		restAdminListener["sslCertificate"] =  cert
-    	}
-    	if restAdminListener["sslPassword"] == nil {
-    		restAdminListener["sslPassword"] =  key
-    	}
-    	if restAdminListener["requireClientCert"] == nil {
-    		restAdminListener["requireClientCert"] = isTrue
-    	}
-    	if restAdminListener["caPath"] == nil {
-    		restAdminListener["caPath"] = cacert
-    	}
+		if restAdminListener["sslCertificate"] == nil {
+			restAdminListener["sslCertificate"] = cert
+		}
+		if restAdminListener["sslPassword"] == nil {
+			restAdminListener["sslPassword"] = key
+		}
+		if restAdminListener["requireClientCert"] == nil {
+			restAdminListener["requireClientCert"] = isTrue
+		}
+		if restAdminListener["caPath"] == nil {
+			restAdminListener["caPath"] = cacert
+		}
 		log.Printf("Admin Server Security merging RestAdminListener using ACE_ADMIN_SERVER environment variables")
 	}
 
@@ -411,8 +498,10 @@ func addAdminsslToServerConf(serverconfContent []byte) ([]byte, error) {
 // a bar file from that URL
 func getConfigurationFromContentServer() error {
 
-	url := os.Getenv("ACE_CONTENT_SERVER_URL")
-	if url == "" {
+
+	// ACE_CONTENT_SERVER_URL can contain 1 or more comma separated urls 
+	urls := os.Getenv("ACE_CONTENT_SERVER_URL")
+	if urls == "" {
 		log.Printf("No content server url available")
 		return nil
 	}
@@ -423,69 +512,120 @@ func getConfigurationFromContentServer() error {
 		defaultContentServer = "true"
 	}
 
-	serverName := os.Getenv("ACE_CONTENT_SERVER_NAME")
-	if serverName == "" {
-		log.Printf("No content server name available but a url is defined")
-		return errors.New("No content server name available but a url is defined")
-	}
-
-	token := os.Getenv("ACE_CONTENT_SERVER_TOKEN")
-	if token == "" && defaultContentServer == "true" {
-		log.Errorf("No content server token available but a url is defined")
-		return errors.New("No content server token available but a url is defined")
-	}
-
-	err := os.Mkdir("/home/aceuser/initial-config/bars", os.ModePerm)
+	err := osMkdir("/home/aceuser/initial-config/bars", os.ModePerm)
 	if err != nil {
 		log.Errorf("Error creating directory /home/aceuser/initial-config/bars: %v", err)
 		return err
 	}
 
-	file, err := os.Create("/home/aceuser/initial-config/bars/barfile.bar")
-	if err != nil {
-		log.Errorf("Error creating file %v: %v", file, err)
-		return err
-	}
-	defer file.Close()
+	// check for AUTH env parameters (needed if auth is not encoded in urls for backward compatibility pending operator changes)
+	envServerName := os.Getenv("ACE_CONTENT_SERVER_NAME")
+	envToken := os.Getenv("ACE_CONTENT_SERVER_TOKEN")
+	
 
-	// Create a CA certificate pool and add cacert to it
-	var contentServerCACert string
-	if defaultContentServer == "true" {
-		log.Printf("Getting configuration from content server")
-		contentServerCACert = "/home/aceuser/ssl/cacert.pem"
-		url = url + "?archive=true"
-	} else {
-		log.Printf("Getting configuration from custom content server")
-		contentServerCACert = os.Getenv("CONTENT_SERVER_CA")
-		if contentServerCACert == "" {
-			log.Printf("CONTENT_SERVER_CA not defined")
-			return errors.New("CONTENT_SERVER_CA not defined")
+	urlArray := strings.Split(urls, ",")
+	for _, barurl := range urlArray {
+
+		serverName := envServerName
+		token := envToken
+
+		// the ace content server name is the name of the secret where this cert is
+		// eg. secretName: {{ index (splitList ":" (index (splitList "/" (trim .Values.contentServerURL)) 2)) 0 | quote }} ?
+		//  https://domsdash-ibm-ace-dashboard-prod:3443/v1/directories/CustomerDatabaseV1?userid=fsdjfhksdjfhsd
+		//  or https://test-acecontentserver-ace-dom.svc:3443/v1/directories/testdir?e31d23f6-e3ba-467d-ab3b-ceb0ab12eead
+		// Mutli-tenant : https://test-acecontentserver-ace-dom.svc:3443/v1/namespace/directories/testdir
+		// https://dataplane-api-dash.appconnect:3443/v1/appc-fakeid/directories/ace_manualtest_callableflow
+		
+		splitOnSlash := strings.Split(barurl, "/")
+		
+		if len(splitOnSlash) > 2 {
+			serverName = strings.Split(splitOnSlash[2], ":")[0] // test-acecontentserver.ace-dom
+		} else {
+			// if we have not found serverName from either env or url error
+			log.Printf("No content server name available but a url is defined - Have you forgotten to define your BAR_AUTH configuration resource?")
+			return errors.New("No content server name available but a url is defined  - Have you forgotten to define your BAR_AUTH configuration resource?")
 		}
+		
+
+		// if ACE_CONTENT_SERVER_TOKEN was set use it. It may have been read from a secret
+		// otherwise then look in the url for ? 
+		if token == "" {
+			splitOnQuestion := strings.Split(barurl, "?")
+			if len(splitOnQuestion) > 1 && splitOnQuestion[1] != "" {
+				barurl = splitOnQuestion[0]   // https://test-acecontentserver.ace-dom.svc:3443/v1/directories/testdir
+				token = splitOnQuestion[1] //userid=fsdjfhksdjfhsd
+			} else if defaultContentServer == "true" {
+				// if we have not found token from either env or url error
+				log.Errorf("No content server token available but a url is defined")
+				return errors.New("No content server token available but a url is defined")
+			}
+		}
+
+		// use the last part of the url path (base) for the filename
+		u, err := url.Parse(barurl)
+		if err != nil {
+			log.Errorf("Error parsing content server url : %v", err)
+			return err
+		}
+		filename := "/home/aceuser/initial-config/bars/" + path.Base(u.Path) + ".bar"
+		
+		// temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
+		if len(urlArray) == 1 {
+			filename = "/home/aceuser/initial-config/bars/barfile.bar"
+		}
+		log.Printf("Will saving bar as: " + filename)
+
+		file, err := osCreate(filename)
+		if err != nil {
+			log.Errorf("Error creating file %v: %v", file, err)
+			return err
+		}
+		defer file.Close()
+
+		// Create a CA certificate pool and add cacert to it
+		var contentServerCACert string
+		if defaultContentServer == "true" {
+			log.Printf("Getting configuration from content server")
+			contentServerCACert = "/home/aceuser/ssl/cacert.pem"
+			barurl = barurl + "?archive=true"
+		} else {
+			log.Printf("Getting configuration from custom content server")
+			contentServerCACert = os.Getenv("CONTENT_SERVER_CA")
+			if token != "" { 
+				barurl = barurl + "?" + token
+			}
+			if contentServerCACert == "" {
+				log.Printf("CONTENT_SERVER_CA not defined")
+				return errors.New("CONTENT_SERVER_CA not defined")
+			}
+		}
+		log.Printf("Using the following url: " + barurl)
+
+		log.Printf("Using ca file %s", contentServerCACert)
+		caCert, err := ioutilReadFile(contentServerCACert)
+		if err != nil {
+			log.Errorf("Error reading CA Certificate")
+			return errors.New("Error reading CA Certificate")
+		}
+
+		contentServerCert := os.Getenv("CONTENT_SERVER_CERT")
+		contentServerKey := os.Getenv("CONTENT_SERVER_KEY")
+
+		bar, err := contentserverGetBAR(barurl, serverName, token, caCert, contentServerCert, contentServerKey, log)
+		if err != nil {
+			return err
+		}
+		defer bar.Close()
+
+		_, err = ioCopy(file, bar)
+		if err != nil {
+			log.Errorf("Error writing file %v: %v", file, err)
+			return err
+		}
+
+		log.Printf("Configuration pulled from content server successfully")
+
 	}
-
-	log.Printf("Using ca file %s", contentServerCACert)
-	caCert, err := ioutil.ReadFile(contentServerCACert)
-	if err != nil {
-		log.Errorf("Error reading CA Certificate")
-		return errors.New("Error reading CA Certificate")
-	}
-
-	contentServerCert := os.Getenv("CONTENT_SERVER_CERT")
-	contentServerKey := os.Getenv("CONTENT_SERVER_KEY")
-
-	bar, err := contentserver.GetBAR(url, serverName, token, caCert, contentServerCert, contentServerKey, log)
-	if err != nil {
-		return err
-	}
-	defer bar.Close()
-
-	_, err = io.Copy(file, bar)
-	if err != nil {
-		log.Errorf("Error writing file %v: %v", file, err)
-		return err
-	}
-
-	log.Printf("Configuration pulled from content server successfully")
 	return nil
 }
 
@@ -581,13 +721,13 @@ func createWorkDir() error {
 		log.Printf("Work dir is not yet initialized - initializing now in /home/aceuser/ace-server")
 
 		if qmgr.UseQueueManager() {
-			_, _, err := command.RunAsUser("mqm", "/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+			_, _, err := command.RunAsUser("mqm", "/opt/ibm/ace-12/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
 			if err != nil {
 				log.Printf("Error reading initializing work dir")
 				return err
 			}
 		} else {
-			cmd := exec.Command("/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+			cmd := exec.Command("/opt/ibm/ace-12/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
 			_, _, err := command.RunCmd(cmd)
 			if err != nil {
 				log.Printf("Error reading initializing work dir")
@@ -621,4 +761,51 @@ func system(cmd string, arg ...string) {
 		log.Printf(err.Error())
 	}
 	log.Printf(string(out))
+}
+
+
+// applyWorkdirOverrides walks through the home/aceuser/initial-config/workdir_overrides directory
+// we want to do this here rather than the loop above as we want to make sure we have done everything
+// else before applying the workdir overrides and then start the integration server
+func applyWorkdirOverrides() error {
+
+	fileList, err := ioutil.ReadDir("/home/aceuser")
+	if err != nil {
+		log.Errorf("Error checking for the aceuser home directoy: %v", err)
+		return err
+	}
+
+	configDirExists := false
+	for _, file := range fileList {
+		if file.IsDir() && file.Name() == "initial-config" {
+			configDirExists = true
+		}
+	}
+
+	if !configDirExists {
+		log.Printf("No initial-config directory found")
+		return nil
+	}
+
+	fileList, err = ioutil.ReadDir("/home/aceuser/initial-config")
+	if err != nil {
+		log.Errorf("Error checking for initial configuration folders: %v", err)
+		return err
+	}
+
+	for _, file := range fileList {
+		if file.IsDir() && file.Name() == "workdir_overrides" {
+			log.Println("Applying workdir overrides to the integration server")
+			cmd := exec.Command("ace_config_workdir_overrides.sh")
+			out, _, err := command.RunCmd(cmd)
+			log.LogDirect(out)
+			if err != nil {
+				log.Errorf("Error processing workdir overrides in folder %v: %v", file.Name(), err)
+				return err
+			}
+			log.Printf("Workdir overrides applied to the integration server complete")
+		}
+	}
+
+	return nil
 }

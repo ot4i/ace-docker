@@ -33,6 +33,7 @@ import (
     "path/filepath"
     "strings"
     "sync"
+    "time"
 
     "github.com/ot4i/ace-docker/common/logger"
 
@@ -298,6 +299,9 @@ func ReadStatistics(log logger.LoggerInterface) {
             }
         } else {
             log.Errorf("Error calling ace admin server webservice endpoint %s", dialError)
+            log.Println("If this repeats then check you have assigned enough memory to your Pod and you aren't running out of memory")
+            log.Println("Sleeping for 5 seconds before retrying to connect to metrics...")
+            time.Sleep(5 * time.Second)
         }
     }
 }

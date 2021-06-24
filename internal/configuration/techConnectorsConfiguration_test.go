@@ -21,7 +21,7 @@ var jdbcAccount1Sha = "569be438050b9875e183d092b133fa55e0ea57cfcdabe566c2d5613ab
 func TestSetupTechConnectorsConfigurations(t *testing.T) {
 
 	var reset = func() {
-		processMqAccount = func(log logger.LoggerInterface, basedir string, account MQAccountInfo) error {
+		processMqAccount = func(log logger.LoggerInterface, basedir string, account MQAccountInfo, isDesignerAuthoringMode bool) error {
 			panic("should be mocked")
 		}
 
@@ -174,7 +174,7 @@ func TestProcessJdbcAccounts(t *testing.T) {
 	}
 
 	accounts := []AccountInfo{
-		AccountInfo{
+		{
 			Name:        "acc 1",
 			Credentials: json.RawMessage(`{"authType":"BASIC","dbType":"Oracle","hostname":"abc","port":"123","Username":"user1","Password":"password1","dbName":"test"}`)}}
 
@@ -475,12 +475,13 @@ func TestBuildJDBCPolicies(t *testing.T) {
 func TestProcessMqConnectorAccounts(t *testing.T) {
 
 	var reset = func() {
-		processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccount MQAccountInfo) error {
+		processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccount MQAccountInfo, isDesignerAuthoringMode bool) error {
 			panic("should be mocked")
 		}
 	}
 	var restore = func() {
 		processMqAccount = processMqAccountRestore
+		os.Unsetenv("DEVELOPMENT_MODE")
 	}
 
 	t.Run("Process all mq accounts", func(t *testing.T) {
@@ -489,14 +490,11 @@ func TestProcessMqConnectorAccounts(t *testing.T) {
 		defer restore()
 
 		mqAccounts := []AccountInfo{
-			AccountInfo{
-				Name:        "acc 1",
-				Credentials: json.RawMessage(`{"authType":"BASIC","Username":"abc","Password":"xyz"}`)},
-			AccountInfo{Name: "acc 2",
-				Credentials: json.RawMessage(`{"authType":"BASIC","Username":"u1","Password":"p1"}`)}}
+			{Name: "acc 1", Credentials: json.RawMessage(`{"authType":"BASIC","Username":"abc","Password":"xyz"}`)},
+			{Name: "acc 2", Credentials: json.RawMessage(`{"authType":"BASIC","Username":"u1","Password":"p1"}`)}}
 
 		var callCount = 0
-		processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccount MQAccountInfo) error {
+		processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccount MQAccountInfo, isDesignerAuthoringMode bool) error {
 
 			if callCount == 0 {
 				assert.Equal(t, "acc 1", mqAccount.Name)
@@ -528,15 +526,12 @@ func TestProcessMqConnectorAccounts(t *testing.T) {
 		defer restore()
 
 		mqAccounts := []AccountInfo{
-			AccountInfo{
-				Name:        "acc 1",
-				Credentials: json.RawMessage(`{"authType":"BASIC","Username":"abc","Password":"xyz"}`)},
-			AccountInfo{Name: "acc 2",
-				Credentials: json.RawMessage(`{"authType":"BASIC","Username":"u1","Password":"p1"}`)}}
+			{Name: "acc 1", Credentials: json.RawMessage(`{"authType":"BASIC","Username":"abc","Password":"xyz"}`)},
+			{Name: "acc 2", Credentials: json.RawMessage(`{"authType":"BASIC","Username":"u1","Password":"p1"}`)}}
 
 		var callCount = 0
 		var err = errors.New("process mq account failed")
-		processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccount MQAccountInfo) error {
+		processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccount MQAccountInfo, isDesignerAuthoringMode bool) error {
 			if callCount == 1 {
 				return err
 			}
@@ -548,6 +543,44 @@ func TestProcessMqConnectorAccounts(t *testing.T) {
 		errReturned := processMqConnectorAccounts(testLogger, testBaseDir, mqAccounts)
 
 		assert.Equal(t, err, errReturned)
+	})
+
+	t.Run("When running in authoring mode, invokes processAllAccounts with isDesignerAuthoringMode flag true", func(t *testing.T) {
+		reset()
+		defer restore()
+
+		os.Setenv("DEVELOPMENT_MODE", "true")
+
+		mqAccounts := []AccountInfo{
+			{Name: "acc 1", Credentials: json.RawMessage(`{"authType":"BASIC","Username":"abc","Password":"xyz"}`)}}
+
+		processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccount MQAccountInfo, isDesignerAuthoringMode bool) error {
+			assert.True(t, isDesignerAuthoringMode)
+			return nil
+		}
+
+		err := processMqConnectorAccounts(testLogger, testBaseDir, mqAccounts)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("When not running in authoring mode, invokes processAllAccounts with isDesignerAuthoringMode flag false", func(t *testing.T) {
+		reset()
+		defer restore()
+
+		os.Unsetenv("DEVELOPMENT_MODE")
+
+		mqAccounts := []AccountInfo{
+			{Name: "acc 1", Credentials: json.RawMessage(`{"authType":"BASIC","Username":"abc","Password":"xyz"}`)}}
+
+		processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccount MQAccountInfo, isDesignerAuthoringMode bool) error {
+			assert.False(t, isDesignerAuthoringMode)
+			return nil
+		}
+
+		err := processMqConnectorAccounts(testLogger, testBaseDir, mqAccounts)
+
+		assert.Nil(t, err)
 	})
 }
 
@@ -567,12 +600,14 @@ func TestProcessMqAccount(t *testing.T) {
 		createMQFlowBarOverridesProperties = func(log logger.LoggerInterface, basedir string, mqAccount MQAccountInfo) error {
 			panic("should be mocked")
 		}
+		os.Setenv("ACE_CONTENT_SERVER_URL", "http://localhost/a.bar")
 	}
 
 	var restore = func() {
 		createMqAccountDbParams = createMqAccountDbParamsRestore
 		createMQPolicy = createMQPolicyRestore
 		createMQFlowBarOverridesProperties = createMQFlowBarOverridesPropertiesRestore
+		os.Unsetenv("ACE_CONTENT_SERVER_URL")
 	}
 
 	mqAccount := getMqAccount("acc-1")
@@ -587,7 +622,7 @@ func TestProcessMqAccount(t *testing.T) {
 			return err
 		}
 
-		errReturned := processMqAccount(testLogger, testBaseDir, mqAccount)
+		errReturned := processMqAccount(testLogger, testBaseDir, mqAccount, false)
 
 		assert.Equal(t, err, errReturned)
 	})
@@ -599,45 +634,78 @@ func TestProcessMqAccount(t *testing.T) {
 			return nil
 		}
 
-		t.Run("when create policy fails, returns error", func(t *testing.T) {
+		t.Run("when running in designer authoring mode, doesn't deploy policy and doesn't create bar overrides file", func(t *testing.T) {
 
-			err := errors.New("create mq policy failed")
+			isDesignerAuthoringMode := true
 			createMQPolicy = func(log logger.LoggerInterface, basedir string, mqAccountP MQAccountInfo) error {
-				return err
+				assert.Fail(t, "Should not create policies in authoring mode")
+				return nil
 			}
 
-			errReturned := processMqAccount(testLogger, testBaseDir, mqAccount)
+			createMQFlowBarOverridesProperties = func(log logger.LoggerInterface, basedir string, mqAccountP MQAccountInfo) error {
+				assert.Fail(t, "Should not create policies in authoring mode")
+				return nil
+			}
+
+			err := processMqAccount(testLogger, testBaseDir, mqAccount, isDesignerAuthoringMode)
+
+			assert.Nil(t, err)
+		})
+
+		t.Run("When mulitple bar files present, returns MQ connector not supported error", func(t *testing.T) {
+
+			err := errors.New("IBM MQ Connector not supported for muliple bar files")
+
+			os.Setenv("ACE_CONTENT_SERVER_URL", "http://localhost/a.bar,http://localhost/b.bar")
+
+			errReturned := processMqAccount(testLogger, testBaseDir, mqAccount, false)
 
 			assert.Equal(t, err, errReturned)
 		})
 
-		t.Run("when create policy succeeds, creates bar overrides files", func(t *testing.T) {
-			createMQPolicy = func(log logger.LoggerInterface, basedir string, mqAccountP MQAccountInfo) error {
-				assert.Equal(t, mqAccount, mqAccountP)
-				return nil
-			}
+		t.Run("When single bar present, create mq policy", func(t *testing.T) {
+			os.Setenv("ACE_CONTENT_SERVER_URL", "http://localhost/a.bar")
 
-			t.Run("when create bar ovrrides failed, returns error", func(t *testing.T) {
-				err := errors.New("create bar overrides failed")
-				createMQFlowBarOverridesProperties = func(log logger.LoggerInterface, basedir string, mqAccountP MQAccountInfo) error {
+			t.Run("when create policy fails, returns error", func(t *testing.T) {
+
+				err := errors.New("create mq policy failed")
+				createMQPolicy = func(log logger.LoggerInterface, basedir string, mqAccountP MQAccountInfo) error {
 					return err
 				}
 
-				errReturned := processMqAccount(testLogger, testBaseDir, mqAccount)
+				errReturned := processMqAccount(testLogger, testBaseDir, mqAccount, false)
 
 				assert.Equal(t, err, errReturned)
 			})
 
-			t.Run("when create bar ovrrides succeeds, returns nil", func(t *testing.T) {
-
-				createMQFlowBarOverridesProperties = func(log logger.LoggerInterface, basedir string, mqAccountP MQAccountInfo) error {
+			t.Run("when create policy succeeds, creates bar overrides files", func(t *testing.T) {
+				createMQPolicy = func(log logger.LoggerInterface, basedir string, mqAccountP MQAccountInfo) error {
 					assert.Equal(t, mqAccount, mqAccountP)
 					return nil
 				}
 
-				err := processMqAccount(testLogger, testBaseDir, mqAccount)
+				t.Run("when create bar ovrrides failed, returns error", func(t *testing.T) {
+					err := errors.New("create bar overrides failed")
+					createMQFlowBarOverridesProperties = func(log logger.LoggerInterface, basedir string, mqAccountP MQAccountInfo) error {
+						return err
+					}
 
-				assert.Nil(t, err)
+					errReturned := processMqAccount(testLogger, testBaseDir, mqAccount, false)
+
+					assert.Equal(t, err, errReturned)
+				})
+
+				t.Run("when create bar ovrrides succeeds, returns nil", func(t *testing.T) {
+
+					createMQFlowBarOverridesProperties = func(log logger.LoggerInterface, basedir string, mqAccountP MQAccountInfo) error {
+						assert.Equal(t, mqAccount, mqAccountP)
+						return nil
+					}
+
+					err := processMqAccount(testLogger, testBaseDir, mqAccount, false)
+
+					assert.Nil(t, err)
+				})
 			})
 		})
 	})
@@ -698,6 +766,25 @@ func TestCreateMqAccountDbParams(t *testing.T) {
 		internalRunSetdbparmsCommand = func(log logger.LoggerInterface, command string, params []string) error {
 			return nil
 		}
+
+		errReturned := createMqAccountDbParams(testLogger, testBaseDir, mqAccount)
+
+		assert.Nil(t, errReturned)
+	})
+
+	t.Run("when username and password fields are empty doesn't execute setdbparams command", func(t *testing.T) {
+
+		reset()
+		defer restore()
+
+		internalRunSetdbparmsCommand = func(log logger.LoggerInterface, command string, params []string) error {
+			assert.Fail(t, "setdbparams should not be invoked when username and password fields are empty")
+			return nil
+		}
+
+		mqAccount := getMqAccount("acc1")
+		mqAccount.Credentials.Username = ""
+		mqAccount.Credentials.Password = ""
 
 		errReturned := createMqAccountDbParams(testLogger, testBaseDir, mqAccount)
 
@@ -800,6 +887,30 @@ func TestCreateMqPolicy(t *testing.T) {
 				}
 
 				errorReturned := createMQPolicy(testLogger, testBaseDir, mqAccount)
+				assert.Equal(t, transformError, errorReturned)
+			})
+
+			t.Run("Sets security idenity empty with mq account username and password are empty", func(t *testing.T) {
+
+				transformError := errors.New("transform xml template failed")
+				policyName := "account_1"
+
+				transformXMLTemplate = func(xmlTemplate string, context interface{}) (string, error) {
+					assert.Equal(t, map[string]interface{}{
+						"policyName":       policyName,
+						"queueManager":     mqAccount.Credentials.QueueManager,
+						"hostName":         mqAccount.Credentials.Hostname,
+						"port":             mqAccount.Credentials.Port,
+						"channelName":      mqAccount.Credentials.ChannelName,
+						"securityIdentity": "",
+					}, context)
+
+					return "", transformError
+				}
+
+				mqAccountWithEmptyCredentials := getMqAccountWithEmptyCredentials()
+
+				errorReturned := createMQPolicy(testLogger, testBaseDir, mqAccountWithEmptyCredentials)
 				assert.Equal(t, transformError, errorReturned)
 			})
 
@@ -966,5 +1077,18 @@ func getMqAccount(accountName string) MQAccountInfo {
 			Port:         123,
 			Username:     "abc",
 			Password:     "xyz",
+			ChannelName:  "testchannel"}}
+}
+
+func getMqAccountWithEmptyCredentials() MQAccountInfo {
+	return MQAccountInfo{
+		Name: "account-1",
+		Credentials: MQCredentials{
+			AuthType:     "BASIC",
+			QueueManager: "QM1",
+			Hostname:     "host1",
+			Port:         123,
+			Username:     "",
+			Password:     "",
 			ChannelName:  "testchannel"}}
 }

@@ -22,9 +22,9 @@ if ls /home/aceuser/initial-config/truststore/*.crt >/dev/null 2>&1; then
   fi
 
   IFS=$'\n'
-  KEYTOOL=/opt/ibm/ace-11/common/jdk/jre/bin/keytool
+  KEYTOOL=/opt/ibm/ace-12/common/jdk/jre/bin/keytool
   if [ ! -f "$KEYTOOL" ]; then
-    KEYTOOL=/opt/ibm/ace-11/common/jre/bin/keytool
+    KEYTOOL=/opt/ibm/ace-12/common/jre/bin/keytool
   fi
   for file in `ls /home/aceuser/initial-config/truststore/*.crt`; do
     if [ -s "${file}" ]; then

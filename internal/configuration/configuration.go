@@ -3,13 +3,22 @@ package configuration
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"errors"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
+
+	"github.com/Jeffail/gabs"
 
 	"github.com/ot4i/ace-docker/common/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +37,11 @@ const keystoresName = "keystores"
 const genericName = "generic"
 const odbcIniName = "odbc"
 const adminsslName = "adminssl"
-const aceInstall = "/opt/ibm/ace-11/server/bin"
+const aceInstall = "/opt/ibm/ace-12/server/bin"
+const initialConfig = "initial-config"
+const workdiroverrides = "workdir_overrides"
+
+var ContentServer = true
 
 var (
 	configurationClassGVR = schema.GroupVersionResource{
@@ -189,15 +202,7 @@ func parseConfigurationList(log logger.LoggerInterface, basedir string, list []*
 				return nil, errors.New("Failed to decode contents")
 			}
 			output[index] = configurationObject{name: name, configType: configType, contents: contents}
-		case "truststorecertificate", "truststore", "keystore", "setdbparms", "generic", "adminssl", "agentx", "agenta", "accounts", "loopbackdatasource":
-			if configType == "accounts" {
-				designerAuthMode, ok := os.LookupEnv("DEVELOPMENT_MODE")
-				if ok && designerAuthMode == "true" {
-					log.Println("Ignore accounts.yaml configuration in designer authoring integration server")
-					output[index] = configurationObject{name: name, configType: configType, contents: nil}
-					break
-				}
-			}
+		case "truststorecertificate", "truststore", "keystore", "setdbparms", "generic", "adminssl", "agentx", "agenta", "accounts", "loopbackdatasource", "barauth", "workdiroverride":
 			secretName, exists, err := unstructured.NestedString(item.Object, "spec", "secretName")
 			if !exists || err != nil {
 				log.Printf("%s: %#v", "A configuration with type: "+configType+" must have a secretName field", errors.New("A configuration with type: "+configType+" must have a secretName field"))
@@ -298,19 +303,17 @@ func constructConfigurationsOnFileSystem(log logger.LoggerInterface, basedir str
 	case "adminssl":
 		return constructAdminSSLOnFileSystem(log, basedir, contents)
 	case "accounts":
-		designerAuthMode, ok := os.LookupEnv("DEVELOPMENT_MODE")
-		if ok && designerAuthMode == "true" {
-			// no mount required for this type as already mounted
-			return nil
-		} else {
-			return SetupTechConnectorsConfigurations(log, basedir, contents)
-		}
+		return SetupTechConnectorsConfigurations(log, basedir, contents)
 	case "agentx":
 		return constructAgentxOnFileSystem(log, basedir, contents)
 	case "agenta":
 		return constructAgentaOnFileSystem(log, basedir, contents)
 	case "truststorecertificate":
 		return addTrustCertificateToCAcerts(log, basedir, configName, contents)
+	case "barauth":
+		return downloadBarFiles(log, basedir, contents)
+	case "workdiroverride":
+		return constructWorkdirOverrideOnFileSystem(log, basedir, configName, contents)
 	default:
 		return errors.New("Unknown configuration type")
 	}
@@ -375,6 +378,11 @@ func addTrustCertificateToCAcerts(log logger.LoggerInterface, basedir string, na
 	// adding this file to CAcerts
 	commandCreateArgsJKS := []string{"-import", "-file", tmpFile.Name(), "-alias", name, "-keystore", "$MQSI_JREPATH/lib/security/cacerts", "-storepass", "changeit", "-noprompt", "-storetype", "JKS"}
 	return internalRunKeytoolCommand(log, commandCreateArgsJKS)
+}
+
+func constructWorkdirOverrideOnFileSystem(log logger.LoggerInterface, basedir string, name string, contents []byte) error {
+	log.Printf("Construct workdiroverride on the filesystem - Workdiroveride name: %s", name)
+	return writeConfigurationFile(basedir+string(os.PathSeparator)+initialConfig+string(os.PathSeparator)+workdiroverrides, name, contents)
 }
 
 func creatingTempFile(log logger.LoggerInterface, contents []byte, name string) *os.File {
@@ -474,4 +482,140 @@ func Contains(a []string, x string) bool {
 	return false
 }
 func main() {
+}
+
+func downloadBarFiles(log logger.LoggerInterface, basedir string, contents []byte) error {
+	log.Println("Downloading bar file using supplied credentials")
+	ContentServer = false
+	log.Debug("Configuration: " + string(contents))
+	barAuthParsed, err := gabs.ParseJSON(contents)
+	if err != nil {
+		return errors.New("Unable to parse JSON")
+	}
+	authType := barAuthParsed.Path("authType").Data().(string)
+	switch authType {
+	case "BASIC_AUTH":
+		return downloadBASIC_AUTH(log, basedir, barAuthParsed)
+	default:
+		return errors.New("Unknown barauth type: " + authType)
+	}
+}
+
+func downloadBASIC_AUTH(log logger.LoggerInterface, basedir string, barAuthParsed *gabs.Container) error {
+	log.Println("BasicAuth Credentials")
+
+	// Get the SystemCertPool, continue with an empty pool on error
+	rootCAs, _ := x509.SystemCertPool()
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+
+	// Append optional cert to the system pool
+	if ( (barAuthParsed.Path("credentials.caCert").Data() != nil) && (barAuthParsed.Path("credentials.caCert").Data().(string) != "" ) ) {
+		caCert := barAuthParsed.Path("credentials.caCert").Data().(string)
+		if ok := rootCAs.AppendCertsFromPEM([]byte(caCert)); !ok {
+			return errors.New("CaCert provided but failed to append, Cert provided: " + caCert)
+		} else {
+			log.Println("Appending supplied cert via configuration to system pool")
+		}
+	} else if ( (barAuthParsed.Path("credentials.caCertSecret").Data() != nil) && (barAuthParsed.Path("credentials.caCertSecret").Data().(string) != "" ) ) {
+		// Read in the cert file
+		caCert, err := ioutil.ReadFile(`/home/aceuser/barurlendpoint/ca.crt`)
+		if err != nil {
+			return errors.New("CaCertSecret provided but failed to append, Cert provided: " + string(caCert))
+		}
+		if ok := rootCAs.AppendCertsFromPEM(caCert); !ok {
+			log.Println("No certs appended, using system certs only")
+		} else {
+			log.Println("Appending supplied cert via secret to system pool")
+		}
+	} else {
+		log.Println("No certs provided, using system certs only")
+	}
+
+	var tr *http.Transport
+	// Allow insecure if InsecureSsl is set
+	if (barAuthParsed.Path("credentials.InsecureSsl").Data() != nil) && (barAuthParsed.Path("credentials.InsecureSsl").Data().(string) == "true") {
+		tr = &http.Transport{
+			MaxIdleConns:       10,
+			IdleConnTimeout:    30 * time.Second,
+			DisableCompression: true,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+				RootCAs:            rootCAs,
+			},
+		}
+		log.Println("InsecureSsl set so accepting/ignoring all server SSL certificates ")
+	} else {
+		tr = &http.Transport{
+			MaxIdleConns:       10,
+			IdleConnTimeout:    30 * time.Second,
+			DisableCompression: true,
+			TLSClientConfig: &tls.Config{
+				RootCAs: rootCAs,
+			},
+		}
+	}
+	client := &http.Client{Transport: tr}
+
+	urls := os.Getenv("ACE_CONTENT_SERVER_URL")
+	if urls == "" {
+		return errors.New("No bar url available")
+	}
+
+	err := os.Mkdir("/home/aceuser/initial-config/bars", os.ModePerm)
+	if err != nil {
+		log.Errorf("Error creating directory /home/aceuser/initial-config/bars: %v", err)
+		return err
+	}
+
+	urlArray := strings.Split(urls, ",")
+	for _, url := range urlArray {
+
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			log.Errorf("Failed creating request - err:", err)
+			return err
+		}
+
+		filename := "/home/aceuser/initial-config/bars/" + path.Base(req.URL.Path)
+
+		// temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
+		if len(urlArray) == 1 {
+			filename = "/home/aceuser/initial-config/bars/barfile.bar"
+		}
+		
+		file, err := os.Create(filename)
+		if err != nil {
+			log.Errorf("Error creating file %v: %v", file, err)
+			return err
+		}
+		defer file.Close()
+
+		req.SetBasicAuth(barAuthParsed.Path("credentials.username").Data().(string), barAuthParsed.Path("credentials.password").Data().(string))
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Errorf("HTTP call failed - err:", err)
+			return err
+		}
+		if resp.StatusCode != http.StatusOK {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Errorf("Failed to convert body", err)
+				return err
+			}
+			log.Println("Response: " + string(body))
+			return errors.New("Non-OK HTTP status: " + strconv.Itoa(resp.StatusCode))
+		} else {
+			log.Println("Downloaded bar file from: " + url)
+		}
+
+		_, err = io.Copy(file, resp.Body)
+		if err != nil {
+			log.Errorf("Error writing file %v: %v", file, err)
+			return err
+		}
+		log.Printf("Saved bar file to " + filename)
+	}
+	return nil
 }

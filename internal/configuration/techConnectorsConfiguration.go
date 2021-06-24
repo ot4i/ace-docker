@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/aymerick/raymond"
 	"github.com/ghodss/yaml"
@@ -120,6 +121,7 @@ func SetupTechConnectorsConfigurations(log logger.LoggerInterface, basedir strin
 
 			if err != nil {
 				log.Printf("An error occured while proccessing connector accounts %s %v\n", connector, err)
+				return err
 			} else {
 				log.Printf("Connector %s accounts processed %v", connector, len(connectorAccounts))
 			}
@@ -132,6 +134,13 @@ func SetupTechConnectorsConfigurations(log logger.LoggerInterface, basedir strin
 }
 
 func processJdbcConnectorAccountsImpl(log logger.LoggerInterface, basedir string, accounts []AccountInfo) error {
+
+	designerAuthMode, ok := os.LookupEnv("DEVELOPMENT_MODE")
+
+	if ok && designerAuthMode == "true" {
+		log.Println("Ignore jdbc accounts in designer authoring integration server")
+		return nil
+	}
 
 	jdbcAccounts := unmarshalJdbcAccounts(accounts)
 	err := setDSNForJDBCApplication(log, basedir, jdbcAccounts)
@@ -377,13 +386,27 @@ func getJDBCPolicyAttributes(log logger.LoggerInterface, dbType, hostname, port,
 	return policyAttributes, err
 }
 
+func haveMultipleBarFiles() bool {
+	urls := os.Getenv("ACE_CONTENT_SERVER_URL")
+	urlArray := strings.Split(urls, ",")
+
+	return len(urlArray) > 1
+}
+
 var processMQConnectorAccountsImpl = func(log logger.LoggerInterface, basedir string, accounts []AccountInfo) error {
 
 	mqAccounts := unmarshalMQAccounts(accounts)
 
+	designerAuthMode, ok := os.LookupEnv("DEVELOPMENT_MODE")
+
+	isDesignerAuthoringMode := false
+	if ok && designerAuthMode == "true" {
+		isDesignerAuthoringMode = true
+	}
+
 	for _, mqAccount := range mqAccounts {
 		log.Printf("MQ account %v Q Manager %v", mqAccount.Name, mqAccount.Credentials.QueueManager)
-		err := processMqAccount(log, basedir, mqAccount)
+		err := processMqAccount(log, basedir, mqAccount, isDesignerAuthoringMode)
 		if err != nil {
 			log.Printf("#SetupTechConnectorsConfigurations encountered an error while processing mq account %v\n", err)
 			return err
@@ -406,12 +429,21 @@ var unmarshalMQAccounts = func(accounts []AccountInfo) []MQAccountInfo {
 	return mqAccountsInfo
 }
 
-var processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccount MQAccountInfo) error {
+var processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccount MQAccountInfo, isDesignerAuthoringMode bool) error {
 	err := createMqAccountDbParams(log, baseDir, mqAccount)
 
 	if err != nil {
 		log.Println("#processMQAccounts create db params failed")
 		return err
+	}
+
+	if isDesignerAuthoringMode {
+		return nil
+	}
+
+	if haveMultipleBarFiles() {
+		log.Println("#processMQAccounts IBM MQ Connector not supported for muliple bar files")
+		return errors.New("IBM MQ Connector not supported for muliple bar files")
 	}
 
 	err = createMQPolicy(log, baseDir, mqAccount)
@@ -489,13 +521,21 @@ var createMQPolicy = func(log logger.LoggerInterface, basedir string, mqAccount 
 
 	policyName := specialCharsRegEx.ReplaceAllString(mqAccountName, "_")
 
+	securityIdentity := ""
+
+	if mqAccount.Credentials.Username == "" && mqAccount.Credentials.Password == "" {
+		log.Println("#createMQPolicy - setting security identity empty")
+	} else {
+		securityIdentity = "gen_" + getMQAccountSHA(&mqAccount)
+	}
+
 	context := map[string]interface{}{
 		"policyName":       policyName,
 		"queueManager":     mqAccount.Credentials.QueueManager,
 		"hostName":         mqAccount.Credentials.Hostname,
 		"port":             mqAccount.Credentials.Port,
 		"channelName":      mqAccount.Credentials.ChannelName,
-		"securityIdentity": "gen_" + getMQAccountSHA(&mqAccount),
+		"securityIdentity": securityIdentity,
 	}
 
 	result, err := transformXMLTemplate(string(policyxmlTemplate), context)
@@ -521,9 +561,13 @@ var createMQPolicy = func(log logger.LoggerInterface, basedir string, mqAccount 
 }
 
 var createMqAccountDbParams = func(log logger.LoggerInterface, basedir string, mqAccount MQAccountInfo) error {
-	log.Println("#createMqAccountDbParams: Execute mqsisetdbparms command")
 
-	log.Printf("#createMqAccountDbParams: setting up config for account - %v\n", mqAccount.Name)
+	if mqAccount.Credentials.Username == "" && mqAccount.Credentials.Password == "" {
+		log.Println("#createMqAccountDbParams - skipping setdbparams empty credentials")
+		return nil
+	}
+
+	log.Printf("#createMqAccountDbParams: setdbparams for account - %v\n", mqAccount.Name)
 
 	securityIdentityName := "gen_" + getMQAccountSHA(&mqAccount)
 	args := []string{"'-n'", "mq::" + securityIdentityName, "'-u'", "'" + mqAccount.Credentials.Username + "'", "'-p'", "'" + mqAccount.Credentials.Password + "'", "'-w'", "'" + basedir + string(os.PathSeparator) + workdirName + "'"}

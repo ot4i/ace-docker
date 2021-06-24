@@ -15,28 +15,28 @@ For information of building images with IBM MQ Advanced please refer to [IBM App
 The IBM App Connect operator now supports a single image which includes both the ACE server runtime as well as an MQ client. This readme will describe how you can build an equivalent image.
 
 A pre-built developer edition image can be found at dockerhub - [ibmcom/ace-server](https://hub.docker.com/r/ibmcom/ace-server)
-A pre-built production edition image can be found on IBM Entitled Registry - [Obtaining the IBM App Connect Enterprise server image from the IBM Cloud Container Registry](https://www.ibm.com/support/knowledgecenter/en/SSTTDS_11.0.0/com.ibm.ace.icp.doc/certc_install_obtaininstallationimageser.html)
+A pre-built production edition image can be found on IBM Entitled Registry - [Obtaining the IBM App Connect Enterprise server image from the IBM Cloud Container Registry](https://www.ibm.com/docs/en/app-connect/11.0.0?topic=aciccd-obtaining-app-connect-enterprise-server-image-from-cloud-container-registry)
 
 
 ## Building a container image
 
-Download a copy of App Connect Enterprise (ie. `ace-11.0.0.9.tar.gz`) and place it in the `deps` folder. When building the image use `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-11.0.0.9.tar.gz`
+Download a copy of App Connect Enterprise (ie. `ace-12.0.1.0.tar.gz`) and place it in the `deps` folder. When building the image use `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-12.0.1.0.tar.gz`
 
-**Important:** Only ACE version **11.0.0.9 or greater** is supported.
+**Important:** Only ACE version **12.0.1.0 or greater** is supported.
 
 Choose if you want to have an image with just App Connect Enterprise or an image with both App Connect Enterprise and the IBM MQ Client libraries. The second of these is used by the IBM App Connect operator.
 
 ### Building a container image which contains an IBM Service provided fix for ACE
 
-You may have been provided with a fix for App Connect Enterprise by IBM Support, this fix will have a name of the form `11.0.0.X-ACE-LinuxX64-TF12345.tar.gz`. In order to apply this fix follow these steps.
+You may have been provided with a fix for App Connect Enterprise by IBM Support, this fix will have a name of the form `12.0.X.Y-ACE-LinuxX64-TF12345.tar.gz`. In order to apply this fix follow these steps.
  - On a local system extract the App Connect Enterprise archive
-   `tar -xvf ace-11.0.0.9.tar.gz`
+   `tar -xvf ace-12.0.1.0.tar.gz`
  - Extract the fix package into expanded App Connect Enterprise installation
-   `tar -xvf /path/to/11.0.0.9-ACE-LinuxX64-TF12345.tar.gz --directory ace-11.0.0.9`
+   `tar -xvf /path/to/12.0.1.0-ACE-LinuxX64-TF12345.tar.gz --directory ace-12.0.1.0`
  - Tar and compress the resulting App Connect Enterprise installation
-   `tar -cvf ace-11.0.0.9_with_IT12345.tar ace-11.0.0.9`
-   `gzip ace-11.0.0.9_with_IT12345.tar`
- - Place the resulting `ace-11.0.0.9_with_IT12345.tar.gz` file in the `deps` folder and when building using the `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-11.0.0.9_with_IT12345.tar.gz`
+   `tar -cvf ace-12.0.1.0_with_IT12345.tar ace-12.0.1.0`
+   `gzip ace-12.0.1.0_with_IT12345.tar`
+ - Place the resulting `ace-12.0.1.0_with_IT12345.tar.gz` file in the `deps` folder and when building using the `build-arg` to specify the name of the file: `--build-arg ACE_INSTALL=ace-12.0.1.0_with_IT12345.tar.gz`
 
 ### Using App Connect Enterprise for Developers
 
@@ -44,7 +44,7 @@ Get [ACE for Developers edition](https://www.ibm.com/marketing/iwm/iwm/web/pick.
 
 ### Build an image with App Connect Enterprise only
 
-The `deps` folder must contain a copy of ACE, **version 11.0.0.9 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
+The `deps` folder must contain a copy of ACE, **version 12.0.1.0 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
 Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in `deps`.
 
 1. ACE for Developers only:
@@ -123,7 +123,6 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
   - You can place multiple sets of files, each with a different file name/alias; each `.crt` file must have an associated `.key` file, and a `.pass` file must be present if the private key has a passphrase.
 - `/home/aceuser/initial-config/odbcini`
   - A text file called `odbc.ini`. This must be an `odbc.ini` file suitable for the Integration Server to use when connecting to a database.  This will be copied to `/home/aceuser/ace-server/odbc.ini`.
-  - To enabled an ODBC trace, follow the steps [here](https://community.ibm.com/community/user/integration/blogs/amar-shah1/2021/05/10/enabling-odbc-trace-for-integration-server-running)
 - `/home/aceuser/initial-config/policy`
   - A set of `.policyxml` files, each with the suffix `.policyxml`, and a single `policy.descriptor` file.  These will be copied to `/home/aceuser/ace-server/overrides/DefaultPolicies/`. They should be specified in the `server.conf.yaml` section in order to be used.
 - `/home/aceuser/initial-config/serverconf`
@@ -223,6 +222,11 @@ You can mount the following file structure at `/home/aceuser/initial-config`. Mi
   - For any parameters that need to be set via `mqsiapplybaroverride` include text files with extension `.properties` Eg:
    ```script
    sampleFlow#MQInput.queueName=NEWC
+   ```
+- `/home/aceuser/initial-config/workdir_overrides`
+  - For any parameters that need to be set via `ibm int apply overrides --work-directory /home/aceuser/ace-server` on the integration server include text files Eg:
+   ```script
+   TestFlow#HTTP Input.URLSpecifier=/production
    ```
 
 
