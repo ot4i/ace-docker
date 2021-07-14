@@ -14,6 +14,6 @@ fi
 if ls /home/aceuser/bars/*.bar >/dev/null 2>&1; then
   for bar in /home/aceuser/bars/*.bar
   do
-    mqsibar -a $bar -w /home/aceuser/ace-server
+    mqsibar -a $bar -w /home/aceuser/ace-server -c
   done
 fi
