@@ -3,6 +3,8 @@
 
 <img src="./app_connect_light_256x256.png" width="100" alt="IBM ACE logo"/>
 
+**No longer updated. These examples currently only support MQ 9.1.4 or earlier.**
+
 Run [IBM App Connect Enterprise for Developers with IBM MQ Advanced for Developers](https://developer.ibm.com/integration/docs/app-connect-enterprise/faq/) in a container.
 
 You can build an image containing one of the following combinations:
