@@ -32,7 +32,8 @@ RUN apk --update add --no-cache --virtual .build-deps curl binutils zstd \
     && apk del --purge .build-deps \
     && rm -rf /tmp/${GLIBC_VER}.apk /tmp/gcc /tmp/gcc-libs.tar* /tmp/libz /tmp/libz.tar* /var/cache/apk/* \
     && mkdir /usr/glibc-compat/zlib-only \
-    && ( cd /usr/glibc-compat/lib && tar -cf - libz* ) | ( cd /usr/glibc-compat/zlib-only && tar -xf - )
+    && ( cd /usr/glibc-compat/lib && tar -cf - libz* ) | ( cd /usr/glibc-compat/zlib-only && tar -xf - ) \
+    && apk upgrade
 
 ENV TZ=Europe/London
 
