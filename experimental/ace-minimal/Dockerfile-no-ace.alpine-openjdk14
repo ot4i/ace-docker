@@ -1,4 +1,4 @@
-FROM alpine:3.13
+FROM alpine:3.14
 
 # docker build -t alpine-openjdk14 -f Dockerfile-no-ace.alpine-openjdk14 .
 
