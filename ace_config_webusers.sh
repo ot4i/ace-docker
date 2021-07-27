@@ -8,7 +8,7 @@
 # http://www.eclipse.org/legal/epl-v20.html
 
 if [ -z "$MQSI_VERSION" ]; then
-  source /opt/ibm/ace-11/server/bin/mqsiprofile
+  source /opt/ibm/ace-12/server/bin/mqsiprofile
 fi
 
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -53,10 +53,15 @@ if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $EDITORUSERSFILE 
       fi
       IFS=${OLDIFS}
       fields=($line)
-      log "Creating admin user ${fields[0]}"
+      if [ $(mqsiwebuseradmin -w /home/aceuser/ace-server -l  | grep admin  | wc -l) -eq 0 ]
+      then
+        log "Creating admin user ${fields[0]}"
 
-      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r admin 2>&1)
-      logAndExitIfError $? "${OUTPUT}"
+        OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r admin 2>&1)
+        logAndExitIfError $? "${OUTPUT}"
+      else
+        log "admin user already exists"
+      fi
     done
   fi
 
@@ -68,10 +73,15 @@ if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $EDITORUSERSFILE 
       fi
       IFS=${OLDIFS}
       fields=($line)
-      log "Creating operator user ${fields[0]}"
+      if [ $(mqsiwebuseradmin -w /home/aceuser/ace-server -l  | grep operator  | wc -l) -eq 0 ]
+      then
+        log "Creating operator user ${fields[0]}"
 
-      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r operator 2>&1)
-      logAndExitIfError $? "${OUTPUT}"
+        OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r operator 2>&1)
+        logAndExitIfError $? "${OUTPUT}"
+      else
+        log "operator user already exists"
+      fi
     done
   fi
 
@@ -83,10 +93,15 @@ if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $EDITORUSERSFILE 
       fi
       IFS=${OLDIFS}
       fields=($line)
-      log "Creating editor user ${fields[0]}"
+      if [ $(mqsiwebuseradmin -w /home/aceuser/ace-server -l  | grep editor  | wc -l) -eq 0 ]
+      then
+        log "Creating editor user ${fields[0]}"
 
-      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r editor 2>&1)
-      logAndExitIfError $? "${OUTPUT}"
+        OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r editor 2>&1)
+        logAndExitIfError $? "${OUTPUT}"
+      else
+        log "editor user already exists"
+      fi
     done
   fi
 
@@ -98,10 +113,15 @@ if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $EDITORUSERSFILE 
       fi
       IFS=${OLDIFS}
       fields=($line)
-      log "Creating audit user ${fields[0]}"
+      if [ $(mqsiwebuseradmin -w /home/aceuser/ace-server -l  | grep audit  | wc -l) -eq 0 ]
+      then
+        log "Creating audit user ${fields[0]}"
 
-      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r audit 2>&1)
-      logAndExitIfError $? "${OUTPUT}"
+        OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r audit 2>&1)
+        logAndExitIfError $? "${OUTPUT}"
+      else
+        log "audit user already exists"
+      fi
     done
   fi
 
@@ -113,10 +133,15 @@ if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $EDITORUSERSFILE 
       fi
       IFS=${OLDIFS}
       fields=($line)
-      log "Creating viewer user ${fields[0]}"
+      if [ $(mqsiwebuseradmin -w /home/aceuser/ace-server -l  | grep viewer  | wc -l) -eq 0 ]
+      then
+        log "Creating viewer user ${fields[0]}"
 
-      OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r viewer 2>&1)
-      logAndExitIfError $? "${OUTPUT}"
+        OUTPUT=$(mqsiwebuseradmin -w /home/aceuser/ace-server -c -u ${fields[0]} -a ${fields[1]} -r viewer 2>&1)
+        logAndExitIfError $? "${OUTPUT}"
+      else
+        log "viewer user already exists"
+      fi
     done
   fi
 fi

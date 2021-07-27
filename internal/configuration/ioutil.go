@@ -8,6 +8,8 @@ import (
 
 var ioutilReadFile = ioutil.ReadFile
 var osMkdirAll = os.MkdirAll
+var osMkdir = os.Mkdir
+var osCreate = os.Create
 var ioutilWriteFile = ioutil.WriteFile
 var osOpenFile = os.OpenFile
 var ioCopy = io.Copy

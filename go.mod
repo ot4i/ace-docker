@@ -3,6 +3,7 @@ module github.com/ot4i/ace-docker
 go 1.13
 
 require (
+	github.com/Jeffail/gabs v1.4.0
 	github.com/aymerick/raymond v2.0.2+incompatible
 	github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680
 	github.com/gorilla/websocket v1.4.2

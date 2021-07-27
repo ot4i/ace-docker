@@ -56,18 +56,8 @@ func (handler DbParamsHandler) execute(log logger.LoggerInterface, body io.Reade
 
 	log.Printf("#setdbparamsHandler adding %s of type %s", dbParamsCommand.ResourceName, dbParamsCommand.ResourceType)
 
-	_, exitCode, err := runCommand("ace_mqsicommand.sh", "setdbparms", "-w", "/home/aceuser/ace-server/", "-n", resource,
+	runCommand("ace_mqsicommand.sh", "setdbparms", "-w", "/home/aceuser/ace-server/", "-n", resource,
 		"-u", dbParamsCommand.UserName, "-p", dbParamsCommand.Password)
-
-	if err != nil {
-		log.Printf("#setdbparamsHandler An error occured while invoking ace_mqsicommand setdbparams %s", err.Error())
-		return nil, &commandError{errorCode: commandErrorInternal, error: "Internal error"}
-	}
-
-	if exitCode != 0 {
-		log.Printf("#setdbparamsHandler An error occured while invoking ace_mqsicommand setdbparams, exit code %v", exitCode)
-		return nil, &commandError{errorCode: commandErrorInternal, error: "Internal error"}
-	}
 
 	return &commandResponse{message: "success", restartIs: true}, nil
 }

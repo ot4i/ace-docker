@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# © Copyright IBM Corporation 2018.
+# © Copyright IBM Corporation 2021.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Eclipse Public License v2.0
@@ -9,4 +9,11 @@
 
 if [ -z "$MQSI_VERSION" ]; then
   source /opt/ibm/ace-12/server/bin/mqsiprofile
+fi
+
+if ls /home/aceuser/initial-config/workdir_overrides/* >/dev/null 2>&1; then
+  for workdiroverride in /home/aceuser/initial-config/workdir_overrides/*
+  do
+    ibmint apply overrides $workdiroverride --work-directory /home/aceuser/ace-server
+  done
 fi
