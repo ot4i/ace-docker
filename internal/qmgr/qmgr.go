@@ -52,7 +52,7 @@ func StartQueueManager(log *logger.Logger) command.BackgroundCmd {
 // an RC of zero, to indicate that the queue manager is ready.
 func WaitForQueueManager(log *logger.Logger) error {
 	for {
-		_, rc, err := command.RunAsUser("mqm", "chkmqready")
+		_, rc, err := command.RunAsUser("1000650000", "chkmqready")
 		if rc != 0 || err != nil {
 			log.Print("Queue manager not ready yet")
 		}

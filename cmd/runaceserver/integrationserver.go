@@ -91,7 +91,7 @@ func initialIntegrationServerConfig() error {
 		if file.IsDir() && file.Name() != "mqsc" {
 			log.Printf("Processing configuration in folder %v", file.Name())
 			if qmgr.UseQueueManager() {
-				out, _, err := command.RunAsUser("mqm", "ace_config_"+file.Name()+".sh")
+				out, _, err := command.RunAsUser("1001", "ace_config_"+file.Name()+".sh")
 				if err != nil {
 					log.LogDirect(out)
 					log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
@@ -572,7 +572,7 @@ func startIntegrationServer() command.BackgroundCmd {
 func waitForIntegrationServer() error {
 	for {
 		if qmgr.UseQueueManager() {
-			_, rc, err := command.RunAsUser("mqm", "chkaceready")
+			_, rc, err := command.RunAsUser("1000650000", "chkaceready")
 			if rc != 0 || err != nil {
 				log.Printf("Integration server not ready yet")
 			}
@@ -616,7 +616,7 @@ func createWorkDir() error {
 		log.Printf("Work dir is not yet initialized - initializing now in /home/aceuser/ace-server")
 
 		if qmgr.UseQueueManager() {
-			_, _, err := command.RunAsUser("mqm", "/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+			_, _, err := command.RunAsUser("1001", "/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
 			if err != nil {
 				log.Printf("Error reading initializing work dir")
 				return err
