@@ -554,7 +554,7 @@ func startIntegrationServer() command.BackgroundCmd {
 			returnErr.ReturnError = err
 			return returnErr
 		}
-		return command.RunAsUserBackground("1001", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
+		return command.RunAsUserBackground("1000650000", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
 	}
 
 	thisUser, err := user.Current()
