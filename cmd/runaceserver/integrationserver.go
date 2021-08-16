@@ -91,7 +91,7 @@ func initialIntegrationServerConfig() error {
 		if file.IsDir() && file.Name() != "mqsc" {
 			log.Printf("Processing configuration in folder %v", file.Name())
 			if qmgr.UseQueueManager() {
-				out, _, err := command.RunAsUser("1001", "ace_config_"+file.Name()+".sh")
+				out, _, err := command.RunAsUser("1000650000", "ace_config_"+file.Name()+".sh")
 				if err != nil {
 					log.LogDirect(out)
 					log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
@@ -554,7 +554,7 @@ func startIntegrationServer() command.BackgroundCmd {
 			returnErr.ReturnError = err
 			return returnErr
 		}
-		return command.RunAsUserBackground("mqm", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
+		return command.RunAsUserBackground("1001", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
 	}
 
 	thisUser, err := user.Current()
