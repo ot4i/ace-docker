@@ -15,3 +15,4 @@ Defaults:
  Policies:
    # Set default policy names, optionally qualified with a policy project as {policy project}:name
    HTTPSConnector: 'HTTPS'          # Default HTTPS connector policy
+   MQEndpoint: 'QM1'          # Default HTTPS connector policy

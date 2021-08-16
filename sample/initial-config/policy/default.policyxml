@@ -26,4 +26,15 @@
     <TruststoreFile>/home/aceuser/ace-server/truststore.jks</TruststoreFile>
     <TruststorePassword>truststorepwd</TruststorePassword>
   </policy>
+  <policy policyType="MQEndpoint" policyName="QM1" policyTemplate="MQEndpoint">
+    <connection>SERVER</connection>
+    <destinationQueueManagerName>QMGR</destinationQueueManagerName>
+    <queueManagerHostname></queueManagerHostname>
+    <listenerPortNumber>1414</listenerPortNumber>
+    <channelName>ACE.SVRCONN</channelName>
+    <securityIdentity></securityIdentity>
+    <useSSL>false</useSSL>
+    <SSLPeerName></SSLPeerName>
+    <SSLCipherSpec></SSLCipherSpec>
+  </policy>
 </policies>
