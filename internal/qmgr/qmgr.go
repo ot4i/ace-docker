@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 	"time"
+	"os/exec"
 
 	"github.com/ot4i/ace-docker/internal/command"
 	"github.com/ot4i/ace-docker/internal/logger"
@@ -52,7 +53,12 @@ func StartQueueManager(log *logger.Logger) command.BackgroundCmd {
 // an RC of zero, to indicate that the queue manager is ready.
 func WaitForQueueManager(log *logger.Logger) error {
 	for {
-		_, rc, err := command.RunAsUser("1000650000", "chkmqready")
+		//_, rc, err := command.RunAsUser("mqm", "chkmqready")
+
+		//Fix for MQ 9.2
+		cmd := exec.Command("chkmqready")
+		_, rc, err := command.RunCmd(cmd)
+
 		if rc != 0 || err != nil {
 			log.Print("Queue manager not ready yet")
 		}

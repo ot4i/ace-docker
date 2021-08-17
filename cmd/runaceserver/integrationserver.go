@@ -90,24 +90,37 @@ func initialIntegrationServerConfig() error {
 	for _, file := range fileList {
 		if file.IsDir() && file.Name() != "mqsc" {
 			log.Printf("Processing configuration in folder %v", file.Name())
-			if qmgr.UseQueueManager() {
-				out, _, err := command.RunAsUser("1000650000", "ace_config_"+file.Name()+".sh")
-				if err != nil {
-					log.LogDirect(out)
-					log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
-					return err
-				}
+
+			//if qmgr.UseQueueManager() {
+			//	out, _, err := command.RunAsUser("mqm", "ace_config_"+file.Name()+".sh")
+			//	if err != nil {
+			//		log.LogDirect(out)
+			//		log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
+			//		return err
+			//	}
+			//	log.LogDirect(out)
+			//} else {
+			//	cmd := exec.Command("ace_config_"+file.Name()+".sh")
+			//	out, _, err := command.RunCmd(cmd)
+			//	if err != nil {
+			//		log.LogDirect(out)
+			//		log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
+			//		return err
+			//	}
+			//	log.LogDirect(out)
+			//}
+
+      		//Fix for MQ 9.2
+			cmd := exec.Command("ace_config_"+file.Name()+".sh")
+			out, _, err := command.RunCmd(cmd)
+
+			if err != nil {
 				log.LogDirect(out)
-			} else {
-				cmd := exec.Command("ace_config_"+file.Name()+".sh")
-				out, _, err := command.RunCmd(cmd)
-				if err != nil {
-					log.LogDirect(out)
-					log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
-					return err
-				}
-				log.LogDirect(out)
+				log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
+				return err
 			}
+
+			log.LogDirect(out)
 		}
 	}
 
@@ -554,7 +567,11 @@ func startIntegrationServer() command.BackgroundCmd {
 			returnErr.ReturnError = err
 			return returnErr
 		}
-		return command.RunAsUserBackground("1000650000", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
+
+		//return command.RunAsUserBackground("mqm", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
+
+    	//Fix for MQ 9.2
+		return command.RunBackground("ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
 	}
 
 	thisUser, err := user.Current()
@@ -571,26 +588,41 @@ func startIntegrationServer() command.BackgroundCmd {
 
 func waitForIntegrationServer() error {
 	for {
-		if qmgr.UseQueueManager() {
-			_, rc, err := command.RunAsUser("1000650000", "chkaceready")
-			if rc != 0 || err != nil {
-				log.Printf("Integration server not ready yet")
-			}
-			if rc == 0 {
-				break
-			}
-			time.Sleep(5 * time.Second)
-		} else {
-			cmd := exec.Command("chkaceready")
-			_, rc, err := command.RunCmd(cmd)
-			if rc != 0 || err != nil {
-				log.Printf("Integration server not ready yet")
-			}
-			if rc == 0 {
-				break
-			}
-			time.Sleep(5 * time.Second)
+
+		//if qmgr.UseQueueManager() {
+		//	_, rc, err := command.RunAsUser("mqm", "chkaceready")
+		//	if rc != 0 || err != nil {
+		//		log.Printf("Integration server not ready yet")
+		//	}
+		//	if rc == 0 {
+		//		break
+		//	}
+		//	time.Sleep(5 * time.Second)
+		//} else {
+		//	cmd := exec.Command("chkaceready")
+		//	_, rc, err := command.RunCmd(cmd)
+		//	if rc != 0 || err != nil {
+		//		log.Printf("Integration server not ready yet")
+		//	}
+		//	if rc == 0 {
+		//		break
+		//	}
+		//	time.Sleep(5 * time.Second)
+		//}
+
+    	//Fix for MQ 9.2
+		cmd := exec.Command("chkaceready")
+		_, rc, err := command.RunCmd(cmd)
+
+		if rc != 0 || err != nil {
+			log.Printf("Integration server not ready yet")
 		}
+
+		if rc == 0 {
+			break
+		}
+
+		time.Sleep(5 * time.Second)
 	}
 	return nil
 }
@@ -616,7 +648,7 @@ func createWorkDir() error {
 		log.Printf("Work dir is not yet initialized - initializing now in /home/aceuser/ace-server")
 
 		if qmgr.UseQueueManager() {
-			_, _, err := command.RunAsUser("1001", "/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+			_, _, err := command.RunAsUser("1000", "/opt/ibm/ace-11/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
 			if err != nil {
 				log.Printf("Error reading initializing work dir")
 				return err
