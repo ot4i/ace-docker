@@ -23,8 +23,6 @@ import (
 	"net"
 	"os"
 
-	"github.com/ot4i/ace-docker/internal/command"
-	"github.com/ot4i/ace-docker/internal/qmgr"
 )
 
 func main() {
@@ -35,14 +33,4 @@ func main() {
 		os.Exit(1)
 	}
 	conn.Close()
-
-	// Run MQ's liveness check chkmqhealthy, if enabled
-	if qmgr.UseQueueManager() {
-		out, rc, err := command.RunAsUser("1001", "chkmqhealthy")
-		if rc != 0 || err != nil {
-			fmt.Println(out)
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	}
 }
