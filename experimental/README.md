@@ -1,19 +1,20 @@
 # Experimental docker files
 
-Simple docker images for ACE v11 on Linux (amd64 and s390x) and Windows
+Simple docker images for ACE v12 on Linux (amd64 and s390x) and Windows
 
 ace-full contains a Dockerfile for building an image that can run the full product, including mqsicreatebar with a virtual X server.
+
+ace-basic contains a Dockerfile for building an image that can run the product server, including all files except the toolkit.
 
 ace-minimal contains the Dockerfiles for building images that can run simple servers with a non-root user.
 
 ace-sample contains a sample BAR file and Dockerfiles for building runnable images to serve HTTP clients.
 
-
 See build-all.sh for details on building the images; setting LICENSE=accept is required for all but the initial image builds.
 
 To run the sample after building:
 ```
-docker run -e LICENSE=accept --rm -ti ace-sample:11.0.0.9-minimal-alpine
+docker run -e LICENSE=accept --rm -ti ace-sample:12.0.1.0-minimal-alpine
 ```
 and then curl http://<container IP>:7800/test should return '{"data":"a string from ACE"}'
 
@@ -21,17 +22,12 @@ and then curl http://<container IP>:7800/test should return '{"data":"a string f
 Local on kenya.hursley.uk.ibm.com (debian 10) with defaults in Dockerfiles:
 
 ```
-ace-minimal:11.0.0.9-alpine-openjdk14   a224eb57078c        39 seconds ago      682MB
-ace-minimal:11.0.0.9-ubuntu             5541e188b068        6 minutes ago       896MB
-ace-minimal:11.0.0.9-alpine             c906eaa3ba7e        25 minutes ago      524MB
-ace-full:11.0.0.9-ubuntu                e7a8e54f20cf        4 minutes ago       2.48GB
+ace-minimal      12.0.1.0-alpine-openjdk16     e7ed561a933e        2 minutes ago       517MB
+ace-minimal      12.0.1.0-alpine-openjdk14     6c0eef3c4116        2 minutes ago       527MB
+ace-minimal      12.0.1.0-alpine               1d68aaf565fd        4 minutes ago       628MB
+ace-minimal      12.0.1.0-ubuntu               874719904be1        5 hours ago         706MB
+ace-basic        12.0.1.0-ubuntu               66fdbbf9b010        4 hours ago         1.51GB
+ace-full         12.0.1.0-ubuntu               22a2f46d7b31        4 hours ago         3.05GB
 ```
 
-Note that the first two have the web UI available on port 7600; removing that capability would leave them at
-
-```
-ace-minimal:11.0.0.9-alpine-openjdk14   eabf8622343a        12 minutes ago      462MB
-ace-minimal:11.0.0.9-ubuntu             a2cfcf555038        18 minutes ago      676MB
-```
-
-Most of these will fit into the IBM Cloud container registry free tier due to compression, but ace-full is too big for that.
+Most of these will fit into the IBM Cloud container registry free tier due to compression, but ace-full and ace-basic are too big for that.
