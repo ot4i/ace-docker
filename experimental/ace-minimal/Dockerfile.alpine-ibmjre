@@ -74,7 +74,7 @@ COPY ibmjava-paths.sh /etc/profile.d/ibmjava-paths.sh
 
 # Install ACE 
 RUN mkdir -p /opt/ibm && \
-    apk add bash curl binutils zip && \
+    apk add bash curl binutils mksh zip && \
     echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} \
     | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
@@ -89,6 +89,9 @@ RUN mkdir -p /opt/ibm && \
     cat /etc/profile.d/ibmjava-paths.sh >> /root/.bashrc && \
     ln -s /opt/ibm/java /opt/ibm/ace-12/common/jdk
 
+# Issues with 5.1.4(1)-release (x86_64-alpine-linux-musl) on alpine
+RUN sed -i 's/\/bin\/bash/\/bin\/mksh/g' /opt/ibm/ace-12/ace /opt/ibm/ace-12/server/bin/mqsicreateworkdir /opt/ibm/ace-12/server/bin/mqsipackagebar
+
 RUN bash -c '. /etc/profile.d/ibmjava-paths.sh && /opt/ibm/ace-12/ace make registry global accept license deferred'
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
@@ -100,7 +103,7 @@ RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001 -h /home/aceuser -s 
     cat /etc/profile.d/ibmjava-paths.sh >> /home/aceuser/.bashrc && \
     chown aceuser /home/aceuser/.bashrc && \
     chmod 664 /home/aceuser/.bashrc && \
-    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-ibmjava-paths.sh && mqsicreateworkdir /home/aceuser/ace-server" && \
+    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-ibmjava-paths.sh && /opt/ibm/ace-12/server/bin/mqsicreateworkdir /home/aceuser/ace-server" && \
     echo ". /etc/profile.d/profile-with-ibmjava-paths.sh" >> /home/aceuser/.bashrc
 
 # aceuser

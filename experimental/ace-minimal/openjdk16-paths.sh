@@ -1,6 +1,6 @@
 export MQSI_SIGNAL_EXCLUSIONS=11
 export MQSI_NON_IBM_JAVA=1
-#export MQSI_NO_CACHE_SUPPORT=1
+export MQSI_NO_CACHE_SUPPORT=1
 
 export LD_LIBRARY_PATH=/lib:/opt/openjdk-16/lib:/opt/openjdk-16/lib/server:$LD_LIBRARY_PATH
 
