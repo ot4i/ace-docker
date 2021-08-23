@@ -16,7 +16,7 @@ To run the sample after building:
 ```
 docker run -e LICENSE=accept --rm -ti ace-sample:12.0.1.0-minimal-alpine
 ```
-and then curl http://<container IP>:7800/test should return '{"data":"a string from ACE"}'
+and then curl http://[container IP]:7800/test should return '{"data":"a string from ACE"}'
 
 ## Various sizes
 Local on kenya.hursley.uk.ibm.com (debian 10) with defaults in Dockerfiles:
