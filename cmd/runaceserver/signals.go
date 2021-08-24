@@ -32,8 +32,8 @@ func signalHandler(shutdownFunc func()) chan int {
 	control := make(chan int)
 	// Use separate channels for the signals, to avoid SIGCHLD signals swamping
 	// the buffer, and preventing other signals.
-	stopSignals := make(chan os.Signal)
-	reapSignals := make(chan os.Signal)
+	stopSignals := make(chan os.Signal, 2)
+	reapSignals := make(chan os.Signal, 2)
 	signal.Notify(stopSignals, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		for {
