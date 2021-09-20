@@ -238,6 +238,7 @@ func TestGetConfigurationFromContentServer(t *testing.T) {
   barDirPath := "/home/aceuser/initial-config/bars"
   var osMkdirRestore = osMkdir
   var osCreateRestore = osCreate
+  var osStatRestore = osStat
   var ioutilReadFileRestore = ioutilReadFile
   var ioCopyRestore = ioCopy
   var contentserverGetBARRestore = contentserverGetBAR
@@ -270,6 +271,9 @@ func TestGetConfigurationFromContentServer(t *testing.T) {
     osCreate = func(file string) (*os.File, error) {
 			panic("should be mocked")
 		}
+    osStat = func(file string) (os.FileInfo, error) {
+			panic("should be mocked")
+		}
     ioCopy = func(target io.Writer, source io.Reader) (int64, error) {
 			panic("should be mocked")
 		}
@@ -284,6 +288,7 @@ func TestGetConfigurationFromContentServer(t *testing.T) {
 	var restore = func() {
 		osMkdir = osMkdirRestore
     osCreate = osCreateRestore
+    osStat = osStatRestore
     ioutilReadFile = ioutilReadFileRestore
     ioCopy = ioCopyRestore
     contentserverGetBAR = contentserverGetBARRestore
@@ -356,6 +361,12 @@ func TestGetConfigurationFromContentServer(t *testing.T) {
   
     osCreate = func(file string) (*os.File, error) {
       assert.Equal(t, "/home/aceuser/initial-config/bars/barfile.bar", file)
+			return nil, nil
+		}
+
+    osStat = func(file string) (os.FileInfo, error) {
+			// Should not be called
+			t.Errorf("Should not check if file exist when only single bar URL")
 			return nil, nil
 		}
 
@@ -441,6 +452,12 @@ func TestGetConfigurationFromContentServer(t *testing.T) {
 			return nil, nil
 		}
 
+		osStat = func(file string) (os.FileInfo, error) {
+			// Should not be called
+			t.Errorf("Should not check if file exist when only single bar URL")
+			return nil, nil
+		}
+
     ioutilReadFile = func(cafile string) ([]byte, error) {
       assert.Equal(t, "/home/aceuser/ssl/mycustom.pem", cafile)
 			return []byte(dummyCert), nil
@@ -491,6 +508,12 @@ func TestGetConfigurationFromContentServer(t *testing.T) {
   
     osCreate = func(file string) (*os.File, error) {
       assert.Equal(t, "/home/aceuser/initial-config/bars/barfile.bar", file)
+			return nil, nil
+		}
+
+    osStat = func(file string) (os.FileInfo, error) {
+			// Should not be called
+			t.Errorf("Should not check if file exist when only single bar URL")
 			return nil, nil
 		}
 
@@ -588,6 +611,10 @@ func TestGetConfigurationFromContentServer(t *testing.T) {
 			return nil, nil
 		}
 
+    osStat = func(file string) (os.FileInfo, error) {
+			return nil, os.ErrNotExist
+		}
+
     ioutilReadFile = func(cafile string) ([]byte, error) {
       assert.Equal(t, "/home/aceuser/ssl/cacert.pem", cafile)
 			return []byte(dummyCert), nil
@@ -622,4 +649,79 @@ func TestGetConfigurationFromContentServer(t *testing.T) {
 
     assert.Nil(t, errorReturned)
   })
+
+	t.Run("Creates multiple files with different names when using multi bar support and the bar file names are all the same", func(t *testing.T) {
+
+		//https://alexdash-ibm-ace-dashboard-prod:3443/v1/directories/CustomerDatabaseV1?userid=fsdjfhksdjfhsd
+		var barName = "CustomerDatabaseV1"
+		var contentServerName = "alexdash-ibm-ace-dashboard-prod"
+		var barAuth = "userid=fsdjfhksdjfhsd"
+		var barUrlBase = "https://" + contentServerName + ":3443/v1/directories/" + barName
+		var barUrlFull = barUrlBase + "?" + barAuth
+
+		var barUrl = barUrlFull + "," + barUrlFull + "," + barUrlFull
+
+		testReadCloser := ioutil.NopCloser(strings.NewReader("test"))
+
+		os.Unsetenv("DEFAULT_CONTENT_SERVER")
+		os.Setenv("ACE_CONTENT_SERVER_URL", barUrl)
+		os.Unsetenv("ACE_CONTENT_SERVER_NAME")
+		os.Unsetenv("ACE_CONTENT_SERVER_TOKEN")
+		os.Setenv("CONTENT_SERVER_CERT", "cacert")
+		os.Setenv("CONTENT_SERVER_KEY", "cakey")
+
+		osMkdir = func(dirPath string, mode os.FileMode) error {
+			assert.Equal(t, barDirPath, dirPath)
+			assert.Equal(t, os.ModePerm, mode)
+			return nil
+		}
+
+		createdFiles := map[string]bool{}
+		osCreateCall := 1
+		osCreate = func(file string) (*os.File, error) {
+			createdFiles[file] = true
+			if osCreateCall == 1 {
+				assert.Equal(t, "/home/aceuser/initial-config/bars/"+barName+".bar", file)
+			} else if osCreateCall == 2 {
+				assert.Equal(t, "/home/aceuser/initial-config/bars/"+barName+"-1.bar", file)
+			} else if osCreateCall == 3 {
+				assert.Equal(t, "/home/aceuser/initial-config/bars/"+barName+"-2.bar", file)
+			}
+			osCreateCall = osCreateCall + 1
+			return nil, nil
+		}
+
+		osStat = func(file string) (os.FileInfo, error) {
+			if createdFiles[file] {
+				return nil, os.ErrExist
+			} else {
+				return nil, os.ErrNotExist
+			}
+		}
+
+		ioutilReadFile = func(cafile string) ([]byte, error) {
+			assert.Equal(t, "/home/aceuser/ssl/cacert.pem", cafile)
+			return []byte(dummyCert), nil
+		}
+
+		getBarCall := 1
+		contentserverGetBAR = func(url string, serverName string, token string, contentServerCACert []byte, contentServerCert string, contentServerKey string, log logger.LoggerInterface) (io.ReadCloser, error) {
+			assert.Equal(t, barUrlBase+"?archive=true", url)
+			assert.Equal(t, contentServerName, serverName)
+			assert.Equal(t, barAuth, token)
+			assert.Equal(t, []byte(dummyCert), contentServerCACert)
+			assert.Equal(t, "cacert", contentServerCert)
+			assert.Equal(t, "cakey", contentServerKey)
+			getBarCall = getBarCall + 1
+			return testReadCloser, nil
+		}
+
+		ioCopy = func(target io.Writer, source io.Reader) (int64, error) {
+			return 0, nil
+		}
+
+		errorReturned := getConfigurationFromContentServer()
+
+		assert.Nil(t, errorReturned)
+	})  
 }
