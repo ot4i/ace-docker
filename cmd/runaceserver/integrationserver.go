@@ -39,6 +39,7 @@ import (
 
 var osMkdir = os.Mkdir
 var osCreate = os.Create
+var osStat = os.Stat
 var ioutilReadFile = ioutil.ReadFile
 var ioCopy = io.Copy
 var contentserverGetBAR = contentserver.GetBAR
@@ -567,13 +568,33 @@ func getConfigurationFromContentServer() error {
 			log.Errorf("Error parsing content server url : %v", err)
 			return err
 		}
-		filename := "/home/aceuser/initial-config/bars/" + path.Base(u.Path) + ".bar"
-		
-		// temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
+
+		var filename string
 		if len(urlArray) == 1 {
+			// temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
 			filename = "/home/aceuser/initial-config/bars/barfile.bar"
+		} else {
+			// Multiple bar support. Need to loop to check that the file does not already exist
+			// (case where multiple bars have the same name)
+			isAvailable := false
+			count := 0
+			for !isAvailable {
+				if count == 0 {
+					filename = "/home/aceuser/initial-config/bars/" + path.Base(u.Path) + ".bar"
+				} else {
+					filename = "/home/aceuser/initial-config/bars/" + path.Base(u.Path) + "-" + fmt.Sprint(count) + ".bar"
+					log.Printf("Previous path already in use. Testing filename: " + filename)
+				}
+
+				if _, err := osStat(filename); os.IsNotExist(err) {
+					log.Printf("No existing file on that path so continuing")
+					isAvailable = true
+				}
+				count++
+			}
 		}
-		log.Printf("Will saving bar as: " + filename)
+
+		log.Printf("Will save bar as: " + filename)
 
 		file, err := osCreate(filename)
 		if err != nil {
