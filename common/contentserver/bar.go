@@ -19,8 +19,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"net/http"
+	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/ot4i/ace-docker/common/logger"
 )
@@ -67,10 +68,10 @@ func GetBAR(url string, serverName string, token string, contentServerCACert []b
 	if err != nil {
 		return nil, err
 	}
-	// TODO: this doesn't actually return an error
+
 	if response.StatusCode != 200 {
 		log.Printf("Call to retrieve BAR file from content server failed with response code: %v", response.StatusCode)
-		return nil, err
+		return nil, errors.New("HTTP status : " + fmt.Sprint(response.StatusCode) + ". Unable to get BAR file from content server.")
 	}
 
 	return response.Body, nil

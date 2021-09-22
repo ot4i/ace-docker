@@ -19,6 +19,8 @@ package logger_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -26,6 +28,9 @@ import (
 )
 
 func TestJSONLogger(t *testing.T) {
+	const logSourceCRN, saveServiceCopy, newParam = "testCRN", false, "123"
+	os.Setenv("MQSI_LOG_ADDITIONAL_JSON_ELEMENTS", fmt.Sprintf("\"logSourceCRN\":%q, \"saveServiceCopy\":%t, \"newParam\":%q", logSourceCRN, saveServiceCopy, newParam))
+
 	buf := new(bytes.Buffer)
 	l, err := logger.NewLogger(buf, true, true, t.Name())
 	if err != nil {
@@ -41,9 +46,23 @@ func TestJSONLogger(t *testing.T) {
 	if s != e["message"] {
 		t.Errorf("Expected JSON to contain message=%v; got %v", s, buf.String())
 	}
+
+	if e["logSourceCRN"] != logSourceCRN {
+		t.Errorf("Expected JSON to contain logSourceCRN=%v; got %v", e["logSourceCRN"], buf.String())
+	}
+
+	if e["saveServiceCopy"] != saveServiceCopy {
+		t.Errorf("Expected JSON to contain saveServiceCopy=%v; got %v", e["saveServiceCopy"], buf.String())
+	}
+
+	if e["newParam"] != newParam {
+		t.Errorf("Expected JSON to contain newParam=%v; got %v", e["newParam"], buf.String())
+	}
 }
 
 func TestSimpleLogger(t *testing.T) {
+	os.Setenv("MQSI_LOG_ADDITIONAL_JSON_ELEMENTS", "\"logSourceCRN\":\"testCRN\"")
+
 	buf := new(bytes.Buffer)
 	l, err := logger.NewLogger(buf, true, false, t.Name())
 	if err != nil {
@@ -53,5 +72,9 @@ func TestSimpleLogger(t *testing.T) {
 	l.Print(s)
 	if !strings.Contains(buf.String(), s) {
 		t.Errorf("Expected log output to contain %v; got %v", s, buf.String())
+	}
+
+	if strings.Contains(buf.String(), "logSourceCRN") {
+		t.Errorf("Expected log output to without %v; got %v", "logSourceCRN", buf.String())
 	}
 }

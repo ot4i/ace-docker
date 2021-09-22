@@ -32,6 +32,7 @@ var osOpenFileRestore = osOpenFile
 var ioCopyRestore = ioCopy
 var RunCommandRestore = internalRunSetdbparmsCommand
 var RunKeytoolCommandRestore = internalRunKeytoolCommand
+var setupMqAccountsKdbFileRestore = setupMqAccountsKdbFile
 
 const policyProjectContent = "UEsDBAoAAAAAAFelclAAAAAAAAAAAAAAAAAJABwAcHJvamVjdDEvVVQJAAPFh3JeyIdyXnV4CwABBPUBAAAEFAAAAFBLAwQUAAAACABgpHJQn5On0w0AAAARAAAAEQAcAHByb2plY3QxL3Rlc3QueG1sVVQJAAPzhXJeHoZyXnV4CwABBPUBAAAEFAAAALMpSS0usQMRNvpgJgBQSwECHgMKAAAAAABXpXJQAAAAAAAAAAAAAAAACQAYAAAAAAAAABAA7UEAAAAAcHJvamVjdDEvVVQFAAPFh3JedXgLAAEE9QEAAAQUAAAAUEsBAh4DFAAAAAgAYKRyUJ+Tp9MNAAAAEQAAABEAGAAAAAAAAQAAAKSBQwAAAHByb2plY3QxL3Rlc3QueG1sVVQFAAPzhXJedXgLAAEE9QEAAAQUAAAAUEsFBgAAAAACAAIApgAAAJsAAAAAAA=="
 const genericContent = "UEsDBAoAAAAAAFelclAAAAAAAAAAAAAAAAAJABwAcHJvamVjdDEvVVQJAAPFh3JeyIdyXnV4CwABBPUBAAAEFAAAAFBLAwQUAAAACABgpHJQn5On0w0AAAARAAAAEQAcAHByb2plY3QxL3Rlc3QueG1sVVQJAAPzhXJeHoZyXnV4CwABBPUBAAAEFAAAALMpSS0usQMRNvpgJgBQSwECHgMKAAAAAABXpXJQAAAAAAAAAAAAAAAACQAYAAAAAAAAABAA7UEAAAAAcHJvamVjdDEvVVQFAAPFh3JedXgLAAEE9QEAAAQUAAAAUEsBAh4DFAAAAAgAYKRyUJ+Tp9MNAAAAEQAAABEAGAAAAAAAAQAAAKSBQwAAAHByb2plY3QxL3Rlc3QueG1sVVQFAAPzhXJedXgLAAEE9QEAAAQUAAAAUEsFBgAAAAACAAIApgAAAJsAAAAAAA=="
@@ -49,6 +50,7 @@ func restore() {
 	ioCopy = ioCopyRestore
 	internalRunSetdbparmsCommand = RunCommandRestore
 	internalRunKeytoolCommand = RunKeytoolCommandRestore
+	setupMqAccountsKdbFile = setupMqAccountsKdbFileRestore
 }
 
 func reset() {
@@ -91,6 +93,10 @@ func reset() {
 
 	ioutilReadFile = func(filename string) ([]byte, error) {
 		return []byte("ace"), nil
+	}
+
+	setupMqAccountsKdbFile = func(log logger.LoggerInterface) error {
+		return nil
 	}
 }
 

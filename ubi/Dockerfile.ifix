@@ -1,0 +1,20 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+USER root
+
+ARG IFIX_ID
+
+COPY ["${IFIX_ID}.tar.gz", "/tmp"]
+RUN mkdir /tmp/fix && \
+    cd /tmp/fix && \
+    tar xzf /tmp/${IFIX_ID}.tar.gz && \
+    ./mqsifixinst.sh /opt/ibm/ace-12 testinstall ${IFIX_ID} && \
+    ./mqsifixinst.sh /opt/ibm/ace-12 install ${IFIX_ID} && \
+    cd /tmp && \
+    rm -rf /tmp/fix && \
+    rm -rf /opt/ibm/ace-12/fix-backups* && \
+    rm /opt/ibm/ace-12/mqsifixinst.log && \
+    rm /opt/ibm/ace-12/mqsifixinst.sh
+
+USER 1000

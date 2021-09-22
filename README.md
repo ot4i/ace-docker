@@ -14,8 +14,7 @@ For information of building images with IBM MQ Advanced please refer to [IBM App
 
 The IBM App Connect operator now supports a single image which includes both the ACE server runtime as well as an MQ client. This readme will describe how you can build an equivalent image.
 
-A pre-built developer edition image can be found at dockerhub - [ibmcom/ace-server](https://hub.docker.com/r/ibmcom/ace-server)
-A pre-built production edition image can be found on IBM Entitled Registry - [Obtaining the IBM App Connect Enterprise server image from the IBM Cloud Container Registry](https://www.ibm.com/docs/en/app-connect/11.0.0?topic=aciccd-obtaining-app-connect-enterprise-server-image-from-cloud-container-registry)
+Pre-built developer and production edition image can be found on IBM Container Registry - [Obtaining the IBM App Connect Enterprise server image from the IBM Cloud Container Registry](https://www.ibm.com/support/knowledgecenter/en/SSTTDS_11.0.0/com.ibm.ace.icp.doc/certc_install_obtaininstallationimageser.html)
 
 
 ## Building a container image
@@ -28,7 +27,19 @@ Choose if you want to have an image with just App Connect Enterprise or an image
 
 ### Building a container image which contains an IBM Service provided fix for ACE
 
-You may have been provided with a fix for App Connect Enterprise by IBM Support, this fix will have a name of the form `12.0.X.Y-ACE-LinuxX64-TF12345.tar.gz`. In order to apply this fix follow these steps.
+You may have been provided with a fix for App Connect Enterprise by IBM Support, this fix will have a name of the form `12.0.X.Y-ACE-LinuxX64-TF12345.tar.gz`. This fix can be used to create a container image in one of two different ways:
+
+#### Installation during container image build
+This method builds a new container image derived from an existing ACE container image and applies the ifix using the standard `mqsifixinst.sh` script. The ifix image can be built from any existing ACE container image, e.g. `ace-only`, `ace-mqclient`, or another ifix image. Simply build `Dockerfile.ifix` passing in the full `BASE_IMAGE` name and the `IFIX_ID` arguments set:
+
+```bash
+docker build -t ace-server:12.0.x.y-r1-tfit12345 --build-arg BASE_IMAGE=ace-server:12.0.x.y-1 --build-arg IFIX_ID=12.0.X.Y-ACE-LinuxX64-TFIT12345 --file ubi/Dockerfile.ifix path/to/folder/containing/ifix
+```
+
+#### Pre-applying the fix to the ACE install image
+This method applies the ifix directly to the ACE installation image that is consumed to make the full container image. **NB**: Only follow these instructions if you have been instructed by IBM Support to "manually install" the ifix, or that the above method is not applicable to your issue. If you follow these instructions then the ifix ID will _not_ appear in the output of `mqsiservice -v`.
+
+In order to apply this fix manually follow these steps.
  - On a local system extract the App Connect Enterprise archive
    `tar -xvf ace-12.0.1.0.tar.gz`
  - Extract the fix package into expanded App Connect Enterprise installation
@@ -102,6 +113,8 @@ In the `sample` folder there is an example on how to build a server image with a
 - **ACE_ADMIN_SERVER_CA** - Set this to your Integration Server SSL CA certificates folder.
 - **ACE_ADMIN_SERVER_CERT** - Set this to your Integration Server SSL certificate.
 - **ACE_ADMIN_SERVER_KEY** - Set this to your Integration Server SSL key certificate.
+
+- **FORCE_FLOW_HTTPS** - Set to 'true' and the *.key and *.crt present in `/home/aceuser/httpsNodeCerts/` are used to force all your flows to use https 
 
 ## How to dynamically configure the ACE Integration Server
 

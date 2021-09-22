@@ -18,41 +18,52 @@
 # Fail on any non-zero return code
 set -ex
 
-mqm_uid=${1:-888}
-
-test -f /usr/bin/microdnf && MICRODNF=true || MICRODNF=false
-test -f /usr/bin/rpm && RPM=true || RPM=false
-
-
-# Download and extract the MQ installation files
-DIR_EXTRACT=/tmp/mq
-mkdir -p ${DIR_EXTRACT}
-cd ${DIR_EXTRACT}
+# Download and extract the MQ unzippable files
+DIR_TMP=/tmp/mq
+mkdir -p ${DIR_TMP}
+cd ${DIR_TMP}
 if [ -z "$MQ_URL_USER" ]
 then
       curl -LO $MQ_URL
 else
       curl -LO -u  ${MQ_URL_USER}:${MQ_URL_PASS} $MQ_URL
 fi
-tar -zxvf ./*.tar.gz
+tar -xzf ./*.tar.gz
+rm -f ./*.tar.gz
+ls -la ${DIR_TMP}
 
-# Recommended: Create the mqm user ID with a fixed UID and group, so that the file permissions work between different images
-groupadd --system --gid ${mqm_uid} mqm
-useradd --system --uid ${mqm_uid} --gid mqm --groups 0 mqm
-
-# Find directory containing .rpm files
-$RPM && DIR_RPM=$(find ${DIR_EXTRACT} -name "*.rpm" -printf "%h\n" | sort -u | head -1)
-# Find location of mqlicense.sh
-MQLICENSE=$(find ${DIR_EXTRACT} -name "mqlicense.sh")
+# Generate MQ package in INSTALLATION_DIR
+export genmqpkg_inc32=0
+export genmqpkg_incadm=1
+export genmqpkg_incamqp=0
+export genmqpkg_incams=0
+export genmqpkg_inccbl=0
+export genmqpkg_inccics=0
+export genmqpkg_inccpp=1
+export genmqpkg_incdnet=0
+export genmqpkg_incjava=1
+export genmqpkg_incjre=${INSTALL_JRE}
+export genmqpkg_incman=0
+export genmqpkg_incmqbc=0
+export genmqpkg_incmqft=0
+export genmqpkg_incmqsf=0
+export genmqpkg_incmqxr=0
+export genmqpkg_incnls=0
+export genmqpkg_incras=1
+export genmqpkg_incsamp=0
+export genmqpkg_incsdk=0
+export genmqpkg_incserver=0
+export genmqpkg_inctls=1
+export genmqpkg_incunthrd=0
+export genmqpkg_incweb=0
+export INSTALLATION_DIR=/opt/mqm
+${DIR_TMP}/bin/genmqpkg.sh -b ${INSTALLATION_DIR}
+ls -la ${INSTALLATION_DIR}
+rm -rf ${DIR_TMP}
 
 # Accept the MQ license
-${MQLICENSE} -text_only -accept
+${INSTALLATION_DIR}/bin/mqlicense -accept
 
-# Install MQ using the rpm packages
-$RPM && cd $DIR_RPM && rpm -ivh $MQ_PACKAGES
+# Create the directory for MQ configuration files
+install --directory --mode 2775 --owner 1001 --group root /etc/mqm
 
-# Remove tar.gz files unpacked by RPM postinst scripts
-find /opt/mqm -name '*.tar.gz' -delete
-
-# Clean up all the downloaded files
-rm -rf ${DIR_EXTRACT}

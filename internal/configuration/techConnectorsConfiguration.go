@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,6 +17,7 @@ import (
 	"github.com/aymerick/raymond"
 	"github.com/ghodss/yaml"
 	"github.com/ot4i/ace-docker/common/logger"
+	yamlv2 "gopkg.in/yaml.v2"
 )
 
 // JdbcCredentials Credentials structure for jdbc credentials object, can be extended for other tech connectors
@@ -32,13 +35,19 @@ type JdbcCredentials struct {
 
 // MQCredentials Credentials structure for mq account credentials object
 type MQCredentials struct {
-	AuthType     string      `json:"authType"`
-	QueueManager string      `json:"queueManager"`
-	Hostname     string      `json:"hostname"`
-	Port         interface{} `json:"port"`
-	Username     string      `json:"username"`
-	Password     string      `json:"password"`
-	ChannelName  string      `json:"channelName"`
+	AuthType                  string      `json:"authType"`
+	QueueManager              string      `json:"queueManager"`
+	Hostname                  string      `json:"hostname"`
+	Port                      interface{} `json:"port"`
+	Username                  string      `json:"username"`
+	Password                  string      `json:"password"`
+	ChannelName               string      `json:"channelName"`
+	CipherSpec                string      `json:"sslCipherSpec"`
+	PeerName                  string      `json:"sslPeerName"`
+	ServerCertificate         string      `json:"sslServerCertificate"`
+	ClientCertificate         string      `json:"sslClientCertificate"`
+	ClientCertificatePassword string      `json:"sslClientCertificatePassword"`
+	ClientCertificateLabel    string      `json:"sslClientCertificateLabel"`
 }
 
 // JdbcAccountInfo structure for jdbc connector accounts
@@ -66,6 +75,12 @@ type Accounts struct {
 
 var processMqConnectorAccounts = processMQConnectorAccountsImpl
 var processJdbcConnectorAccounts = processJdbcConnectorAccountsImpl
+var runOpenSslCommand = runOpenSslCommandImpl
+var runMqakmCommand = runMqakmCommandImpl
+var createMqAccountsKdbFile = createMqAccountsKdbFileImpl
+var setupMqAccountsKdbFile = setupMqAccountsKdbFileImpl
+var convertMqAccountSingleLinePEM = convertMQAccountSingleLinePEMImpl
+var importMqAccountCertificates = importMqAccountCertificatesImpl
 var raymondParse = raymond.Parse
 
 func convertToString(unknown interface{}) string {
@@ -93,6 +108,13 @@ func convertToNumber(unknown interface{}) float64 {
 
 // SetupTechConnectorsConfigurations entry point for all technology connector configurations
 func SetupTechConnectorsConfigurations(log logger.LoggerInterface, basedir string, contents []byte) error {
+
+	kdbError := setupMqAccountsKdbFile(log)
+
+	if kdbError != nil {
+		log.Printf("#SetupTechConnectorsConfigurations setupMqAccountsKdb failed: %v\n", kdbError)
+		return kdbError
+	}
 
 	techConnectors := map[string]func(log logger.LoggerInterface, basedir string, accounts []AccountInfo) error{
 		"jdbc": processJdbcConnectorAccounts,
@@ -386,13 +408,6 @@ func getJDBCPolicyAttributes(log logger.LoggerInterface, dbType, hostname, port,
 	return policyAttributes, err
 }
 
-func haveMultipleBarFiles() bool {
-	urls := os.Getenv("ACE_CONTENT_SERVER_URL")
-	urlArray := strings.Split(urls, ",")
-
-	return len(urlArray) > 1
-}
-
 var processMQConnectorAccountsImpl = func(log logger.LoggerInterface, basedir string, accounts []AccountInfo) error {
 
 	mqAccounts := unmarshalMQAccounts(accounts)
@@ -437,13 +452,15 @@ var processMqAccount = func(log logger.LoggerInterface, baseDir string, mqAccoun
 		return err
 	}
 
-	if isDesignerAuthoringMode {
-		return nil
+	err = importMqAccountCertificates(log, mqAccount)
+
+	if err != nil {
+		log.Printf("Importing of certificates failed for %v", mqAccount.Name)
+		return err
 	}
 
-	if haveMultipleBarFiles() {
-		log.Println("#processMQAccounts IBM MQ Connector not supported for muliple bar files")
-		return errors.New("IBM MQ Connector not supported for muliple bar files")
+	if isDesignerAuthoringMode {
+		return nil
 	}
 
 	err = createMQPolicy(log, baseDir, mqAccount)
@@ -492,9 +509,10 @@ var createMQPolicy = func(log logger.LoggerInterface, basedir string, mqAccount 
 		<listenerPortNumber>{{{port}}}</listenerPortNumber>
 		<channelName>{{{channelName}}}</channelName>
 		<securityIdentity>{{{securityIdentity}}}</securityIdentity>
-		<useSSL>false</useSSL>
-		<SSLPeerName></SSLPeerName>
-		<SSLCipherSpec></SSLCipherSpec>
+		<useSSL>{{useSSL}}</useSSL>
+		<SSLPeerName>{{sslPeerName}}</SSLPeerName>
+		<SSLCipherSpec>{{sslCipherSpec}}</SSLCipherSpec>
+		<SSLCertificateLabel>{{sslCertificateLabel}}</SSLCertificateLabel>
 	  </policy>
 	</policies>
 `
@@ -529,13 +547,19 @@ var createMQPolicy = func(log logger.LoggerInterface, basedir string, mqAccount 
 		securityIdentity = "gen_" + getMQAccountSHA(&mqAccount)
 	}
 
+	useSSL := mqAccount.Credentials.CipherSpec != ""
+
 	context := map[string]interface{}{
-		"policyName":       policyName,
-		"queueManager":     mqAccount.Credentials.QueueManager,
-		"hostName":         mqAccount.Credentials.Hostname,
-		"port":             mqAccount.Credentials.Port,
-		"channelName":      mqAccount.Credentials.ChannelName,
-		"securityIdentity": securityIdentity,
+		"policyName":          policyName,
+		"queueManager":        mqAccount.Credentials.QueueManager,
+		"hostName":            mqAccount.Credentials.Hostname,
+		"port":                mqAccount.Credentials.Port,
+		"channelName":         mqAccount.Credentials.ChannelName,
+		"securityIdentity":    securityIdentity,
+		"useSSL":              useSSL,
+		"sslPeerName":         mqAccount.Credentials.PeerName,
+		"sslCipherSpec":       mqAccount.Credentials.CipherSpec,
+		"sslCertificateLabel": mqAccount.Credentials.ClientCertificateLabel,
 	}
 
 	result, err := transformXMLTemplate(string(policyxmlTemplate), context)
@@ -582,12 +606,12 @@ var createMqAccountDbParams = func(log logger.LoggerInterface, basedir string, m
 var createMQFlowBarOverridesProperties = func(log logger.LoggerInterface, basedir string, mqAccount MQAccountInfo) error {
 	log.Println("#createMQFlowBarOverridesProperties: Execute mqapplybaroverride command")
 
-	barOverridesConfigDir := "/home/aceuser/initial-config/bar_overrides"
+	barOverridesConfigDir := "/home/aceuser/initial-config/workdir_overrides"
 
 	if _, err := osStat(barOverridesConfigDir); osIsNotExist(err) {
 		err = osMkdirAll(barOverridesConfigDir, os.ModePerm)
 		if err != nil {
-			log.Printf("#createMQFlowBarOverridesProperties Failed to create bar_overrides folder %v", err)
+			log.Printf("#createMQFlowBarOverridesProperties Failed to create workdir_overrides folder %v", err)
 			return err
 		}
 	}
@@ -606,12 +630,12 @@ var createMQFlowBarOverridesProperties = func(log logger.LoggerInterface, basedi
 	mqAccountName := convertToString(mqAccount.Name)
 	plainAccountName := specialCharsRegEx.ReplaceAllString(mqAccountName, "_")
 	accountFlowName := "gen.mq_" + plainAccountName
-	accountFlowEndPoint := "/_lcp-mq-connect_" + getMQAccountSHA(&mqAccount)
-	httpURLProperty := accountFlowName + "#HTTPInput.URLSpecifier=" + accountFlowEndPoint
+	accountSha := getMQAccountSHA(&mqAccount)
+	accountIDUdfProperty := accountFlowName + "#mqRuntimeAccountId=" + plainAccountName + "~" + accountSha
 
-	barPropertiesFileContent += httpURLProperty + "\n"
+	barPropertiesFileContent += accountIDUdfProperty + "\n"
 
-	barPropertiesFilePath := "/home/aceuser/initial-config/bar_overrides/barfile.properties"
+	barPropertiesFilePath := "/home/aceuser/initial-config/workdir_overrides/mqconnectorbarfile.properties"
 	err = internalAppendFile(barPropertiesFilePath, []byte(barPropertiesFileContent), 0644)
 
 	if err != nil {
@@ -636,4 +660,268 @@ var transformXMLTemplate = func(xmlTemplate string, context interface{}) (string
 	}
 
 	return result, nil
+}
+
+func setupMqAccountsKdbFileImpl(log logger.LoggerInterface) error {
+
+	serverconfMap := make(map[interface{}]interface{})
+
+	serverConfContents, err := readServerConfFile()
+
+	updateServConf := true
+
+	if err != nil {
+		log.Println("server.conf.yaml not found, proceeding with creating one")
+	} else {
+
+		unmarshallError := yamlv2.Unmarshal(serverConfContents, &serverconfMap)
+
+		if unmarshallError != nil {
+			log.Errorf("Error unmarshalling server.conf.yaml: %v", unmarshallError)
+			return unmarshallError
+		}
+	}
+
+	if serverconfMap["BrokerRegistry"] == nil {
+		serverconfMap["BrokerRegistry"] = map[string]interface{}{
+			"mqKeyRepository": strings.TrimSuffix(getMqAccountsKdbPath(), ".kdb"),
+		}
+	} else {
+		brokerRegistry := serverconfMap["BrokerRegistry"].(map[interface{}]interface{})
+
+		if brokerRegistry["mqKeyRepository"] == nil {
+			log.Println("Adding mqKeyRepository to server.conf.yml")
+			brokerRegistry["mqKeyRepository"] = strings.TrimSuffix(getMqAccountsKdbPath(), ".kdb")
+		} else {
+			log.Printf("An existing mq key repository already found in server.conf %v", brokerRegistry["mqKeyRepository"])
+			updateServConf = false
+		}
+	}
+
+	kdbError := createMqAccountsKdbFile(log)
+
+	if kdbError != nil {
+		log.Errorf("Error while creating mq accounts kdb file %v\n", kdbError)
+		return kdbError
+	}
+
+	serverconfYaml, marshallError := yamlv2.Marshal(&serverconfMap)
+
+	if marshallError != nil {
+		log.Errorf("Error marshalling server.conf.yaml: %v", marshallError)
+		return marshallError
+	}
+
+	if updateServConf {
+		err = writeServerConfFile(serverconfYaml)
+
+		if err != nil {
+			log.Errorf("Error while writingg server.conf", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+var importMqAccountCertificatesImpl = func(log logger.LoggerInterface, mqAccount MQAccountInfo) error {
+
+	tempDir := filepath.FromSlash("/tmp/mqssl-work")
+
+	serverCertPem := filepath.FromSlash("/tmp/mqssl-work/servercrt.pem")
+	clientCertPem := filepath.FromSlash("/tmp/mqssl-work/clientcrt.pem")
+	clientCertP12 := filepath.FromSlash("/tmp/mqssl-work/clientcrt.p12")
+
+	var cleanUp = func() {
+		osRemoveAll(tempDir)
+	}
+
+	defer cleanUp()
+
+	mkdirErr := osMkdirAll(tempDir, os.ModePerm)
+
+	if mkdirErr != nil {
+		return fmt.Errorf("Failed to create mp dir to import certificates,Error: %v", mkdirErr.Error())
+	}
+
+	if mqAccount.Credentials.ServerCertificate != "" {
+		serverPem, err := convertMqAccountSingleLinePEM(mqAccount.Credentials.ServerCertificate)
+		if err != nil {
+			log.Errorf("An error while creating server certificate PEM for %v, error: %v", mqAccount.Name, err)
+			return err
+		}
+		err = ioutilWriteFile(serverCertPem, []byte(serverPem), os.ModePerm)
+
+		if err != nil {
+			log.Errorf("An error while saving server certificate pem for %v, error: %v", mqAccount.Name, err)
+			return err
+		}
+
+		err = importServerCertificate(log, serverCertPem)
+
+		if err != nil {
+			log.Errorf("An error while converting server certificate PEM for %v, error: %v", mqAccount.Name, err.Error())
+			return err
+		}
+
+		log.Printf("Imported server certificate for %v", mqAccount.Name)
+	}
+
+	if mqAccount.Credentials.ClientCertificate != "" {
+
+		if mqAccount.Credentials.ClientCertificateLabel == "" {
+			return fmt.Errorf("Certificate label should not be empty for %v", mqAccount.Name)
+		}
+
+		clientPem, err := convertMqAccountSingleLinePEM(mqAccount.Credentials.ClientCertificate)
+		if err != nil {
+			log.Errorf("An error while converting client certificate PEM for %v, error: %v", mqAccount.Name, err)
+			return err
+		}
+
+		err = ioutilWriteFile(clientCertPem, []byte(clientPem), os.ModePerm)
+
+		if err != nil {
+			log.Errorf("An error while saving pem client certificate pem for %v, error: %v", mqAccount.Name, err)
+			return err
+		}
+
+		p12Pass := randomString(10)
+
+		err = createPkcs12(log, clientCertP12, p12Pass, clientCertPem, mqAccount.Credentials.ClientCertificatePassword, mqAccount.Credentials.ClientCertificateLabel)
+
+		if err != nil {
+			log.Errorf("An error while creating P12 of %v %v", mqAccount.Name, err)
+			return err
+		}
+
+		err = importP12(log, clientCertP12, p12Pass, mqAccount.Credentials.ClientCertificateLabel)
+
+		if err != nil {
+			log.Errorf("An error while importing P12 of %v %v", mqAccount.Name, err)
+			return err
+		}
+
+		log.Printf("Imported client certificate for %v", mqAccount.Name)
+
+	}
+
+	return nil
+}
+
+// readServerConfFile returns the content of the server.conf.yaml file in the overrides folder
+func readServerConfFile() ([]byte, error) {
+	content, err := ioutilReadFile("/home/aceuser/ace-server/overrides/server.conf.yaml")
+	return content, err
+}
+
+// writeServerConfFile writes the yaml content to the server.conf.yaml file in the overrides folder
+// It creates the file if it doesn't already exist
+func writeServerConfFile(content []byte) error {
+	return ioutilWriteFile("/home/aceuser/ace-server/overrides/server.conf.yaml", content, 0644)
+}
+
+func createMqAccountsKdbFileImpl(log logger.LoggerInterface) error {
+
+	mkdirError := osMkdirAll(filepath.FromSlash("/home/aceuser/kdb"), os.ModePerm)
+
+	if mkdirError != nil {
+		return fmt.Errorf("Failed to create directory to create kdb file, Error %v", mkdirError.Error())
+	}
+
+	kdbPass := randomString(10)
+
+	createKdbArgs := []string{"-keydb", "-create", "-type", "cms", "-db", getMqAccountsKdbPath(), "-pw", kdbPass}
+	err := runMqakmCommand(log, createKdbArgs)
+	if err != nil {
+		return fmt.Errorf("Create kdb failed, Error %v ", err.Error())
+	}
+
+	createSthArgs := []string{"-keydb", "-stashpw", "-type", "cms", "-db", getMqAccountsKdbPath(), "-pw", kdbPass}
+	err = runMqakmCommand(log, createSthArgs)
+	if err != nil {
+		return fmt.Errorf("Create stash file failed, Error %v", err.Error())
+	}
+
+	return nil
+
+}
+
+func importServerCertificate(log logger.LoggerInterface, pemFilePath string) error {
+
+	cmdArgs := []string{"-cert", "-add", "-db", getMqAccountsKdbPath(), "-stashed", "-file", pemFilePath}
+	return runMqakmCommand(log, cmdArgs)
+}
+
+func importP12(log logger.LoggerInterface, p12File string, p12Password string, certLabel string) error {
+	runMqakmCmdArgs := []string{"-cert", "-import", "-type", "p12", "-file", p12File, "-pw", p12Password, "-target_type", "cms", "-target", getMqAccountsKdbPath(), "-target_stashed"}
+
+	if certLabel != "" {
+		runMqakmCmdArgs = append(runMqakmCmdArgs, "-new_label")
+		runMqakmCmdArgs = append(runMqakmCmdArgs, certLabel)
+	}
+
+	return runMqakmCommand(log, runMqakmCmdArgs)
+}
+
+func createPkcs12(log logger.LoggerInterface, p12OutFile string, p12Password string, pemFilePath string, pemPassword string, certLabel string) error {
+	openSslCmdArgs := []string{"pkcs12", "-export", "-out", p12OutFile, "-passout", "pass:" + p12Password, "-in", pemFilePath}
+
+	if pemPassword != "" {
+		openSslCmdArgs = append(openSslCmdArgs, "-passin")
+		openSslCmdArgs = append(openSslCmdArgs, "pass:"+pemPassword)
+	}
+
+	return runOpenSslCommand(log, openSslCmdArgs)
+}
+
+func runOpenSslCommandImpl(log logger.LoggerInterface, cmdArgs []string) error {
+	return runCommand(log, "openssl", cmdArgs)
+}
+
+func runMqakmCommandImpl(log logger.LoggerInterface, cmdArgs []string) error {
+	return runCommand(log, "runmqakm", cmdArgs)
+}
+
+func getMqAccountsKdbPath() string {
+	return filepath.FromSlash(`/home/aceuser/kdb/mq.kdb`)
+}
+
+func convertMQAccountSingleLinePEMImpl(singleLinePem string) (string, error) {
+	pemRegExp, err := regexp.Compile(`(?m)-----BEGIN (.*?)-----\s(.*?)-----END (.*?)-----\s?`)
+	if err != nil {
+		return "", err
+	}
+
+	var pemContent strings.Builder
+
+	matches := pemRegExp.FindAllStringSubmatch(singleLinePem, -1)
+
+	if matches == nil {
+		return "", errors.New("PEM is not in expected format")
+	}
+
+	for _, subMatches := range matches {
+
+		if len(subMatches) != 4 {
+			return "", fmt.Errorf("PEM is not in expected format, found %v", len(subMatches))
+		}
+
+		pemContent.WriteString(fmt.Sprintf("-----BEGIN %v-----\n", subMatches[1]))
+		pemContent.WriteString(strings.ReplaceAll(subMatches[2], " ", "\n"))
+		pemContent.WriteString(fmt.Sprintf("-----END %v-----\n", subMatches[3]))
+	}
+
+	return pemContent.String(), nil
+
+}
+
+func randomString(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+	s := make([]rune, n)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
 }
