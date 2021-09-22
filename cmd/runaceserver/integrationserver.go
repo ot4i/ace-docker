@@ -16,33 +16,43 @@ limitations under the License.
 package main
 
 import (
+	"context"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"math/big"
+	"net"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/user"
-	"time"
-	"strings"
 	"path"
-	"net/url"
 	"sort"
-	"fmt"
+	"strings"
+	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/ot4i/ace-docker/common/contentserver"
 	"github.com/ot4i/ace-docker/internal/command"
 	"github.com/ot4i/ace-docker/internal/configuration"
 	"github.com/ot4i/ace-docker/internal/name"
 	"github.com/ot4i/ace-docker/internal/qmgr"
 	"gopkg.in/yaml.v2"
+
+	"software.sslmate.com/src/go-pkcs12"
 )
 
 var osMkdir = os.Mkdir
 var osCreate = os.Create
-var osStat = os.Stat
 var ioutilReadFile = ioutil.ReadFile
 var ioCopy = io.Copy
 var contentserverGetBAR = contentserver.GetBAR
+var watcher *fsnotify.Watcher
 
 // createSystemQueues creates the default MQ service queues used by the Integration Server
 func createSystemQueues() error {
@@ -104,7 +114,7 @@ func initialIntegrationServerConfig() error {
 	SortFileNameAscend(fileList)
 
 	for _, file := range fileList {
-		if file.IsDir() && file.Name() != "mqsc" && file.Name() != "workdir_overrides"  {
+		if file.IsDir() && file.Name() != "mqsc" && file.Name() != "workdir_overrides" {
 			log.Printf("Processing configuration in folder %v", file.Name())
 			if qmgr.UseQueueManager() {
 				out, _, err := command.RunAsUser("mqm", "ace_config_"+file.Name()+".sh")
@@ -161,7 +171,42 @@ func initialIntegrationServerConfig() error {
 		}
 	}
 
-	log.Printf("Initial configuration of integration server complete")
+	forceFlowHttps := os.Getenv("FORCE_FLOW_HTTPS")
+	if forceFlowHttps == "true" || forceFlowHttps == "1" {
+		log.Printf("Forcing all flows to be https. FORCE_FLOW_HTTPS=%v", forceFlowHttps)
+
+		// create the https nodes keystore and password
+		password := generatePassword(10)
+
+		log.Println("Force Flows to be HTTPS running keystore creation commands")
+		cmd := exec.Command("ace_forceflowhttps.sh", password)
+		out, _, err := command.RunCmd(cmd)
+		if err != nil {
+			log.Errorf("Error creating force flow https keystore and password, retrying. Error is %v", err)
+			log.LogDirect(out)
+			return err
+		}
+
+		log.Println("Force Flows to be HTTPS in server.conf.yaml")
+		forceFlowHttpsError := forceFlowsHttpsInServerConf()
+		if forceFlowHttpsError != nil {
+			log.Errorf("Error forcing flows to https in server.conf.yaml: %v", forceFlowHttpsError)
+			return forceFlowHttpsError
+		}
+
+		// Start watching the ..data/tls.key file where the tls.key secret is stored and if it changes recreate the p12 keystore and restart the HTTPSConnector dynamically
+		// need to watch the mounted ..data/tls.key file here as the tls.key symlink timestamp never changes
+		log.Println("Force Flows to be HTTPS starting to watch /home/aceuser/httpsNodeCerts/..data/tls.key")
+		watcher = watchForceFlowsHTTPSSecret(password)
+		err = watcher.Add("/home/aceuser/httpsNodeCerts/..data/tls.key")
+		if err != nil {
+			log.Errorf("Error watching /home/aceuser/httpsNodeCerts/tls.key for Force Flows to be HTTPS: %v", err)
+		}
+	} else {
+		log.Printf("Not Forcing all flows to be https as FORCE_FLOW_HTTPS=%v", forceFlowHttps)
+	}
+
+	log.Println("Initial configuration of integration server complete")
 
 	log.Println("Discovering override ports")
 
@@ -201,7 +246,7 @@ func createSHAServerConfYaml() error {
 
 	if serverconfMap["RestAdminListener"] == nil {
 		serverconfMap["RestAdminListener"] = map[string]interface{}{
-			"webUserPasswordHashAlgorithm":    "SHA-1",
+			"webUserPasswordHashAlgorithm": "SHA-1",
 		}
 		log.Printf("Updating RestAdminListener/webUserPasswordHashAlgorithm")
 	} else {
@@ -226,7 +271,6 @@ func createSHAServerConfYaml() error {
 	return nil
 
 }
-
 
 // enableMetricsInServerConf adds Statistics fields to the server.conf.yaml in overrides
 // If the file does not exist already it gets created.
@@ -288,6 +332,23 @@ func enableOpenTracingInServerConf() error {
 	return nil
 }
 
+// readServerConfFile returns the content of the server.conf.yaml file in the overrides folder
+func readServerConfFile() ([]byte, error) {
+	content, err := ioutil.ReadFile("/home/aceuser/ace-server/overrides/server.conf.yaml")
+	return content, err
+}
+
+// writeServerConfFile writes the yaml content to the server.conf.yaml file in the overrides folder
+// It creates the file if it doesn't already exist
+func writeServerConfFile(content []byte) error {
+	writeError := ioutil.WriteFile("/home/aceuser/ace-server/overrides/server.conf.yaml", content, 0644)
+	if writeError != nil {
+		log.Errorf("Error writing server.conf.yaml: %v", writeError)
+		return writeError
+	}
+	return nil
+}
+
 // enableAdminsslInServerConf adds RestAdminListener configuration fields to the server.conf.yaml in overrides
 // based on the env vars ACE_ADMIN_SERVER_KEY, ACE_ADMIN_SERVER_CERT, ACE_ADMIN_SERVER_CA
 // If the file does not exist already it gets created.
@@ -316,23 +377,6 @@ func enableAdminsslInServerConf() error {
 
 	log.Println("Admin Server Security enabled in server.conf.yaml")
 
-	return nil
-}
-
-// readServerConfFile returns the content of the server.conf.yaml file in the overrides folder
-func readServerConfFile() ([]byte, error) {
-	content, err := ioutil.ReadFile("/home/aceuser/ace-server/overrides/server.conf.yaml")
-	return content, err
-}
-
-// writeServerConfFile writes the yaml content to the server.conf.yaml file in the overrides folder
-// It creates the file if it doesn't already exist
-func writeServerConfFile(content []byte) error {
-	writeError := ioutil.WriteFile("/home/aceuser/ace-server/overrides/server.conf.yaml", content, 0644)
-	if writeError != nil {
-		log.Errorf("Error writing server.conf.yaml: %v", writeError)
-		return writeError
-	}
 	return nil
 }
 
@@ -499,8 +543,7 @@ func addAdminsslToServerConf(serverconfContent []byte) ([]byte, error) {
 // a bar file from that URL
 func getConfigurationFromContentServer() error {
 
-
-	// ACE_CONTENT_SERVER_URL can contain 1 or more comma separated urls 
+	// ACE_CONTENT_SERVER_URL can contain 1 or more comma separated urls
 	urls := os.Getenv("ACE_CONTENT_SERVER_URL")
 	if urls == "" {
 		log.Printf("No content server url available")
@@ -522,7 +565,6 @@ func getConfigurationFromContentServer() error {
 	// check for AUTH env parameters (needed if auth is not encoded in urls for backward compatibility pending operator changes)
 	envServerName := os.Getenv("ACE_CONTENT_SERVER_NAME")
 	envToken := os.Getenv("ACE_CONTENT_SERVER_TOKEN")
-	
 
 	urlArray := strings.Split(urls, ",")
 	for _, barurl := range urlArray {
@@ -536,9 +578,9 @@ func getConfigurationFromContentServer() error {
 		//  or https://test-acecontentserver-ace-dom.svc:3443/v1/directories/testdir?e31d23f6-e3ba-467d-ab3b-ceb0ab12eead
 		// Mutli-tenant : https://test-acecontentserver-ace-dom.svc:3443/v1/namespace/directories/testdir
 		// https://dataplane-api-dash.appconnect:3443/v1/appc-fakeid/directories/ace_manualtest_callableflow
-		
+
 		splitOnSlash := strings.Split(barurl, "/")
-		
+
 		if len(splitOnSlash) > 2 {
 			serverName = strings.Split(splitOnSlash[2], ":")[0] // test-acecontentserver.ace-dom
 		} else {
@@ -546,15 +588,14 @@ func getConfigurationFromContentServer() error {
 			log.Printf("No content server name available but a url is defined - Have you forgotten to define your BAR_AUTH configuration resource?")
 			return errors.New("No content server name available but a url is defined  - Have you forgotten to define your BAR_AUTH configuration resource?")
 		}
-		
 
 		// if ACE_CONTENT_SERVER_TOKEN was set use it. It may have been read from a secret
-		// otherwise then look in the url for ? 
+		// otherwise then look in the url for ?
 		if token == "" {
 			splitOnQuestion := strings.Split(barurl, "?")
 			if len(splitOnQuestion) > 1 && splitOnQuestion[1] != "" {
-				barurl = splitOnQuestion[0]   // https://test-acecontentserver.ace-dom.svc:3443/v1/directories/testdir
-				token = splitOnQuestion[1] //userid=fsdjfhksdjfhsd
+				barurl = splitOnQuestion[0] // https://test-acecontentserver.ace-dom.svc:3443/v1/directories/testdir
+				token = splitOnQuestion[1]  //userid=fsdjfhksdjfhsd
 			} else if defaultContentServer == "true" {
 				// if we have not found token from either env or url error
 				log.Errorf("No content server token available but a url is defined")
@@ -568,33 +609,13 @@ func getConfigurationFromContentServer() error {
 			log.Errorf("Error parsing content server url : %v", err)
 			return err
 		}
+		filename := "/home/aceuser/initial-config/bars/" + path.Base(u.Path) + ".bar"
 
-		var filename string
+		// temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
 		if len(urlArray) == 1 {
-			// temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
 			filename = "/home/aceuser/initial-config/bars/barfile.bar"
-		} else {
-			// Multiple bar support. Need to loop to check that the file does not already exist
-			// (case where multiple bars have the same name)
-			isAvailable := false
-			count := 0
-			for !isAvailable {
-				if count == 0 {
-					filename = "/home/aceuser/initial-config/bars/" + path.Base(u.Path) + ".bar"
-				} else {
-					filename = "/home/aceuser/initial-config/bars/" + path.Base(u.Path) + "-" + fmt.Sprint(count) + ".bar"
-					log.Printf("Previous path already in use. Testing filename: " + filename)
-				}
-
-				if _, err := osStat(filename); os.IsNotExist(err) {
-					log.Printf("No existing file on that path so continuing")
-					isAvailable = true
-				}
-				count++
-			}
 		}
-
-		log.Printf("Will save bar as: " + filename)
+		log.Printf("Will saving bar as: " + filename)
 
 		file, err := osCreate(filename)
 		if err != nil {
@@ -612,7 +633,7 @@ func getConfigurationFromContentServer() error {
 		} else {
 			log.Printf("Getting configuration from custom content server")
 			contentServerCACert = os.Getenv("CONTENT_SERVER_CA")
-			if token != "" { 
+			if token != "" {
 				barurl = barurl + "?" + token
 			}
 			if contentServerCACert == "" {
@@ -784,7 +805,6 @@ func system(cmd string, arg ...string) {
 	log.Printf(string(out))
 }
 
-
 // applyWorkdirOverrides walks through the home/aceuser/initial-config/workdir_overrides directory
 // we want to do this here rather than the loop above as we want to make sure we have done everything
 // else before applying the workdir overrides and then start the integration server
@@ -829,4 +849,230 @@ func applyWorkdirOverrides() error {
 	}
 
 	return nil
+}
+
+// forceFlowHttps adds ResourceManagers HTTPSConnector fields to the server.conf.yaml in overrides using the keystore and password created
+// If the file does not exist already it gets created.
+func forceFlowsHttpsInServerConf() error {
+	serverconfContent, readError := readServerConfFile()
+	if readError != nil {
+		if !os.IsNotExist(readError) {
+			// Error is different from file not existing (if the file does not exist we will create it ourselves)
+			log.Errorf("Error reading server.conf.yaml: %v", readError)
+			return readError
+		}
+	}
+
+	serverconfYaml, manipulationError := addforceFlowsHttpsToServerConf(serverconfContent)
+	if manipulationError != nil {
+		return manipulationError
+	}
+
+	writeError := writeServerConfFile(serverconfYaml)
+	if writeError != nil {
+		return writeError
+	}
+	log.Println("Force Flows to be HTTPS in server.conf.yaml completed")
+
+	return nil
+}
+
+// addforceFlowsHttpsToServerConf gets the content of the server.conf.yaml and adds the Force Flow Security fields to it
+// It returns the updated server.conf.yaml content
+func addforceFlowsHttpsToServerConf(serverconfContent []byte) ([]byte, error) {
+	serverconfMap := make(map[interface{}]interface{})
+	unmarshallError := yaml.Unmarshal([]byte(serverconfContent), &serverconfMap)
+	if unmarshallError != nil {
+		log.Errorf("Error unmarshalling server.conf.yaml: %v", unmarshallError)
+		return nil, unmarshallError
+	}
+
+	isTrue := true
+	keystoreFile := "/home/aceuser/ace-server/https-keystore.p12"
+	keystorePassword := "brokerHTTPSKeystore::password"
+	keystoreType := "PKCS12"
+
+	ResourceManagersMap := make(map[interface{}]interface{})
+	ResourceManagersMap["HTTPSConnector"] = map[string]interface{}{
+		"KeystoreFile":     keystoreFile,
+		"KeystorePassword": keystorePassword,
+		"KeystoreType":     keystoreType,
+	}
+	// Only update if there is not an existing entry in the override server.conf.yaml
+	// so we don't overwrite any customer provided configuration
+	if serverconfMap["forceServerHTTPS"] == nil {
+		serverconfMap["forceServerHTTPS"] = isTrue
+		log.Printf("Force Flows HTTPS Security setting forceServerHTTPS to true")
+	}
+
+	if serverconfMap["ResourceManagers"] == nil {
+		serverconfMap["ResourceManagers"] = ResourceManagersMap
+		log.Printf("Force Flows HTTPS Security creating ResourceManagers->HTTPSConnector")
+	} else {
+		resourceManagers := serverconfMap["ResourceManagers"].(map[interface{}]interface{})
+		if resourceManagers["HTTPSConnector"] == nil {
+			resourceManagers["HTTPSConnector"] = ResourceManagersMap["HTTPSConnector"]
+			log.Printf("Force Flows HTTPS Security updating ResourceManagers creating HTTPSConnector")
+		} else {
+			httpsConnector := resourceManagers["HTTPSConnector"].(map[interface{}]interface{})
+			log.Printf("Force Flows HTTPS Security merging ResourceManagers->HTTPSConnector")
+
+			if httpsConnector["KeystoreFile"] == nil {
+				httpsConnector["KeystoreFile"] = keystoreFile
+			} else {
+				log.Printf("Force Flows HTTPS Security leaving ResourceManagers->HTTPSConnector->KeystoreFile unchanged")
+			}
+			if httpsConnector["KeystorePassword"] == nil {
+				httpsConnector["KeystorePassword"] = keystorePassword
+			} else {
+				log.Printf("Force Flows HTTPS Security leaving ResourceManagers->HTTPSConnector->KeystorePassword unchanged")
+			}
+			if httpsConnector["KeystoreType"] == nil {
+				httpsConnector["KeystoreType"] = keystoreType
+			} else {
+				log.Printf("Force Flows HTTPS Security leaving ResourceManagers->HTTPSConnector->KeystoreType unchanged")
+			}
+		}
+	}
+
+	serverconfYaml, marshallError := yaml.Marshal(&serverconfMap)
+	if marshallError != nil {
+		log.Errorf("Error marshalling server.conf.yaml: %v", marshallError)
+		return nil, marshallError
+	}
+
+	return serverconfYaml, nil
+}
+
+func generatePassword(length int64) string {
+	var i, e = big.NewInt(length), big.NewInt(10)
+	bigInt, _ := rand.Int(rand.Reader, i.Exp(e, i, nil) )
+	return bigInt.String()
+}
+
+func watchForceFlowsHTTPSSecret(password string) *fsnotify.Watcher {
+
+	//set up watch on the /home/aceuser/httpsNodeCerts/tls.key file 
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Errorf("Error creating new watcher for Force Flows to be HTTPS: %v", err)
+	}
+
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+
+				// https://github.com/istio/istio/issues/7877 Remove is triggered for the ..data directory when the secret is updated so check for remove too
+				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Remove == fsnotify.Remove {
+					log.Println("modified file regenerating /home/aceuser/ace-server/https-keystore.p12 and restarting HTTPSConnector:", event.Name)
+					time.Sleep(1 * time.Second)
+
+					// 1. generate new p12 /home/aceuser/ace-server/https-keystore.p12 and then
+					generateHTTPSKeystore("/home/aceuser/httpsNodeCerts/tls.key", "/home/aceuser/httpsNodeCerts/tls.crt", "/home/aceuser/ace-server/https-keystore.p12", password)
+
+					// 2. patch the HTTPSConnector to pick this up
+					patchHTTPSConnector("/home/aceuser/ace-server/config/IntegrationServer.uds")
+
+					// 3. Need to start watching the newly created/ mounted tls.key
+					err = watcher.Add("/home/aceuser/httpsNodeCerts/..data/tls.key")
+					if err != nil {
+						log.Errorf("Error watching /home/aceuser/httpsNodeCerts/tls.key for Force Flows to be HTTPS: %v", err)
+					}
+				}
+
+
+			case err, ok := <-watcher.Errors:
+				log.Println("error from Force Flows to be HTTPS watcher:", err)
+				if !ok {
+					return
+				}
+			}
+		}
+	}()
+
+	return watcher
+}
+
+var generateHTTPSKeystore = localGenerateHTTPSKeystore
+
+func localGenerateHTTPSKeystore(privateKeyLocation string, certificateLocation string, keystoreLocation string, password string) {
+	// create /home/aceuser/ace-server/https-keystore.p12 using:
+	// single /home/aceuser/httpsNodeCerts/tls.key
+	// single /home/aceuser/httpsNodeCerts/tls.crt
+	
+	//Script version: openssl pkcs12 -export -in ${certfile} -inkey ${keyfile} -out /home/aceuser/ace-server/https-keystore.p12 -name ${alias} -password pass:${1} 2>&1)
+
+	// Load the private key file into a rsa.PrivateKey
+	privateKeyFile, err := ioutil.ReadFile(privateKeyLocation) 
+	if err != nil {
+		log.Error("Error loading " + privateKeyLocation, err)
+	}
+	privateKeyPem, _ := pem.Decode(privateKeyFile)
+	if privateKeyPem.Type != "RSA PRIVATE KEY" {
+		log.Error(privateKeyLocation + " is not of type RSA private key")
+	}
+	privateKeyPemBytes := privateKeyPem.Bytes
+	parsedPrivateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPemBytes)
+	if err != nil { 
+		log.Error("Error parsing " + privateKeyLocation + " RSA PRIVATE KEY", err)
+	}
+
+	// Load the single cert file into a x509.Certificate
+	certificateFile, err := ioutil.ReadFile(certificateLocation)
+	if err != nil {
+		log.Error("Error loading " + certificateLocation, err)
+	}
+	certificatePem, _ := pem.Decode(certificateFile)
+	if certificatePem.Type != "CERTIFICATE" {
+		log.Error(certificateLocation +" is not CERTIFICATE type ", certificatePem.Type)
+	}
+	certificatePemBytes := certificatePem.Bytes
+	parsedCertificate, err := x509.ParseCertificate(certificatePemBytes)
+	if err != nil { 
+		log.Error("Error parsing " + certificateLocation +" CERTIFICATE", err)
+	}
+
+	// Create Keystore
+	pfxBytes, err := pkcs12.Encode(rand.Reader, parsedPrivateKey, parsedCertificate, []*x509.Certificate{}, password)
+	if err != nil { 
+		log.Error("Error creating the " + keystoreLocation, err)
+	}
+
+	// Write out the Keystore 600 (rw- --- ---)
+	err = ioutil.WriteFile(keystoreLocation, pfxBytes, 0600)
+	if err != nil { 
+		log.Error(err)
+	}
+}
+
+var patchHTTPSConnector = localPatchHTTPSConnector
+
+func localPatchHTTPSConnector(uds string) {
+	// curl -GET --unix-socket /home/aceuser/ace-server/config/IntegrationServer.uds http://localhost/apiv2/resource-managers/https-connector
+	// curl -d "" -POST --unix-socket /home/aceuser/ace-server/config/IntegrationServer.uds http://localhost/apiv2/resource-managers/https-connector/refresh-tls-config -i
+	// HTTP/1.1 200 OK
+	// Content-Length: 0
+	// Content-Type: application/json
+	
+	// use unix domain socket
+	httpc := http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", uds)
+			},
+		},
+	}
+
+	var err error
+	// can be any path root but use localhost to match curl
+	_, err = httpc.Post("http://localhost/apiv2/resource-managers/https-connector/refresh-tls-config", "application/octet-stream", strings.NewReader(""))
+	if err != nil {
+		log.Println("error during call to restart HTTPSConnector for Force Flows HTTPS", err)
+	} else {
+		log.Println("Call made to restart HTTPSConnector for Force Flows HTTPS")
+	}
 }

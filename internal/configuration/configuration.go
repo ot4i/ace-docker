@@ -202,7 +202,7 @@ func parseConfigurationList(log logger.LoggerInterface, basedir string, list []*
 				return nil, errors.New("Failed to decode contents")
 			}
 			output[index] = configurationObject{name: name, configType: configType, contents: contents}
-		case "truststorecertificate", "truststore", "keystore", "setdbparms", "generic", "adminssl", "agentx", "agenta", "accounts", "loopbackdatasource", "barauth", "workdiroverride":
+		case "truststorecertificate", "truststore", "keystore", "setdbparms", "generic", "adminssl", "agentx", "agenta", "accounts", "loopbackdatasource", "barauth", "workdiroverride", "resiliencekafkacredentials", "persistencerediscredentials":
 			secretName, exists, err := unstructured.NestedString(item.Object, "spec", "secretName")
 			if !exists || err != nil {
 				log.Printf("%s: %#v", "A configuration with type: "+configType+" must have a secretName field", errors.New("A configuration with type: "+configType+" must have a secretName field"))
@@ -314,6 +314,12 @@ func constructConfigurationsOnFileSystem(log logger.LoggerInterface, basedir str
 		return downloadBarFiles(log, basedir, contents)
 	case "workdiroverride":
 		return constructWorkdirOverrideOnFileSystem(log, basedir, configName, contents)
+	case "resiliencekafkacredentials":
+		log.Println("Do nothing for resiliencykafkacredentials")
+		return nil
+	case "persistencerediscredentials":
+		log.Println("Do nothing for persistencerediscredentials")
+		return nil
 	default:
 		return errors.New("Unknown configuration type")
 	}
@@ -511,14 +517,14 @@ func downloadBASIC_AUTH(log logger.LoggerInterface, basedir string, barAuthParse
 	}
 
 	// Append optional cert to the system pool
-	if ( (barAuthParsed.Path("credentials.caCert").Data() != nil) && (barAuthParsed.Path("credentials.caCert").Data().(string) != "" ) ) {
+	if (barAuthParsed.Path("credentials.caCert").Data() != nil) && (barAuthParsed.Path("credentials.caCert").Data().(string) != "") {
 		caCert := barAuthParsed.Path("credentials.caCert").Data().(string)
 		if ok := rootCAs.AppendCertsFromPEM([]byte(caCert)); !ok {
 			return errors.New("CaCert provided but failed to append, Cert provided: " + caCert)
 		} else {
 			log.Println("Appending supplied cert via configuration to system pool")
 		}
-	} else if ( (barAuthParsed.Path("credentials.caCertSecret").Data() != nil) && (barAuthParsed.Path("credentials.caCertSecret").Data().(string) != "" ) ) {
+	} else if (barAuthParsed.Path("credentials.caCertSecret").Data() != nil) && (barAuthParsed.Path("credentials.caCertSecret").Data().(string) != "") {
 		// Read in the cert file
 		caCert, err := ioutil.ReadFile(`/home/aceuser/barurlendpoint/ca.crt`)
 		if err != nil {
@@ -584,7 +590,7 @@ func downloadBASIC_AUTH(log logger.LoggerInterface, basedir string, barAuthParse
 		if len(urlArray) == 1 {
 			filename = "/home/aceuser/initial-config/bars/barfile.bar"
 		}
-		
+
 		file, err := os.Create(filename)
 		if err != nil {
 			log.Errorf("Error creating file %v: %v", file, err)

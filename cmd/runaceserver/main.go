@@ -62,6 +62,12 @@ func doMain() error {
 
 		metrics.StopMetricsGathering()
 
+		// Stop watching the Force Flows Secret if the watcher has been created
+		if watcher != nil {
+			log.Print("Stopping watching the Force Flows HTTPS secret")
+			watcher.Close()
+		}
+
 		log.Print("Stopping Integration Server")
 		stopIntegrationServer(integrationServerProcess)
 		log.Print("Integration Server stopped")
@@ -113,33 +119,85 @@ func doMain() error {
 	// Print out versioning information
 	logVersionInfo()
 
-	if useQmgr {
+	runOnly := os.Getenv("ACE_RUN_ONLY")
+	if runOnly == "true" || runOnly == "1" {
+			log.Println("Run selected so skipping setup")
+	} else {
+		if useQmgr {
 
-		log.Println("Starting MQ Initialisation")
-		err = qmgr.InitializeMQ()
+			log.Println("Starting MQ Initialisation")
+			err = qmgr.InitializeMQ()
+			if err != nil {
+				logTermination(err)
+				performShutdown()
+				return err
+			}
+
+			log.Println("Starting queue manager")
+			qmgrProcess = qmgr.StartQueueManager(log)
+			if qmgrProcess.ReturnError != nil {
+				logTermination(qmgrProcess.ReturnError)
+				return qmgrProcess.ReturnError
+			}
+
+			log.Println("Waiting for queue manager to be ready")
+			err = qmgr.WaitForQueueManager(log)
+			if err != nil {
+				logTermination(err)
+				performShutdown()
+				return err
+			}
+			log.Println("Queue Manager is ready")
+
+			err = createSystemQueues()
+			if err != nil {
+				logTermination(err)
+				performShutdown()
+				return err
+			}
+		}
+
+		log.Println("Checking for valid working directory")
+		err = createWorkDir()
 		if err != nil {
 			logTermination(err)
 			performShutdown()
 			return err
 		}
 
-		log.Println("Starting queue manager")
-		qmgrProcess = qmgr.StartQueueManager(log)
-		if qmgrProcess.ReturnError != nil {
-			logTermination(qmgrProcess.ReturnError)
-			return qmgrProcess.ReturnError
-		}
-
-		log.Println("Waiting for queue manager to be ready")
-		err = qmgr.WaitForQueueManager(log)
+		// Note: this will do nothing if there are no crs set in the environment
+		err = configuration.SetupConfigurationsFiles(log, "/home/aceuser")
 		if err != nil {
 			logTermination(err)
 			performShutdown()
 			return err
 		}
-		log.Println("Queue Manager is ready")
 
-		err = createSystemQueues()
+		err = initialIntegrationServerConfig()
+		if err != nil {
+			logTermination(err)
+			performShutdown()
+			return err
+		}
+
+		log.Println("Validating flows deployed to the integration server before starting")
+		licenseToggles, err := designer.GetLicenseTogglesFromEnvironmentVariables()
+		if err != nil {
+			logTermination(err)
+			performShutdown()
+			return err
+		}
+		designer.InitialiseLicenseToggles(licenseToggles)
+
+		err = designer.ValidateFlows(log, "/home/aceuser")
+		if err != nil {
+			logTermination(err)
+			performShutdown()
+			return err
+		}
+
+		// Apply any WorkdirOverrides provided
+		err = applyWorkdirOverrides()
 		if err != nil {
 			logTermination(err)
 			performShutdown()
@@ -147,51 +205,10 @@ func doMain() error {
 		}
 	}
 
-	log.Println("Checking for valid working directory")
-	err = createWorkDir()
-	if err != nil {
-		logTermination(err)
-		performShutdown()
-		return err
-	}
-
-	// Note: this will do nothing if there are no crs set in the environment
-	err = configuration.SetupConfigurationsFiles(log, "/home/aceuser")
-	if err != nil {
-		logTermination(err)
-		performShutdown()
-		return err
-	}
-
-	err = initialIntegrationServerConfig()
-	if err != nil {
-		logTermination(err)
-		performShutdown()
-		return err
-	}
-
-	log.Println("Validating flows deployed to the integration server before starting")
-	licenseToggles, err := designer.GetLicenseTogglesFromEnvironmentVariables()
-	if err != nil {
-		logTermination(err)
-		performShutdown()
-		return err
-	}
-	designer.InitialiseLicenseToggles(licenseToggles)
-
-	err = designer.ValidateFlows(log, "/home/aceuser")
-	if err != nil {
-		logTermination(err)
-		performShutdown()
-		return err
-	}
-
-	// Apply any WorkdirOverrides provided
-	err = applyWorkdirOverrides()
-	if err != nil {
-		logTermination(err)
-		performShutdown()
-		return err
+	setupOnly := os.Getenv("ACE_SETUP_ONLY")
+	if setupOnly == "true" || setupOnly == "1" {
+		log.Println("Setup only enabled so exiting now")
+		osExit(0)
 	}
 
 	log.Println("Starting integration server")
@@ -241,6 +258,7 @@ func doMain() error {
 var osExit = os.Exit
 
 func main() {
+
 	err := doMain()
 	if err != nil {
 		osExit(1)

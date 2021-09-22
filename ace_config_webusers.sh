@@ -25,23 +25,87 @@ VIEWERUSERSFILE=/home/aceuser/initial-config/webusers/viewer-users.txt
 if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $EDITORUSERSFILE ] || [ -s $AUDITUSERSFILE ] || [ -s $VIEWERUSERSFILE ]; then
   OUTPUT=$(mqsichangeauthmode -w /home/aceuser/ace-server -s active -m file 2>&1)
   logAndExitIfError $? "${OUTPUT}"
+fi
 
-  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r admin -p all+ 2>&1)
-  logAndExitIfError $? "${OUTPUT}"
-  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r admin -o Data -p all+ 2>&1)
-  logAndExitIfError $? "${OUTPUT}"
+if [ -f $ADMINUSERSFILE ]; then
+  if [ -s $ADMINUSERSFILE ]; then
+    if [ -r $ADMINUSERSFILE ]; then
+      OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r admin -p all+ 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
 
-  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r operator -p read+,write-,execute+ 2>&1)
-  logAndExitIfError $? "${OUTPUT}"
-  
-  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r editor -p read+,write+,execute- 2>&1)
-  logAndExitIfError $? "${OUTPUT}"
+      OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r admin -o Data -p all+ 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    else
+      log "ERROR: $ADMINUSERSFILE is not readable"
+      exit 66
+    fi
+  else
+    log "ERROR: $ADMINUSERSFILE is empty"
+    exit 67
+  fi
+fi
 
-  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r audit -p read+,write-,execute- 2>&1)
-  logAndExitIfError $? "${OUTPUT}"
+if [ -f $OPERATORUSERSFILE ]; then
+  if [ -s $OPERATORUSERSFILE ]; then
+    if [ -r $OPERATORUSERSFILE ]; then
+      OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r operator -p read+,write-,execute+ 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    else
+      log "ERROR: $OPERATORUSERSFILE is not readable"
+      exit 66
+    fi
+  else
+    log "ERROR: $OPERATORUSERSFILE is empty"
+    exit 67
+  fi
+fi
 
-  OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r viewer -p read+,write-,execute- 2>&1)
-  logAndExitIfError $? "${OUTPUT}"
+if [ -f $EDITORUSERSFILE ]; then
+  if [ -s $EDITORUSERSFILE ]; then
+    if [ -r $EDITORUSERSFILE ]; then
+      OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r editor -p read+,write+,execute- 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    else
+      log "ERROR: $EDITORUSERSFILE is not readable"
+      exit 66
+    fi
+  else
+    log "ERROR: $EDITORUSERSFILE is empty"
+    exit 67
+  fi
+fi
+
+if [ -f $AUDITUSERSFILE ]; then
+  if [ -s $AUDITUSERSFILE ]; then
+    if [ -r $AUDITUSERSFILE ]; then
+      OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r audit -p read+,write-,execute- 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    else
+      log "ERROR: $AUDITUSERSFILE is not readable"
+      exit 66
+    fi
+  else
+    log "ERROR: $AUDITUSERSFILE is empty"
+    exit 67
+  fi
+fi
+
+if [ -f $VIEWERUSERSFILE ]; then
+  if [ -s $VIEWERUSERSFILE ]; then
+    if [ -r $VIEWERUSERSFILE ]; then
+      OUTPUT=$(mqsichangefileauth -w /home/aceuser/ace-server -r viewer -p read+,write-,execute- 2>&1)
+      logAndExitIfError $? "${OUTPUT}"
+    else
+      log "ERROR: $VIEWERUSERSFILE is not readable"
+      exit 66
+    fi
+  else
+    log "ERROR: $VIEWERUSERSFILE is empty"
+    exit 67
+  fi
+fi
+
+if [ -s $ADMINUSERSFILE ] || [ -s $OPERATORUSERSFILE ] || [ -s $EDITORUSERSFILE ] || [ -s $AUDITUSERSFILE ] || [ -s $VIEWERUSERSFILE ]; then
 
   OLDIFS=${IFS}
 

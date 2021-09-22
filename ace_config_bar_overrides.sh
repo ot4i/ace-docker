@@ -14,7 +14,10 @@ fi
 if ls /home/aceuser/initial-config/bar_overrides/*.properties >/dev/null 2>&1; then
   for propertyFile in /home/aceuser/initial-config/bar_overrides/*.properties
   do
-    mqsiapplybaroverride -b /home/aceuser/initial-config/bars/barfile.bar -p $propertyFile -r 
-    echo $propertyFile >> /home/aceuser/initial-config/bar_overrides/logs.txt
+    for bar in /home/aceuser/initial-config/bars/*.bar
+    do
+      mqsiapplybaroverride -b $bar -p $propertyFile -r 
+      echo $propertyFile >> /home/aceuser/initial-config/bar_overrides/logs.txt
+    done
   done
 fi
