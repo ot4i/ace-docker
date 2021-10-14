@@ -4,7 +4,7 @@ This image exists to enable the use of mqsicreatebar in build pipelines with ACE
  
 To build the image, run
 ```
-docker build -t ace-full:12.0.1.0-ubuntu -f Dockerfile.ubuntu .
+docker build -t ace-full:12.0.2.0-ubuntu -f Dockerfile.ubuntu .
 ```
 in this directory.
  
@@ -37,7 +37,7 @@ container. To do this, mount the .Xauthority file from the host into the contain
 
 ```
 chmod 664 ~/.Xauthority
-docker run -e LICENSE=accept -e DISPLAY --network=host -v $HOME/.Xauthority:/home/aceuser/.Xauthority --rm -ti ace-full:12.0.1.0-ubuntu
+docker run -e LICENSE=accept -e DISPLAY --network=host -v $HOME/.Xauthority:/home/aceuser/.Xauthority --rm -ti ace-full:12.0.2.0-ubuntu
 ```
 with the "--network=host" and "-e DISPLAY" settings allowing the container the network access 
 it needs to get to the host X server. If there is no .Xauthority file in the home directory, it
@@ -54,7 +54,7 @@ able to connect to the host display.
 Assuming permissions are set correctly, then the docker run command above should lead to the 
 standard ACE profile banner, and at that point it should be possible to start the toolkit:
 ```
-MQSI 12.0.1.0
+MQSI 12.0.2.0
 /opt/ibm/ace-12/server
 
 (ACE_12:)aceuser@tdolby-laptop:/$ /opt/ibm/ace-12/ace tools
