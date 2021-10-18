@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.14
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 

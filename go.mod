@@ -12,6 +12,7 @@ require (
 	github.com/prometheus/client_golang v1.5.1
 	github.com/prometheus/client_model v0.2.0
 	github.com/stretchr/testify v1.4.0
+	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/apimachinery v0.18.1

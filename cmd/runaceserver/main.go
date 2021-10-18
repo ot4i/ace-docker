@@ -29,6 +29,7 @@ import (
 	"github.com/ot4i/ace-docker/internal/metrics"
 	"github.com/ot4i/ace-docker/internal/name"
 	"github.com/ot4i/ace-docker/internal/qmgr"
+	"github.com/ot4i/ace-docker/internal/trace"
 )
 
 func doMain() error {
@@ -241,6 +242,14 @@ func doMain() error {
 		log.Println("Failed to start isapi server " + err.Error())
 	} else {
 		log.Println("Integration API started")
+	}
+
+	log.Println("Starting trace API server")
+	err = trace.StartServer(log, 7981)
+	if err != nil {
+		log.Println("Failed to start trace API server, you will not be able to retrieve trace through the ACE dashboard " + err.Error())
+	} else {
+		log.Println("Trace API server started")
 	}
 
 	// Start reaping zombies from now on.

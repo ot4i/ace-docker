@@ -1,0 +1,4 @@
+RestAdminListener:
+  authorizationEnabled: true
+  authorizationMode: file
+  basicAuth: true

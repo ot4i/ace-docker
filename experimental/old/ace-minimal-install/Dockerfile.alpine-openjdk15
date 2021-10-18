@@ -1,4 +1,4 @@
-FROM alpine:3.12
+FROM alpine:3.14
 
 # docker build --build-arg DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-11.0.0.9.tar.gz --build-arg PRODUCT_LABEL=ace-11.0.0.9 -t ace-minimal-install:11.0.0.9-alpine-openjdk15 -f Dockerfile.alpine-openjdk15 .
 

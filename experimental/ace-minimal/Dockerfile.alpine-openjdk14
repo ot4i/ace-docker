@@ -1,4 +1,4 @@
-FROM alpine:3.12
+FROM alpine:3.14
 
 # docker build -t ace-minimal:11.0.0.9-alpine-openjdk14 -f Dockerfile.alpine-openjdk14 .
 

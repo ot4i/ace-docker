@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/windows/servercore:1809
+FROM mcr.microsoft.com/windows/servercore:2009
 
 WORKDIR c:\\tmp
 COPY ACESetup11.0.16742.4.exe c:\\tmp\\ACESetup.exe

@@ -42,6 +42,7 @@ import (
 	"github.com/ot4i/ace-docker/internal/configuration"
 	"github.com/ot4i/ace-docker/internal/name"
 	"github.com/ot4i/ace-docker/internal/qmgr"
+	"github.com/ot4i/ace-docker/internal/webadmin"
 	"gopkg.in/yaml.v2"
 
 	"software.sslmate.com/src/go-pkcs12"
@@ -49,10 +50,21 @@ import (
 
 var osMkdir = os.Mkdir
 var osCreate = os.Create
+var osStat = os.Stat
 var ioutilReadFile = ioutil.ReadFile
+var ioutilReadDir = ioutil.ReadDir
 var ioCopy = io.Copy
 var contentserverGetBAR = contentserver.GetBAR
 var watcher *fsnotify.Watcher
+var createSHAServerConfYaml = createSHAServerConfYamlLocal
+var homedir string = "/home/aceuser"
+var initialConfigDir string = "/home/aceuser/initial-config"
+var ConfigureWebAdminUsers = webadmin.ConfigureWebAdminUsers
+var readServerConfFile = readServerConfFileLocal
+var yamlUnmarshal = yaml.Unmarshal
+var yamlMarshal = yaml.Marshal
+var writeServerConfFile = writeServerConfFileLocal
+var getConfigurationFromContentServer = getConfigurationFromContentServerLocal
 
 // createSystemQueues creates the default MQ service queues used by the Integration Server
 func createSystemQueues() error {
@@ -86,7 +98,7 @@ func initialIntegrationServerConfig() error {
 		}
 	}
 
-	fileList, err := ioutil.ReadDir("/home/aceuser")
+	fileList, err := ioutilReadDir(homedir)
 	if err != nil {
 		log.Errorf("Error checking for an initial configuration folder: %v", err)
 		return err
@@ -104,7 +116,7 @@ func initialIntegrationServerConfig() error {
 		return nil
 	}
 
-	fileList, err = ioutil.ReadDir("/home/aceuser/initial-config")
+	fileList, err = ioutil.ReadDir(initialConfigDir)
 	if err != nil {
 		log.Errorf("Error checking for initial configuration folders: %v", err)
 		return err
@@ -112,7 +124,6 @@ func initialIntegrationServerConfig() error {
 
 	// Sort filelist to server.conf.yaml gets written before webusers are processedconfigDirExists
 	SortFileNameAscend(fileList)
-
 	for _, file := range fileList {
 		if file.IsDir() && file.Name() != "mqsc" && file.Name() != "workdir_overrides" {
 			log.Printf("Processing configuration in folder %v", file.Name())
@@ -126,20 +137,29 @@ func initialIntegrationServerConfig() error {
 				log.LogDirect(out)
 			} else {
 				if file.Name() == "webusers" {
+					log.Println("Configuring server.conf.yaml overrides - Webadmin")
 					updateServerConf := createSHAServerConfYaml()
 					if updateServerConf != nil {
 						log.Errorf("Error setting webadmin SHA server.conf.yaml: %v", updateServerConf)
 						return updateServerConf
 					}
+					log.Println("Configuring WebAdmin Users")
+					err := ConfigureWebAdminUsers(log)
+					if err != nil {
+						log.Errorf("Error configuring the WebAdmin users : %v", err)
+						return err
+					}
 				}
-				cmd := exec.Command("ace_config_" + file.Name() + ".sh")
-				out, _, err := command.RunCmd(cmd)
-				if err != nil {
+				if file.Name() != "webusers" {
+					cmd := exec.Command("ace_config_" + file.Name() + ".sh")
+					out, _, err := command.RunCmd(cmd)
+					if err != nil {
+						log.LogDirect(out)
+						log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
+						return err
+					}
 					log.LogDirect(out)
-					log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
-					return err
 				}
-				log.LogDirect(out)
 			}
 		}
 	}
@@ -208,15 +228,6 @@ func initialIntegrationServerConfig() error {
 
 	log.Println("Initial configuration of integration server complete")
 
-	log.Println("Discovering override ports")
-
-	out, _, err := command.Run("bash", "ace_discover_port_overrides.sh")
-	if err != nil {
-		log.Errorf("Error discovering override ports: %v", string(out))
-		return err
-	}
-	log.Println("Successfully discovered override ports")
-
 	return nil
 }
 
@@ -226,7 +237,7 @@ func SortFileNameAscend(files []os.FileInfo) {
 	})
 }
 
-func createSHAServerConfYaml() error {
+func createSHAServerConfYamlLocal() error {
 
 	oldserverconfContent, readError := readServerConfFile()
 	if readError != nil {
@@ -238,7 +249,7 @@ func createSHAServerConfYaml() error {
 	}
 
 	serverconfMap := make(map[interface{}]interface{})
-	unmarshallError := yaml.Unmarshal([]byte(oldserverconfContent), &serverconfMap)
+	unmarshallError := yamlUnmarshal([]byte(oldserverconfContent), &serverconfMap)
 	if unmarshallError != nil {
 		log.Errorf("Error unmarshalling server.conf.yaml: %v", unmarshallError)
 		return unmarshallError
@@ -246,19 +257,19 @@ func createSHAServerConfYaml() error {
 
 	if serverconfMap["RestAdminListener"] == nil {
 		serverconfMap["RestAdminListener"] = map[string]interface{}{
-			"webUserPasswordHashAlgorithm": "SHA-1",
+			"authorizationEnabled": true,
+			"authorizationMode":    "file",
+			"basicAuth":            true,
 		}
-		log.Printf("Updating RestAdminListener/webUserPasswordHashAlgorithm")
 	} else {
 		restAdminListener := serverconfMap["RestAdminListener"].(map[interface{}]interface{})
-		if restAdminListener["webUserPasswordHashAlgorithm"] == nil {
-			restAdminListener["webUserPasswordHashAlgorithm"] = "SHA-1"
-			log.Printf("Updating RestAdminListener/webUserPasswordHashAlgorithm")
-		}
+		restAdminListener["authorizationEnabled"] = true
+		restAdminListener["authorizationMode"] = "file"
+		restAdminListener["basicAuth"] = true
 
 	}
 
-	serverconfYaml, marshallError := yaml.Marshal(&serverconfMap)
+	serverconfYaml, marshallError := yamlMarshal(&serverconfMap)
 	if marshallError != nil {
 		log.Errorf("Error marshalling server.conf.yaml: %v", marshallError)
 		return marshallError
@@ -333,14 +344,14 @@ func enableOpenTracingInServerConf() error {
 }
 
 // readServerConfFile returns the content of the server.conf.yaml file in the overrides folder
-func readServerConfFile() ([]byte, error) {
+func readServerConfFileLocal() ([]byte, error) {
 	content, err := ioutil.ReadFile("/home/aceuser/ace-server/overrides/server.conf.yaml")
 	return content, err
 }
 
 // writeServerConfFile writes the yaml content to the server.conf.yaml file in the overrides folder
 // It creates the file if it doesn't already exist
-func writeServerConfFile(content []byte) error {
+func writeServerConfFileLocal(content []byte) error {
 	writeError := ioutil.WriteFile("/home/aceuser/ace-server/overrides/server.conf.yaml", content, 0644)
 	if writeError != nil {
 		log.Errorf("Error writing server.conf.yaml: %v", writeError)
@@ -384,7 +395,7 @@ func enableAdminsslInServerConf() error {
 // It returns the updated server.conf.yaml content
 func addMetricsToServerConf(serverconfContent []byte) ([]byte, error) {
 	serverconfMap := make(map[interface{}]interface{})
-	unmarshallError := yaml.Unmarshal([]byte(serverconfContent), &serverconfMap)
+	unmarshallError := yamlUnmarshal([]byte(serverconfContent), &serverconfMap)
 	if unmarshallError != nil {
 		log.Errorf("Error unmarshalling server.conf.yaml: %v", unmarshallError)
 		return nil, unmarshallError
@@ -541,7 +552,7 @@ func addAdminsslToServerConf(serverconfContent []byte) ([]byte, error) {
 
 // getConfigurationFromContentServer checks if ACE_CONTENT_SERVER_URL exists.  If so then it pulls
 // a bar file from that URL
-func getConfigurationFromContentServer() error {
+func getConfigurationFromContentServerLocal() error {
 
 	// ACE_CONTENT_SERVER_URL can contain 1 or more comma separated urls
 	urls := os.Getenv("ACE_CONTENT_SERVER_URL")
@@ -609,13 +620,33 @@ func getConfigurationFromContentServer() error {
 			log.Errorf("Error parsing content server url : %v", err)
 			return err
 		}
-		filename := "/home/aceuser/initial-config/bars/" + path.Base(u.Path) + ".bar"
 
-		// temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
+		var filename string
 		if len(urlArray) == 1 {
+			// temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
 			filename = "/home/aceuser/initial-config/bars/barfile.bar"
+		} else {
+			// Multiple bar support. Need to loop to check that the file does not already exist
+			// (case where multiple bars have the same name)
+			isAvailable := false
+			count := 0
+			for !isAvailable {
+				if count == 0 {
+					filename = "/home/aceuser/initial-config/bars/" + path.Base(u.Path) + ".bar"
+				} else {
+					filename = "/home/aceuser/initial-config/bars/" + path.Base(u.Path) + "-" + fmt.Sprint(count) + ".bar"
+					log.Printf("Previous path already in use. Testing filename: " + filename)
+				}
+
+				if _, err := osStat(filename); os.IsNotExist(err) {
+					log.Printf("No existing file on that path so continuing")
+					isAvailable = true
+				}
+				count++
+			}
 		}
-		log.Printf("Will saving bar as: " + filename)
+
+		log.Printf("Will save bar as: " + filename)
 
 		file, err := osCreate(filename)
 		if err != nil {
@@ -946,13 +977,13 @@ func addforceFlowsHttpsToServerConf(serverconfContent []byte) ([]byte, error) {
 
 func generatePassword(length int64) string {
 	var i, e = big.NewInt(length), big.NewInt(10)
-	bigInt, _ := rand.Int(rand.Reader, i.Exp(e, i, nil) )
+	bigInt, _ := rand.Int(rand.Reader, i.Exp(e, i, nil))
 	return bigInt.String()
 }
 
 func watchForceFlowsHTTPSSecret(password string) *fsnotify.Watcher {
 
-	//set up watch on the /home/aceuser/httpsNodeCerts/tls.key file 
+	//set up watch on the /home/aceuser/httpsNodeCerts/tls.key file
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Errorf("Error creating new watcher for Force Flows to be HTTPS: %v", err)
@@ -984,7 +1015,6 @@ func watchForceFlowsHTTPSSecret(password string) *fsnotify.Watcher {
 					}
 				}
 
-
 			case err, ok := <-watcher.Errors:
 				log.Println("error from Force Flows to be HTTPS watcher:", err)
 				if !ok {
@@ -1003,13 +1033,13 @@ func localGenerateHTTPSKeystore(privateKeyLocation string, certificateLocation s
 	// create /home/aceuser/ace-server/https-keystore.p12 using:
 	// single /home/aceuser/httpsNodeCerts/tls.key
 	// single /home/aceuser/httpsNodeCerts/tls.crt
-	
+
 	//Script version: openssl pkcs12 -export -in ${certfile} -inkey ${keyfile} -out /home/aceuser/ace-server/https-keystore.p12 -name ${alias} -password pass:${1} 2>&1)
 
 	// Load the private key file into a rsa.PrivateKey
-	privateKeyFile, err := ioutil.ReadFile(privateKeyLocation) 
+	privateKeyFile, err := ioutil.ReadFile(privateKeyLocation)
 	if err != nil {
-		log.Error("Error loading " + privateKeyLocation, err)
+		log.Error("Error loading "+privateKeyLocation, err)
 	}
 	privateKeyPem, _ := pem.Decode(privateKeyFile)
 	if privateKeyPem.Type != "RSA PRIVATE KEY" {
@@ -1017,34 +1047,34 @@ func localGenerateHTTPSKeystore(privateKeyLocation string, certificateLocation s
 	}
 	privateKeyPemBytes := privateKeyPem.Bytes
 	parsedPrivateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPemBytes)
-	if err != nil { 
-		log.Error("Error parsing " + privateKeyLocation + " RSA PRIVATE KEY", err)
+	if err != nil {
+		log.Error("Error parsing "+privateKeyLocation+" RSA PRIVATE KEY", err)
 	}
 
 	// Load the single cert file into a x509.Certificate
 	certificateFile, err := ioutil.ReadFile(certificateLocation)
 	if err != nil {
-		log.Error("Error loading " + certificateLocation, err)
+		log.Error("Error loading "+certificateLocation, err)
 	}
 	certificatePem, _ := pem.Decode(certificateFile)
 	if certificatePem.Type != "CERTIFICATE" {
-		log.Error(certificateLocation +" is not CERTIFICATE type ", certificatePem.Type)
+		log.Error(certificateLocation+" is not CERTIFICATE type ", certificatePem.Type)
 	}
 	certificatePemBytes := certificatePem.Bytes
 	parsedCertificate, err := x509.ParseCertificate(certificatePemBytes)
-	if err != nil { 
-		log.Error("Error parsing " + certificateLocation +" CERTIFICATE", err)
+	if err != nil {
+		log.Error("Error parsing "+certificateLocation+" CERTIFICATE", err)
 	}
 
 	// Create Keystore
 	pfxBytes, err := pkcs12.Encode(rand.Reader, parsedPrivateKey, parsedCertificate, []*x509.Certificate{}, password)
-	if err != nil { 
-		log.Error("Error creating the " + keystoreLocation, err)
+	if err != nil {
+		log.Error("Error creating the "+keystoreLocation, err)
 	}
 
 	// Write out the Keystore 600 (rw- --- ---)
 	err = ioutil.WriteFile(keystoreLocation, pfxBytes, 0600)
-	if err != nil { 
+	if err != nil {
 		log.Error(err)
 	}
 }
@@ -1057,7 +1087,7 @@ func localPatchHTTPSConnector(uds string) {
 	// HTTP/1.1 200 OK
 	// Content-Length: 0
 	// Content-Type: application/json
-	
+
 	// use unix domain socket
 	httpc := http.Client{
 		Transport: &http.Transport{
