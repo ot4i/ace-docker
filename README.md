@@ -55,6 +55,9 @@ Get [ACE for Developers edition](https://www.ibm.com/marketing/iwm/iwm/web/pick.
 
 ### Build an image with App Connect Enterprise only
 
+NOTE: The current dockerfiles are tailored towards use by the App Connect Operator and as a result may have function removed from it if we are no longer using it in our operator. If you prefer to use the old dockerfiles for building your containers please use the `Dockerfile-legacy.aceonly` file
+
+
 The `deps` folder must contain a copy of ACE, **version 12.0.1.0 or greater**. If using ACE for Developers, download it from [here](https://www.ibm.com/marketing/iwm/iwm/web/pick.do?source=swg-wmbfd).
 Then set the build argument `ACE_INSTALL` to the name of the ACE file placed in `deps`.
 

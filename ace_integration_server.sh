@@ -11,6 +11,11 @@ if [ -z "$MQSI_VERSION" ]; then
   source /opt/ibm/ace-12/server/bin/mqsiprofile
 fi
 
+# Enable TLS on both MQ and DB2
+if [ -d /opt/mqm/gskit8/lib64 ]; then
+  export LD_LIBRARY_PATH=/opt/mqm/gskit8/lib64:$LD_LIBRARY_PATH
+fi
+
 if [ -s /home/aceuser/ace-server/odbc.ini ]; then
   export ODBCINI=/home/aceuser/ace-server/odbc.ini
 fi

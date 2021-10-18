@@ -36,11 +36,14 @@ func main() {
 
 	if err != nil {
 
-		fmt.Println("REST endpoint failed" + err.Error())
+		fmt.Println("Unable to connect to IntegrationServer REST endpoint: " + err.Error() + ", ")
 
 		fileInfo, statErr := os.Stat("/tmp/integration_server_restart.timestamp")
 
-		if statErr != nil {
+		if os.IsNotExist(statErr) {
+			fmt.Println("Integration server is not active")
+			os.Exit(1)
+		} else if statErr != nil  {
 			fmt.Println(statErr)
 			os.Exit(1)
 		} else {
