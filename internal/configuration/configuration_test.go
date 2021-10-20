@@ -928,3 +928,110 @@ func TestSetupConfigurationsFilesInternal(t *testing.T) {
 	// restore
 	restore()
 }
+
+func TestDetermineAvailableFilename(t *testing.T) {
+
+	var osStatRestore = osStat
+	createdFiles := map[string]bool{}
+
+	var reset = func() {
+		osStat = func(file string) (os.FileInfo, error) {
+			if createdFiles[file] {
+				return nil, os.ErrExist
+			} else {
+				return nil, os.ErrNotExist
+			}
+		}
+	}
+
+	var restore = func() {
+		osStat = osStatRestore
+	}
+
+	reset()
+	defer restore()
+
+	t.Run("No existing files just returns the path.bar when basepath has no .bar", func(t *testing.T) {
+		createdFiles = map[string]bool{}
+		filename := determineAvailableFilename(testLogger, "my_server/my_bar")
+		assert.Equal(t, "my_server/my_bar.bar", filename)
+	})
+
+	t.Run("No existing files just returns the path.bar when basepath already has .bar", func(t *testing.T) {
+		createdFiles = map[string]bool{}
+		filename := determineAvailableFilename(testLogger, "my_server/my_bar.bar")
+		assert.Equal(t, "my_server/my_bar.bar", filename)
+	})
+
+	t.Run("Multiple files with different base paths all save as normal", func(t *testing.T) {
+		createdFiles = map[string]bool{}
+
+		filename1 := determineAvailableFilename(testLogger, "my_server/my_bar1")
+		createdFiles[filename1] = true
+
+		filename2 := determineAvailableFilename(testLogger, "my_server/my_bar2")
+		createdFiles[filename2] = true
+
+		filename3 := determineAvailableFilename(testLogger, "my_server2/my_bar")
+		createdFiles[filename3] = true
+
+		assert.Equal(t, "my_server/my_bar1.bar", filename1)
+		assert.Equal(t, "my_server/my_bar2.bar", filename2)
+		assert.Equal(t, "my_server2/my_bar.bar", filename3)
+	})
+
+	t.Run("Multiple files all the same basepath append an incrementing index with no .bar", func(t *testing.T) {
+		createdFiles = map[string]bool{}
+		basePath := "my_server/my_bar"
+
+		filename1 := determineAvailableFilename(testLogger, basePath)
+		createdFiles[filename1] = true
+
+		filename2 := determineAvailableFilename(testLogger, basePath)
+		createdFiles[filename2] = true
+
+		filename3 := determineAvailableFilename(testLogger, basePath)
+		createdFiles[filename3] = true
+
+		assert.Equal(t, "my_server/my_bar.bar", filename1)
+		assert.Equal(t, "my_server/my_bar-1.bar", filename2)
+		assert.Equal(t, "my_server/my_bar-2.bar", filename3)
+	})
+
+	t.Run("Multiple files all the same basepath append an incrementing index and already have a .bar", func(t *testing.T) {
+		createdFiles = map[string]bool{}
+		basePath := "my_server/my_bar.bar"
+
+		filename1 := determineAvailableFilename(testLogger, basePath)
+		createdFiles[filename1] = true
+
+		filename2 := determineAvailableFilename(testLogger, basePath)
+		createdFiles[filename2] = true
+
+		filename3 := determineAvailableFilename(testLogger, basePath)
+		createdFiles[filename3] = true
+
+		assert.Equal(t, "my_server/my_bar.bar", filename1)
+		assert.Equal(t, "my_server/my_bar-1.bar", filename2)
+		assert.Equal(t, "my_server/my_bar-2.bar", filename3)
+	})
+
+	t.Run("Multiple files all the same basepath append an incrementing index with mixed present and missing .bar", func(t *testing.T) {
+		createdFiles = map[string]bool{}
+		basePath := "my_server/my_bar.bar"
+		basePathBar := "my_server/my_bar"
+
+		filename1 := determineAvailableFilename(testLogger, basePath)
+		createdFiles[filename1] = true
+
+		filename2 := determineAvailableFilename(testLogger, basePathBar)
+		createdFiles[filename2] = true
+
+		filename3 := determineAvailableFilename(testLogger, basePath)
+		createdFiles[filename3] = true
+
+		assert.Equal(t, "my_server/my_bar.bar", filename1)
+		assert.Equal(t, "my_server/my_bar-1.bar", filename2)
+		assert.Equal(t, "my_server/my_bar-2.bar", filename3)
+	})
+}

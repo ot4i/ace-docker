@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -584,11 +585,14 @@ func downloadBASIC_AUTH(log logger.LoggerInterface, basedir string, barAuthParse
 			return err
 		}
 
-		filename := "/home/aceuser/initial-config/bars/" + path.Base(req.URL.Path)
+		var filename string
 
-		// temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
 		if len(urlArray) == 1 {
+			// Temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
 			filename = "/home/aceuser/initial-config/bars/barfile.bar"
+		} else {
+			// Case where multiple bars. Need to check what file path is available
+			filename = determineAvailableFilename(log, "/home/aceuser/initial-config/bars/"+path.Base(req.URL.Path))
 		}
 
 		file, err := os.Create(filename)
@@ -624,4 +628,30 @@ func downloadBASIC_AUTH(log logger.LoggerInterface, basedir string, barAuthParse
 		log.Printf("Saved bar file to " + filename)
 	}
 	return nil
+}
+
+func determineAvailableFilename(log logger.LoggerInterface, basepath string) string {
+	var filename string
+	filenameBase := basepath
+	// Initially strip off the .bar at the end if present
+	if filenameBase[len(filenameBase)-4:] == ".bar" {
+		filenameBase = filenameBase[:len(filenameBase)-4]
+	}
+	isAvailable := false
+	count := 0
+	for !isAvailable {
+		if count == 0 {
+			filename = filenameBase + ".bar"
+		} else {
+			filename = filenameBase + "-" + fmt.Sprint(count) + ".bar"
+			log.Printf("Previous path already in use. Testing filename: " + filename)
+		}
+
+		if _, err := osStat(filename); os.IsNotExist(err) {
+			log.Printf("No existing file on that path so continuing")
+			isAvailable = true
+		}
+		count++
+	}
+	return filename
 }
