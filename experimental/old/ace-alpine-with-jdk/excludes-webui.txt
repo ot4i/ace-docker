@@ -1,2 +1,0 @@
-*/server/nodejs/lib/node_modules/ace-admin-server/node_modules
-*/server/nodesjs/nock

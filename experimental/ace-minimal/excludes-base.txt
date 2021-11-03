@@ -54,3 +54,4 @@
 */common/schemas/Policy/tr
 */common/schemas/Policy/zh_cn
 */common/schemas/Policy/zh_tw
+*/server/transformationAdvisor

@@ -1,0 +1,10 @@
+#!/bin/bash -e
+cat <<EOF
+
+Sample invocation:
+
+s2i build <source code path/URL> nheidloff/s2i-openliberty <image-name>
+
+docker run -it --rm -p 7800:7800 <image-name>
+
+EOF

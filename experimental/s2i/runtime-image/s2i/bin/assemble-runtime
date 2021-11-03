@@ -1,0 +1,15 @@
+#!/bin/bash
+
+ls -l $S2I_DESTINATION/ace-server
+ls -l $S2I_DESTINATION/ace-server/run
+
+cp -r $S2I_DESTINATION/ace-server/run/* /home/aceuser/ace-server/run/
+
+# Might fail if no policies - note that these policies won't actually do anything in
+# that location, but could be used as templates by startup scripts.
+cp -r $S2I_DESTINATION/ace-server/*policyxml /home/aceuser/ace-server/ 2>/dev/null
+
+if [[ -e $S2I_DESTINATION/ace-server/ace-startup-script.sh ]]
+then
+   cp -r $S2I_DESTINATION/ace-server/ace-startup-script.sh /home/aceuser/ace-server/
+fi

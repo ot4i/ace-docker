@@ -1,0 +1,11 @@
+#!/bin/bash
+
+. /opt/ibm/ace-12/server/bin/mqsiprofile
+
+if [[ -e /home/aceuser/ace-server/ace-startup-script.sh ]]
+then
+    echo "Sourcing /home/aceuser/ace-server/ace-startup-script.sh . . ."
+    . /home/aceuser/ace-server/ace-startup-script.sh
+fi
+
+IntegrationServer -w /home/aceuser/ace-server --no-nodejs

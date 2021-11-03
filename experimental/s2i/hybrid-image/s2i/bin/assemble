@@ -1,0 +1,28 @@
+#!/bin/bash
+
+cd $S2I_DESTINATION/src/
+
+echo "Looking for ace-build.sh/pom.xml/build.gradle . . ."
+pwd
+ls -l
+id
+if [[ -e "pom.xml" ]]
+then
+    echo "Running mvn install"
+    export PATH=/usr/lib/jvm/java-1.8-openjdk/bin:$PATH
+    mvn -Dinstall.work.directory=$S2I_DESTINATION/ace-server install
+else
+    echo "Running ace-build.sh"
+    ./ace-build.sh $S2I_DESTINATION
+fi
+
+echo "In ace-server"
+cd  $S2I_DESTINATION/ace-server
+
+ls -l
+echo "Copying contents to /home/aceuser/ace-server"
+
+tar -cf - * | ( cd /home/aceuser/ace-server && tar -xvf - )
+
+echo "Contents of /home/aceuser/ace-server: "
+find /home/aceuser/ace-server -print

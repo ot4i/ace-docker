@@ -1,2 +1,0 @@
-*/server/adapters
-*/server/lil/mqsiadapter.par

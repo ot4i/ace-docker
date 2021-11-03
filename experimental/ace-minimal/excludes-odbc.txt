@@ -1,1 +1,2 @@
 */server/ODBC/drivers
+*/server/ODBC/dsdriver

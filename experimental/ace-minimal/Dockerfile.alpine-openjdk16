@@ -1,14 +1,14 @@
 FROM alpine:3.14
 
-# docker build -t ace-minimal:12.0.2.0-alpine-openjdk14 -f Dockerfile.alpine-openjdk14 .
+# docker build -t ace-minimal:12.0.2.0-alpine-openjdk16 -f Dockerfile.alpine-openjdk16 .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
 ARG LICENSE
 ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.2.0-ACE-LINUX64-DEVELOPER.tar.gz
 ARG PRODUCT_LABEL=ace-12.0.2.0
-ARG JDK_DOWNLOAD_URL=https://download.java.net/java/GA/jdk14.0.1/664493ef4a6946b186ff29eb326336a2/7/GPL/openjdk-14.0.1_linux-x64_bin.tar.gz
-ARG JDK_LABEL=jdk-14.0.1
+ARG JDK_DOWNLOAD_URL=https://download.java.net/java/GA/jdk16.0.1/7147401fd7354114ac51ef3e1328291f/9/GPL/openjdk-16.0.1_linux-x64_bin.tar.gz
+ARG JDK_LABEL=jdk-16.0.1
 
 
 RUN apk --update add --no-cache --virtual .build-deps curl binutils zstd \
@@ -78,8 +78,8 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
 # Set the env vars mentioned above
-COPY profile-with-openjdk14-paths.sh /etc/profile.d/profile-with-openjdk14-paths.sh
-COPY openjdk14-paths.sh /etc/profile.d/openjdk14-paths.sh
+COPY profile-with-openjdk16-paths.sh /etc/profile.d/profile-with-openjdk16-paths.sh
+COPY openjdk16-paths.sh /etc/profile.d/openjdk16-paths.sh
 
 
 # Install openjdk
@@ -87,14 +87,14 @@ RUN mkdir -p /opt/ibm && \
     apk add binutils zip bash curl && \
     cd /opt && \
     curl ${JDK_DOWNLOAD_URL} | tar -xzf - && \
-    /opt/${JDK_LABEL}/bin/jlink --strip-debug --no-man-pages --no-header-files --output /opt/openjdk-14 --add-modules java.base,java.compiler,java.datatransfer,java.instrument,java.logging,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.se,java.security.jgss,java.security.sasl,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto,jdk.accessibility,jdk.aot,jdk.attach,jdk.charsets,jdk.compiler,jdk.crypto.cryptoki,jdk.crypto.ec,jdk.dynalink,jdk.hotspot.agent,jdk.internal.ed,jdk.internal.jvmstat,jdk.internal.le,jdk.internal.opt,jdk.internal.vm.ci,jdk.internal.vm.compiler,jdk.internal.vm.compiler.management,jdk.jartool,jdk.jcmd,jdk.jconsole,jdk.jdeps,jdk.jdi,jdk.jdwp.agent,jdk.jfr,jdk.jlink,jdk.management,jdk.management.agent,jdk.management.jfr,jdk.naming.dns,jdk.naming.rmi,jdk.net,jdk.nio.mapmode,jdk.sctp,jdk.security.auth,jdk.security.jgss,jdk.unsupported,jdk.xml.dom,jdk.zipfs && \
+    /opt/${JDK_LABEL}/bin/jlink --strip-debug --no-man-pages --no-header-files --output /opt/openjdk-16 --add-modules java.base,java.compiler,java.datatransfer,java.instrument,java.logging,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.scripting,java.se,java.security.jgss,java.security.sasl,java.sql,java.sql.rowset,java.transaction.xa,java.xml,java.xml.crypto,jdk.accessibility,jdk.attach,jdk.charsets,jdk.compiler,jdk.crypto.cryptoki,jdk.crypto.ec,jdk.dynalink,jdk.hotspot.agent,jdk.internal.ed,jdk.internal.jvmstat,jdk.internal.le,jdk.internal.opt,jdk.internal.vm.ci,jdk.jartool,jdk.jcmd,jdk.jconsole,jdk.jdeps,jdk.jdi,jdk.jdwp.agent,jdk.jfr,jdk.jlink,jdk.management,jdk.management.agent,jdk.management.jfr,jdk.naming.dns,jdk.naming.rmi,jdk.net,jdk.nio.mapmode,jdk.sctp,jdk.security.auth,jdk.security.jgss,jdk.unsupported,jdk.xml.dom,jdk.zipfs && \
     rm -rf /opt/${JDK_LABEL} && \
     apk del --purge binutils zip curl ncurses-terminfo-base ncurses-libs
 
 
 # Install ACE v12.0.2.0
 RUN mkdir -p /opt/ibm && \
-    apk add binutils zip bash mksh curl && \
+    apk add binutils zip bash curl mksh && \
     cd /opt && \
     echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} \
@@ -107,27 +107,27 @@ RUN mkdir -p /opt/ibm && \
     zip -d /opt/ibm/ace-12/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     apk del --purge binutils zip curl ncurses-terminfo-base ncurses-libs && \
     addgroup mqbrkrs && \
-    cat /etc/profile.d/openjdk14-paths.sh >> /root/.bashrc && \
+    cat /etc/profile.d/openjdk16-paths.sh >> /root/.bashrc && \
     mkdir /opt/ibm/ace-12/common/jdk && \
-    ln -s /opt/openjdk-14 /opt/ibm/ace-12/common/jdk/jre
+    ln -s /opt/openjdk-16 /opt/ibm/ace-12/common/jdk/jre
 
 # Issues with 5.1.4(1)-release (x86_64-alpine-linux-musl) on alpine
 RUN sed -i 's/\/bin\/bash/\/bin\/mksh/g' /opt/ibm/ace-12/ace /opt/ibm/ace-12/server/bin/mqsicreateworkdir /opt/ibm/ace-12/server/bin/mqsipackagebar
 
-RUN bash -c '. /etc/profile.d/openjdk14-paths.sh && /opt/ibm/ace-12/ace make registry global accept license deferred'
+RUN bash -c '. /etc/profile.d/openjdk16-paths.sh && /opt/ibm/ace-12/ace make registry global accept license deferred'
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
-ENV BASH_ENV=/etc/profile.d/profile-with-openjdk14-paths.sh
+ENV BASH_ENV=/etc/profile.d/profile-with-openjdk16-paths.sh
 
 # Create a user to run as, create the ace workdir, and chmod script files
 RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001 -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \
     adduser aceuser mqbrkrs && \
     ( chmod 664 /etc/profile.d/* || /bin/true ) && \
-    cat /etc/profile.d/openjdk14-paths.sh >> /home/aceuser/.bashrc && \
+    cat /etc/profile.d/openjdk16-paths.sh >> /home/aceuser/.bashrc && \
     chown aceuser /home/aceuser/.bashrc && \
     chmod 664 /home/aceuser/.bashrc && \
-    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-openjdk14-paths.sh && /opt/ibm/ace-12/server/bin/mqsicreateworkdir /home/aceuser/ace-server" && \
-    echo ". /etc/profile.d/profile-with-openjdk14-paths.sh" >> /home/aceuser/.bashrc
+    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-openjdk16-paths.sh && /opt/ibm/ace-12/server/bin/mqsicreateworkdir /home/aceuser/ace-server" && \
+    echo ". /etc/profile.d/profile-with-openjdk16-paths.sh" >> /home/aceuser/.bashrc
 
 # aceuser
 USER 1001

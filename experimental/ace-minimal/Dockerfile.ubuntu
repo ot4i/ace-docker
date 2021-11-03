@@ -1,16 +1,14 @@
 FROM ubuntu:20.04
 
-# docker build -t ace-minimal:11.0.0.9-ubuntu -f Dockerfile.ubuntu .
+# docker build -t ace-minimal:12.0.2.0-ubuntu -f Dockerfile.ubuntu .
 
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/11.0.0.9-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-11.0.0.9
+ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.2.0-ACE-LINUX64-DEVELOPER.tar.gz
+ARG PRODUCT_LABEL=ace-12.0.2.0
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
-
-RUN apt-get update && apt-get install -y --no-install-recommends curl
 
 # Set up exclusions
 COPY excludes*txt /tmp/
@@ -23,11 +21,11 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # FTE is optional
     cat /tmp/excludes-fte.txt >> /tmp/all-excludes.txt && \
 # GlobalCache is optional; set MQSI_NO_CACHE_SUPPORT=1
-#    cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
+    cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
 # IMS is optional
     cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
 # node.js support is optional; use --no-nodejs on server start line
-#    cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
+    cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
     cat /tmp/excludes-npm.txt >> /tmp/all-excludes.txt && \
 # ODBC drivers are optional
@@ -35,41 +33,58 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # Toolkit is optional
     cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt && \
 # Web UI support optional; use --admin-rest-api -1 on server start line
-#    cat /tmp/excludes-webui.txt >> /tmp/all-excludes.txt && \
+    cat /tmp/excludes-webui.txt >> /tmp/all-excludes.txt && \
 # WSRR nodes are optional
     cat /tmp/excludes-wsrr.txt >> /tmp/all-excludes.txt && \
 # XSLT nodes are optional
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
 # Install ACE and accept the license
-RUN apt-get install -y zip binutils && \
+RUN apt-get update && apt-get install -y --no-install-recommends curl zip binutils && \
     mkdir /opt/ibm && \
     echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} \
     | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
-    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-11 && \
+    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-12 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
-    ( strip /opt/ibm/ace-11/server/bin/* 2>/dev/null || /bin/true ) && \
-    zip -d /opt/ibm/ace-11/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
+    ( strip /opt/ibm/ace-12/server/bin/* 2>/dev/null || /bin/true ) && \
+    zip -d /opt/ibm/ace-12/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     if [ $(uname -m) = x86_64 ]; then apt-get remove -y zip binutils binutils-common libbinutils binutils-x86-64-linux-gnu; else apt-get remove -y zip binutils binutils-common libbinutils; fi && \
-    /opt/ibm/ace-11/ace make registry global accept license deferred
+    rm -rf /var/lib/apt/lists/*  && \
+    /opt/ibm/ace-12/ace make registry global accept license deferred
 
 # Configure the system and increase security
-RUN echo "ACE_11:" > /etc/debian_chroot \
+RUN echo "ACE_12:" > /etc/debian_chroot \
   && sed -i 's/sha512/sha512 minlen=8/' /etc/pam.d/common-password \
   && sed -i 's/PASS_MIN_DAYS\t0/PASS_MIN_DAYS\t1/' /etc/login.defs \
   && sed -i 's/PASS_MAX_DAYS\t99999/PASS_MAX_DAYS\t90/' /etc/login.defs \
-  && echo ". /opt/ibm/ace-11/server/bin/mqsiprofile" >> /root/.bashrc
+  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /root/.bashrc
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
-ENV BASH_ENV=/opt/ibm/ace-11/server/bin/mqsiprofile
+ENV BASH_ENV=/opt/ibm/ace-12/server/bin/mqsiprofile
 
 # Create a user to run as, create the ace workdir, and chmod script files
-RUN useradd --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \
-  && su - aceuser -c "export LICENSE=accept && . /opt/ibm/ace-11/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server" \
-  && echo ". /opt/ibm/ace-11/server/bin/mqsiprofile" >> /home/aceuser/.bashrc
+RUN useradd  --uid 1001 --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \
+  && su - aceuser -c "export LICENSE=accept && . /opt/ibm/ace-12/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server" \
+  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/aceuser/.bashrc
 
-USER aceuser
-ENTRYPOINT ["bash"]
+# Install useful utilities, and the latest of everything to keep security scanners happy
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    tzdata \
+    unzip \
+    zip \
+  && apt-get -y  dist-upgrade \
+  && rm -rf /var/lib/apt/lists/* 
+
+# aceuser
+USER 1001
+
+# Only needed if CacheSupport is disabled above
+ENV MQSI_NO_CACHE_SUPPORT=1
+
+# Leaving this blank to avoid issues with openshift
+#ENTRYPOINT ["bash"]

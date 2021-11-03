@@ -1,0 +1,20 @@
+#!/bin/bash
+
+cd $S2I_DESTINATION/src/
+
+# Needed for some reason due to env vars not being passed through in all cases (crc 1.21)
+export LICENSE=accept
+
+echo "Looking for ace-build.sh/pom.xml/build.gradle . . ."
+pwd
+ls -l
+id
+if [[ -e "pom.xml" ]]
+then
+    echo "Running mvn install"
+    mvn -Dinstall.work.directory=$S2I_DESTINATION/ace-server install
+else
+    echo "Running ace-build.sh"
+    ./ace-build.sh $S2I_DESTINATION
+fi
+
