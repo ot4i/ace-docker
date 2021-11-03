@@ -1,8 +1,8 @@
 #!/bin/bash
-export PRODUCT_VERSION=12.0.1.0
+export PRODUCT_VERSION=12.0.2.0
 export PRODUCT_LABEL=ace-${PRODUCT_VERSION}
-export DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.1.0-ACE-LINUX64-DEVELOPER.tar.gz
-export DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-12.0.1.0.tar.gz
+export DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.2.0-ACE-LINUX64-DEVELOPER.tar.gz
+#export DOWNLOAD_URL=http://kenya.hursley.uk.ibm.com:52367/ace-12.0.2.0.tar.gz
 
 # Exit on error
 set -e
