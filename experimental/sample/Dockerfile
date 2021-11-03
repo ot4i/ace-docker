@@ -1,11 +1,11 @@
 # Override for other variants
-ARG BASE_IMAGE=ace-minimal:12.0.1.0-ubuntu
+ARG BASE_IMAGE=ace-minimal:12.0.2.0-ubuntu
 FROM $BASE_IMAGE
 
 ARG LICENSE
 
-# docker build --build-arg LICENSE=accept --build-arg BASE_IMAGE=ace-full:12.0.1.0-ubuntu -t ace-sample:12.0.1.0-full-ubuntu .
-# docker run -e LICENSE=accept -p 7800:7800 --rm -ti ace-sample:12.0.1.0-full-ubuntu
+# docker build --build-arg LICENSE=accept --build-arg BASE_IMAGE=ace-full:12.0.2.0-ubuntu -t ace-sample:12.0.2.0-full-ubuntu .
+# docker run -e LICENSE=accept -p 7800:7800 --rm -ti ace-sample:12.0.2.0-full-ubuntu
 
 # Switch off the admin REST API for the server run, as we won't be deploying anything after start
 RUN sed -i 's/#port: 7600/port: -1/g' /home/aceuser/ace-server/server.conf.yaml 
