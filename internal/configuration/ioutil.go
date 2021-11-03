@@ -15,6 +15,7 @@ var osOpenFile = os.OpenFile
 var ioCopy = io.Copy
 var osStat = os.Stat
 var osIsNotExist = os.IsNotExist
+var osRemoveAll = os.RemoveAll
 
 var internalAppendFile = func(fileName string, fileContent []byte, filePerm os.FileMode) error {
 

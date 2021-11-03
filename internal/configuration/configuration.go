@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -202,7 +203,7 @@ func parseConfigurationList(log logger.LoggerInterface, basedir string, list []*
 				return nil, errors.New("Failed to decode contents")
 			}
 			output[index] = configurationObject{name: name, configType: configType, contents: contents}
-		case "truststorecertificate", "truststore", "keystore", "setdbparms", "generic", "adminssl", "agentx", "agenta", "accounts", "loopbackdatasource", "barauth", "workdiroverride":
+		case "truststorecertificate", "truststore", "keystore", "setdbparms", "generic", "adminssl", "agentx", "agenta", "accounts", "loopbackdatasource", "barauth", "workdiroverride", "resiliencekafkacredentials", "persistencerediscredentials":
 			secretName, exists, err := unstructured.NestedString(item.Object, "spec", "secretName")
 			if !exists || err != nil {
 				log.Printf("%s: %#v", "A configuration with type: "+configType+" must have a secretName field", errors.New("A configuration with type: "+configType+" must have a secretName field"))
@@ -314,6 +315,12 @@ func constructConfigurationsOnFileSystem(log logger.LoggerInterface, basedir str
 		return downloadBarFiles(log, basedir, contents)
 	case "workdiroverride":
 		return constructWorkdirOverrideOnFileSystem(log, basedir, configName, contents)
+	case "resiliencekafkacredentials":
+		log.Println("Do nothing for resiliencykafkacredentials")
+		return nil
+	case "persistencerediscredentials":
+		log.Println("Do nothing for persistencerediscredentials")
+		return nil
 	default:
 		return errors.New("Unknown configuration type")
 	}
@@ -511,14 +518,14 @@ func downloadBASIC_AUTH(log logger.LoggerInterface, basedir string, barAuthParse
 	}
 
 	// Append optional cert to the system pool
-	if ( (barAuthParsed.Path("credentials.caCert").Data() != nil) && (barAuthParsed.Path("credentials.caCert").Data().(string) != "" ) ) {
+	if (barAuthParsed.Path("credentials.caCert").Data() != nil) && (barAuthParsed.Path("credentials.caCert").Data().(string) != "") {
 		caCert := barAuthParsed.Path("credentials.caCert").Data().(string)
 		if ok := rootCAs.AppendCertsFromPEM([]byte(caCert)); !ok {
 			return errors.New("CaCert provided but failed to append, Cert provided: " + caCert)
 		} else {
 			log.Println("Appending supplied cert via configuration to system pool")
 		}
-	} else if ( (barAuthParsed.Path("credentials.caCertSecret").Data() != nil) && (barAuthParsed.Path("credentials.caCertSecret").Data().(string) != "" ) ) {
+	} else if (barAuthParsed.Path("credentials.caCertSecret").Data() != nil) && (barAuthParsed.Path("credentials.caCertSecret").Data().(string) != "") {
 		// Read in the cert file
 		caCert, err := ioutil.ReadFile(`/home/aceuser/barurlendpoint/ca.crt`)
 		if err != nil {
@@ -578,13 +585,16 @@ func downloadBASIC_AUTH(log logger.LoggerInterface, basedir string, barAuthParse
 			return err
 		}
 
-		filename := "/home/aceuser/initial-config/bars/" + path.Base(req.URL.Path)
+		var filename string
 
-		// temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
 		if len(urlArray) == 1 {
+			// Temporarily override the bar name  with "barfile.bar" if we only have ONE bar file until mq connector is fixed to support any bar name
 			filename = "/home/aceuser/initial-config/bars/barfile.bar"
+		} else {
+			// Case where multiple bars. Need to check what file path is available
+			filename = determineAvailableFilename(log, "/home/aceuser/initial-config/bars/"+path.Base(req.URL.Path))
 		}
-		
+
 		file, err := os.Create(filename)
 		if err != nil {
 			log.Errorf("Error creating file %v: %v", file, err)
@@ -618,4 +628,30 @@ func downloadBASIC_AUTH(log logger.LoggerInterface, basedir string, barAuthParse
 		log.Printf("Saved bar file to " + filename)
 	}
 	return nil
+}
+
+func determineAvailableFilename(log logger.LoggerInterface, basepath string) string {
+	var filename string
+	filenameBase := basepath
+	// Initially strip off the .bar at the end if present
+	if filenameBase[len(filenameBase)-4:] == ".bar" {
+		filenameBase = filenameBase[:len(filenameBase)-4]
+	}
+	isAvailable := false
+	count := 0
+	for !isAvailable {
+		if count == 0 {
+			filename = filenameBase + ".bar"
+		} else {
+			filename = filenameBase + "-" + fmt.Sprint(count) + ".bar"
+			log.Printf("Previous path already in use. Testing filename: " + filename)
+		}
+
+		if _, err := osStat(filename); os.IsNotExist(err) {
+			log.Printf("No existing file on that path so continuing")
+			isAvailable = true
+		}
+		count++
+	}
+	return filename
 }

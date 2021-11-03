@@ -26,6 +26,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/imdario/mergo"
 )
 
 // timestampFormat matches the format used by MQ messages (includes milliseconds)
@@ -36,15 +38,16 @@ const errorLevel string = "ERROR"
 
 // A Logger is used to log messages to stdout
 type Logger struct {
-	mutex       sync.Mutex
-	writer      io.Writer
-	debug       bool
-	json        bool
-	processName string
-	pid         string
-	serverName  string
-	host        string
-	user        *user.User
+	mutex        sync.Mutex
+	writer       io.Writer
+	debug        bool
+	json         bool
+	processName  string
+	pid          string
+	serverName   string
+	host         string
+	user         *user.User
+	jsonElements map[string]interface{}
 }
 
 // Define the interface to keep the internal and external loggers in sync
@@ -73,21 +76,48 @@ func NewLogger(writer io.Writer, debug bool, json bool, serverName string) (*Log
 	if err != nil {
 		return nil, err
 	}
+	jsonElements, err := getAdditionalJsonElements(json)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Logger{
-		mutex:       sync.Mutex{},
-		writer:      writer,
-		debug:       debug,
-		json:        json,
-		processName: os.Args[0],
-		pid:         strconv.Itoa(os.Getpid()),
-		serverName:  serverName,
-		host:        hostname,
-		user:        user,
+		mutex:        sync.Mutex{},
+		writer:       writer,
+		debug:        debug,
+		json:         json,
+		processName:  os.Args[0],
+		pid:          strconv.Itoa(os.Getpid()),
+		serverName:   serverName,
+		host:         hostname,
+		user:         user,
+		jsonElements: jsonElements,
 	}, nil
+}
+
+func getAdditionalJsonElements(isJson bool) (map[string]interface{}, error) {
+	if isJson {
+		jsonElements := os.Getenv("MQSI_LOG_ADDITIONAL_JSON_ELEMENTS")
+		if jsonElements != "" {
+			logEntries := make(map[string]interface{})
+			unmarshalErr := json.Unmarshal([]byte("{"+jsonElements+"}"), &logEntries)
+			if unmarshalErr != nil {
+				return nil, unmarshalErr
+			}
+			return logEntries, nil
+		}
+	}
+
+	return nil, nil
 }
 
 func (l *Logger) format(entry map[string]interface{}) (string, error) {
 	if l.json {
+		if l.jsonElements != nil {
+			// Merge the value of MQSI_LOG_ADDITIONAL_JSON_ELEMENTS with entry
+			mergo.Merge(&entry, l.jsonElements)
+		}
+
 		b, err := json.Marshal(entry)
 		if err != nil {
 			return "", err

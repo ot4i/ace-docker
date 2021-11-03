@@ -21,9 +21,12 @@ set -e
 # Download kubectl
 if [[ $(uname -m) == s390x ]]
 then
-  curl -s -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.17.0/bin/linux/s390x/kubectl
+  curl -s -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/s390x/kubectl
+elif [[ $(uname -m) == ppc64le ]]
+then
+  curl -s -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/ppc64le/kubectl
 else
-   curl -s -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl
+  curl -s -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kubectl
 fi
 chmod +x /usr/local/bin/kubectl && \
     /usr/local/bin/kubectl version --client
