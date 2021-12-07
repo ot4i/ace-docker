@@ -40,7 +40,7 @@ var (
 
 // GatherMetrics gathers metrics for the integration server
 func GatherMetrics(serverName string, log logger.LoggerInterface) {
-	log.Println("Gathering Metrics...")
+	log.Println("Metrics: Gathering Metrics...")
 	metricsEnabled = true
 
 	err := startMetricsGathering(serverName, log)
@@ -59,7 +59,7 @@ func startMetricsGathering(serverName string, log logger.LoggerInterface) error 
 		}
 	}()
 
-	log.Println("Starting metrics gathering")
+	log.Println("Metrics: Starting metrics gathering")
 
 	// Start processing metrics
 	go processMetrics(log, serverName)
@@ -71,7 +71,7 @@ func startMetricsGathering(serverName string, log logger.LoggerInterface) error 
 	metricsExporter := newExporter(serverName, log)
 	err := prometheus.Register(metricsExporter)
 	if err != nil {
-		return fmt.Errorf("Failed to register metrics: %v", err)
+		return fmt.Errorf("Metrics: Failed to register metrics: %v", err)
 	}
 
 	// Setup HTTP server to handle requests from Prometheus
@@ -84,7 +84,7 @@ func startMetricsGathering(serverName string, log logger.LoggerInterface) error 
 	go func() {
 		err = metricsServer.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
-			log.Errorf("Metrics Error: Failed to handle metrics request: %v", err)
+			log.Errorf("Metrics: Error: Failed to handle metrics request: %v", err)
 
 			StopMetricsGathering()
 		}

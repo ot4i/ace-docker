@@ -10,8 +10,6 @@ You can build an image containing one of the following combinations:
 - IBM App Connect Enterprise for Developers
 - IBM App Connect Enterprise for Developers with IBM MQ Client
 
-For information of building images with IBM MQ Advanced please refer to [IBM App Connect Enterprise for Developers with IBM MQ Advanced for Developers](README-MQ.md)
-
 The IBM App Connect operator now supports a single image which includes both the ACE server runtime as well as an MQ client. This readme will describe how you can build an equivalent image.
 
 Pre-built developer and production edition image can be found on IBM Container Registry - [Obtaining the IBM App Connect Enterprise server image from the IBM Cloud Container Registry](https://www.ibm.com/support/knowledgecenter/en/SSTTDS_11.0.0/com.ibm.ace.icp.doc/certc_install_obtaininstallationimageser.html)

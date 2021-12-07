@@ -28,22 +28,6 @@ func sanitizeName(name string) string {
 	return re.ReplaceAllString(name, "")
 }
 
-// GetQueueManagerName resolves the queue manager name to use.  Resolved from
-// either an environment variable, or the hostname.
-func GetQueueManagerName() (string, error) {
-	var name string
-	var err error
-	name, ok := os.LookupEnv("MQ_QMGR_NAME")
-	if !ok || name == "" {
-		name, err = os.Hostname()
-		if err != nil {
-			return "", err
-		}
-		name = sanitizeName(name)
-	}
-	return name, nil
-}
-
 // GetIntegrationServerName resolves the integration server naem to use.
 // Resolved from either an environment variable, or the hostname.
 func GetIntegrationServerName() (string, error) {

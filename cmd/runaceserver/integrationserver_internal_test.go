@@ -1103,3 +1103,45 @@ iipaBg==
   os.Remove(keystoreLocation)
 
 }
+
+
+
+var yamlOpenTracingTests = []struct {
+	in  string
+	out string
+}{
+	{ // User's blank yaml
+``,
+`UserExits:
+  activeUserExitList: ACEOpenTracingUserExit
+  userExitPath: /opt/ACEOpenTracing
+`},
+	{ // Do not alter as values provided
+`UserExits:
+  activeUserExitList: ACEOpenTracingUserExit
+  userExitPath: /opt/ACEOpenTracing`,
+`UserExits:
+  activeUserExitList: ACEOpenTracingUserExit
+  userExitPath: /opt/ACEOpenTracing
+`},
+  { // Check all values 
+`UserExits:
+  userExitPath: /opt/ACEOpenTracing`,
+`UserExits:
+  activeUserExitList: ACEOpenTracingUserExit
+  userExitPath: /opt/ACEOpenTracing
+`},
+}
+
+func TestAddOpenTracingToServerConf(t *testing.T) {
+	for _, table := range yamlOpenTracingTests {
+		out, err := addOpenTracingToServerConf([]byte(table.in))
+		if err != nil {
+			t.Error(err)
+		}
+		stringOut := string(out)
+		if stringOut != table.out {
+			t.Errorf("addOpenTracingToServerConf expected \n%v, got \n%v", table.out, stringOut)
+		}
+	}
+}

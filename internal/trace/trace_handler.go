@@ -39,7 +39,6 @@ import (
 var log logger.LoggerInterface
 
 var traceDir = "/home/aceuser/ace-server/config/common/log"
-var operationalLogDir = "/home/aceuser/ace-server/log"
 var credsDir = "/home/aceuser/initial-config/webusers"
 
 var tlsEnabled = os.Getenv("ACE_ADMIN_SERVER_SECURITY") == "true"
@@ -91,9 +90,9 @@ func (s *Server) Start(address string, mux *http.ServeMux) {
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil {
-			log.Println("Trace API server terminated with error " + err.Error())
+			log.Println("Tracing: Trace API server terminated with error " + err.Error())
 		} else {
-			log.Println("Trace API server terminated")
+			log.Println("Tracing: Trace API server terminated")
 		}
 	}()
 }
@@ -110,9 +109,9 @@ func (s *Server) StartTLS(address string, mux *http.ServeMux, caCertPool *x509.C
 	go func() {
 		err := server.ListenAndServeTLS(certFile, keyFile)
 		if err != nil {
-			log.Println("Trace API server terminated with error " + err.Error())
+			log.Println("Tracing: Trace API server terminated with error " + err.Error())
 		} else {
-			log.Println("Trace API server terminated")
+			log.Println("Tracing: Trace API server terminated")
 		}
 	}()
 }
@@ -122,8 +121,7 @@ func StartServer(logger logger.LoggerInterface, portNumber int) error {
 
 	err := readBasicAuthCreds(credsDir, &FileReader{})
 	if err != nil {
-		log.Println("Failed to read basic auth credentials. Error: " + err.Error())
-		return err
+		log.Println("Tracing: No web admin users have been found. The trace APIs will be run without credential verification.")
 	}
 	return startTraceServer(&Server{}, portNumber)
 }
@@ -177,43 +175,52 @@ func traceRouteHandler(res http.ResponseWriter, req *http.Request, zipFunc zipFu
 }
 
 func zipUserTrace(zipWriter ZipWriterInterface) error {
+	log.Println("Tracing: Collecting user trace")
 	err := zipDir(traceDir, zipWriter, func(fileName string) bool {
 		return strings.Contains(fileName, ".userTrace.")
 	})
 	if err != nil {
-		log.Error("Failed to collect user trace. Error: " + err.Error())
+		log.Error("Tracing: Failed to collect user trace. Error: " + err.Error())
 		return err
 	}
-
+	log.Println("Tracing: Finished collecting user trace")
 	return nil
 }
 
 func zipServiceTrace(zipWriter ZipWriterInterface) error {
+	log.Println("Tracing: Collecting service trace")
 	err := zipDir(traceDir, zipWriter, func(fileName string) bool {
 		return strings.Contains(fileName, ".trace.") || strings.Contains(fileName, ".exceptionLog.")
 	})
 	if err != nil {
-		log.Error("Failed to collect service trace and exception logs. Error: " + err.Error())
+		log.Error("Tracing: Failed to collect service trace and exception logs. Error: " + err.Error())
 		return err
 	}
 
-	err = zipDir(operationalLogDir, zipWriter, func(fileName string) bool {
-		return strings.Contains(fileName, ".designerflows.") || strings.Contains(fileName, ".designereventflows.")
-	})
+	err = addEnvToZip(zipWriter, "env.txt")
 	if err != nil {
-		log.Error("Failed to collect designer operational logs. Error: " + err.Error())
+		log.Error("Tracing: Failed to get integration server env. Error: " + err.Error())
 		return err
 	}
 
-	err = runOSCommand(zipWriter, "env.txt", "env")
-	if err != nil {
-		log.Error("Failed to get integration server env. Error: " + err.Error())
-		return err
+	_ = runOSCommand(zipWriter, "ps eww.txt", "ps", "eww")
+
+	log.Println("Tracing: Finished collecting service trace")
+	return nil
+}
+
+func addEnvToZip(zipWriter ZipWriterInterface, filename string) error {
+	log.Println("Tracing: Adding environment variables to zip")
+
+	var envVars []byte
+	for _, element := range os.Environ() {
+		element += "\n"
+		envVars = append(envVars, element...)
 	}
 
-	err = runOSCommand(zipWriter, "ps -ewww.txt", "ps", "-ewww")
+	err := addEntryToZip(zipWriter, filename, envVars)
 	if err != nil {
-		log.Error("Failed to get integration server env. Error: " + err.Error())
+		log.Error("Tracing: Unable to add env vars to zip. Error: " + err.Error())
 		return err
 	}
 
@@ -221,26 +228,37 @@ func zipServiceTrace(zipWriter ZipWriterInterface) error {
 }
 
 func runOSCommand(zipWriter ZipWriterInterface, filename string, command string, arg ...string) error {
+	log.Println("Tracing: Collecting output of command: " + command)
 	cmd := exec.Command(command, arg...)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
 	err := cmd.Run()
 	if err != nil {
-		log.Error("Unable to run command " + command + ": " + err.Error())
+		log.Error("Tracing: Unable to run command " + command + ": " + err.Error())
 		return err
 	}
 
 	outBytes := out.Bytes()
 
-	zipEntry, err := zipWriter.Create(filename)
+	err = addEntryToZip(zipWriter, filename, outBytes)
 	if err != nil {
-		log.Error("Failed to write header for " + filename)
+		log.Error("Tracing: Unable to add output of command: " + command + " to zip. Error: " + err.Error())
 		return err
 	}
 
-	if _, err := zipEntry.Write(outBytes); err != nil {
-		log.Error("Failed to add " + filename + " to archive")
+	return nil
+}
+
+func addEntryToZip(zipWriter ZipWriterInterface, filename string, fileContents []byte) error {
+	zipEntry, err := zipWriter.Create(filename)
+	if err != nil {
+		log.Error("Tracing: Failed to write header for " + filename)
+		return err
+	}
+
+	if _, err := zipEntry.Write(fileContents); err != nil {
+		log.Error("Tracing: Failed to add " + filename + " to archive")
 		return err
 	}
 
@@ -248,15 +266,15 @@ func runOSCommand(zipWriter ZipWriterInterface, filename string, command string,
 }
 
 func zipDir(traceDir string, zipWriter ZipWriterInterface, testFunc includeFile) error {
-	log.Println("Creating archive of " + traceDir)
+	log.Println("Tracing: Creating archive of " + traceDir)
 	stat, err := os.Stat(traceDir)
 	if err != nil {
-		log.Error("Directory " + traceDir + " does not exist")
+		log.Error("Tracing: Directory " + traceDir + " does not exist")
 		return err
 	}
 
 	if !stat.Mode().IsDir() {
-		log.Error(traceDir + " is not a directory")
+		log.Error("Tracing: " + traceDir + " is not a directory")
 		return errors.New(traceDir + " is not a directory")
 	}
 
@@ -279,16 +297,16 @@ func zipFile(path string, zipWriter ZipWriterInterface) error {
 	defer file.Close()
 
 	if fileInfo, err := file.Stat(); err == nil {
-		log.Println("Adding " + fileInfo.Name() + " to archive")
+		log.Println("Tracing: Adding " + fileInfo.Name() + " to archive")
 
 		zipEntry, err := zipWriter.Create(fileInfo.Name())
 		if err != nil {
-			log.Error("Failed to write header for " + fileInfo.Name())
+			log.Error("Tracing: Failed to write header for " + fileInfo.Name())
 			return err
 		}
 
 		if _, err := io.Copy(zipEntry, file); err != nil {
-			log.Error("Failed to add " + fileInfo.Name() + " to archive")
+			log.Error("Tracing: Failed to add " + fileInfo.Name() + " to archive")
 			return err
 		}
 	}
@@ -326,7 +344,7 @@ func readBasicAuthCreds(credsDir string, fileReader FileReaderInterface) error {
 				if line != "" && !strings.HasPrefix(line, "#") {
 					fields := strings.Fields(line)
 					if len(fields) != 2 {
-						return errors.New("Unable to parse " + fileName)
+						return errors.New("Tracing: Unable to parse " + fileName)
 					}
 					// using hashes means that the length of the byte array to compare is always the same
 					credentials = append(credentials, Credential{
@@ -336,7 +354,7 @@ func readBasicAuthCreds(credsDir string, fileReader FileReaderInterface) error {
 				}
 			}
 
-			log.Println("Added credentials from " + fileName + " to trace router")
+			log.Println("Tracing: Added credentials from " + fileName + " to trace router")
 		}
 		return nil
 	})
@@ -344,24 +362,28 @@ func readBasicAuthCreds(credsDir string, fileReader FileReaderInterface) error {
 
 func basicAuthMiddlware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		username, password, ok := req.BasicAuth()
+		if len(credentials) > 0 {
+			username, password, ok := req.BasicAuth()
 
-		if ok {
-			usernameHash := sha256.Sum256([]byte(username))
-			passwordHash := sha256.Sum256([]byte(password))
+			if ok {
+				usernameHash := sha256.Sum256([]byte(username))
+				passwordHash := sha256.Sum256([]byte(password))
 
-			for _, credential := range credentials {
-				// subtle.ConstantTimeCompare takes the same amount of time to run, regardless of whether the slices match or not
-				usernameMatch := subtle.ConstantTimeCompare(usernameHash[:], credential.Username[:])
-				passwordMatch := subtle.ConstantTimeCompare(passwordHash[:], credential.Password[:])
-				if usernameMatch+passwordMatch == 2 {
-					next.ServeHTTP(res, req)
-					return
+				for _, credential := range credentials {
+					// subtle.ConstantTimeCompare takes the same amount of time to run, regardless of whether the slices match or not
+					usernameMatch := subtle.ConstantTimeCompare(usernameHash[:], credential.Username[:])
+					passwordMatch := subtle.ConstantTimeCompare(passwordHash[:], credential.Password[:])
+					if usernameMatch+passwordMatch == 2 {
+						next.ServeHTTP(res, req)
+						return
+					}
 				}
 			}
-		}
 
-		http.Error(res, "Unauthorized", http.StatusUnauthorized)
+			http.Error(res, "Unauthorized", http.StatusUnauthorized)
+		} else {
+			next.ServeHTTP(res, req)
+		}
 	})
 }
 
@@ -371,38 +393,38 @@ func getCACertPool(caPath string, fileReader FileReaderInterface) (*x509.CertPoo
 	stat, err := os.Stat(caPath)
 
 	if err != nil {
-		log.Printf("%s does not exist", caPath)
+		log.Printf("Tracing: %s does not exist", caPath)
 		return nil, err
 	}
 
 	if stat.IsDir() {
 		// path is a directory load all certs
-		log.Printf("Using CA Certificate folder %s", caPath)
+		log.Printf("Tracing: Using CA Certificate folder %s", caPath)
 		filepath.Walk(caPath, func(cert string, info os.FileInfo, err error) error {
 			if strings.HasSuffix(cert, "crt.pem") {
-				log.Printf("Adding Certificate %s to CA pool", cert)
+				log.Printf("Tracing: Adding Certificate %s to CA pool", cert)
 				binaryCert, err := fileReader.ReadFile(cert)
 				if err != nil {
-					log.Printf("Error reading CA Certificate %s", err.Error())
+					log.Printf("Tracing: Error reading CA Certificate %s", err.Error())
 					return nil
 				}
 				ok := caCertPool.AppendCertsFromPEM(binaryCert)
 				if !ok {
-					log.Printf("Failed to parse Certificate %s", cert)
+					log.Printf("Tracing: Failed to parse Certificate %s", cert)
 				}
 			}
 			return nil
 		})
 	} else {
-		log.Printf("Using CA Certificate file %s", caPath)
+		log.Printf("Tracing: Using CA Certificate file %s", caPath)
 		caCert, err := fileReader.ReadFile(caPath)
 		if err != nil {
-			log.Errorf("Error reading CA Certificate %s", err)
+			log.Errorf("Tracing: Error reading CA Certificate %s", err)
 			return nil, err
 		}
 		ok := caCertPool.AppendCertsFromPEM(caCert)
 		if !ok {
-			log.Error("Failed to parse root CA Certificate")
+			log.Error("Tracing: Failed to parse root CA Certificate")
 			return nil, errors.New("failed to parse root CA Certificate")
 		}
 	}

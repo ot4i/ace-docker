@@ -27,8 +27,14 @@ COPY deps/$ACE_INSTALL .
 COPY ./ApplyIFixes.sh /opt/ibm
 RUN mkdir ace-12
 RUN tar -xzf $ACE_INSTALL --absolute-names --exclude ace-12.\*/tools --exclude ace-12.\*/server/bin/TADataCollector.sh --exclude ace-12.\*/server/transformationAdvisor/ta-plugin-ace.jar --strip-components 1 --directory /opt/ibm/ace-12 \
-  && ./ApplyIFixes.sh $IFIX_LIST \ 
-  && rm ./ApplyIFixes.sh
+  && ./ApplyIFixes.sh $IFIX_LIST \
+  && rm ./ApplyIFixes.sh \
+  && rm -rf /opt/ibm/ace-12/fix-backups*
+
+# This is to delete any flash files which some customers consider a vulnerability - mostly used by googlelibs
+RUN echo "Removing the following swf files" \
+    && find . -name "*.swf" -type f \
+    && find . -name "*.swf" -type f -delete
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 
@@ -77,17 +83,12 @@ COPY --from=builder /go/src/github.com/ot4i/ace-docker/chkace* /usr/local/bin/
 # Copy in script files
 COPY *.sh /usr/local/bin/
 
-# Install kubernetes cli
-COPY ubi/install-kubectl.sh /usr/local/bin/
-RUN chmod u+x /usr/local/bin/install-kubectl.sh \
-  && install-kubectl.sh 
-
 COPY ubi/generic_invalid/invalid_license.msgflow /home/aceuser/temp/gen
 COPY ubi/generic_invalid/InvalidLicenseJava.jar /home/aceuser/temp/gen
 COPY ubi/generic_invalid/application.descriptor /home/aceuser/temp
 
 # Create a user to run as, create the ace workdir, and chmod script files
-RUN /opt/ibm/ace-12/ace make registry global accept license silently \ 
+RUN /opt/ibm/ace-12/ace make registry global accept license silently \
   && useradd -u 1000 -d /home/aceuser -G mqbrkrs,wheel aceuser \
   && mkdir -p /var/mqsi \
   && mkdir -p /home/aceuser/initial-config \

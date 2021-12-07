@@ -41,7 +41,6 @@ import (
 	"github.com/ot4i/ace-docker/internal/command"
 	"github.com/ot4i/ace-docker/internal/configuration"
 	"github.com/ot4i/ace-docker/internal/name"
-	"github.com/ot4i/ace-docker/internal/qmgr"
 	"github.com/ot4i/ace-docker/internal/webadmin"
 	"gopkg.in/yaml.v2"
 
@@ -65,24 +64,6 @@ var yamlUnmarshal = yaml.Unmarshal
 var yamlMarshal = yaml.Marshal
 var writeServerConfFile = writeServerConfFileLocal
 var getConfigurationFromContentServer = getConfigurationFromContentServerLocal
-
-// createSystemQueues creates the default MQ service queues used by the Integration Server
-func createSystemQueues() error {
-	log.Println("Creating system queues")
-	name, err := name.GetQueueManagerName()
-	if err != nil {
-		log.Errorf("Error getting queue manager name: %v", err)
-		return err
-	}
-
-	out, _, err := command.Run("bash", "/opt/ibm/ace-12/server/sample/wmq/iib_createqueues.sh", name, "mqbrkrs")
-	if err != nil {
-		log.Errorf("Error creating system queues: %v", string(out))
-		return err
-	}
-	log.Println("Created system queues")
-	return nil
-}
 
 // initialIntegrationServerConfig walks through the /home/aceuser/initial-config directory
 // looking for directories (each containing some config data), then runs a shell script
@@ -127,41 +108,32 @@ func initialIntegrationServerConfig() error {
 	for _, file := range fileList {
 		if file.IsDir() && file.Name() != "mqsc" && file.Name() != "workdir_overrides" {
 			log.Printf("Processing configuration in folder %v", file.Name())
-			if qmgr.UseQueueManager() {
-				out, _, err := command.RunAsUser("mqm", "ace_config_"+file.Name()+".sh")
+			if file.Name() == "webusers" {
+				log.Println("Configuring server.conf.yaml overrides - Webadmin")
+				updateServerConf := createSHAServerConfYaml()
+				if updateServerConf != nil {
+					log.Errorf("Error setting webadmin SHA server.conf.yaml: %v", updateServerConf)
+					return updateServerConf
+				}
+				log.Println("Configuring WebAdmin Users")
+				err := ConfigureWebAdminUsers(log)
+				if err != nil {
+					log.Errorf("Error configuring the WebAdmin users : %v", err)
+					return err
+				}
+			}
+			if file.Name() != "webusers" {
+				cmd := exec.Command("ace_config_" + file.Name() + ".sh")
+				out, _, err := command.RunCmd(cmd)
 				if err != nil {
 					log.LogDirect(out)
 					log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
 					return err
 				}
 				log.LogDirect(out)
-			} else {
-				if file.Name() == "webusers" {
-					log.Println("Configuring server.conf.yaml overrides - Webadmin")
-					updateServerConf := createSHAServerConfYaml()
-					if updateServerConf != nil {
-						log.Errorf("Error setting webadmin SHA server.conf.yaml: %v", updateServerConf)
-						return updateServerConf
-					}
-					log.Println("Configuring WebAdmin Users")
-					err := ConfigureWebAdminUsers(log)
-					if err != nil {
-						log.Errorf("Error configuring the WebAdmin users : %v", err)
-						return err
-					}
-				}
-				if file.Name() != "webusers" {
-					cmd := exec.Command("ace_config_" + file.Name() + ".sh")
-					out, _, err := command.RunCmd(cmd)
-					if err != nil {
-						log.LogDirect(out)
-						log.Errorf("Error processing configuration in folder %v: %v", file.Name(), err)
-						return err
-					}
-					log.LogDirect(out)
-				}
 			}
 		}
+
 	}
 
 	enableMetrics := os.Getenv("ACE_ENABLE_METRICS")
@@ -465,13 +437,13 @@ func addOpenTracingToServerConf(serverconfContent []byte) ([]byte, error) {
 	}
 
 	if serverconfMap["UserExits"] != nil {
-		userExits := serverconfMap["UserExits"].(map[string]string)
+		userExits := serverconfMap["UserExits"].(map[interface{}]interface{})
 
 		userExits["activeUserExitList"] = "ACEOpenTracingUserExit"
 		userExits["userExitPath"] = "/opt/ACEOpenTracing"
 
 	} else {
-		serverconfMap["UserExits"] = map[string]string{
+		serverconfMap["UserExits"] = map[interface{}]interface{} {
 			"activeUserExitList": "ACEOpenTracingUserExit",
 			"userExitPath":       "/opt/ACEOpenTracing",
 		}
@@ -723,18 +695,6 @@ func startIntegrationServer() command.BackgroundCmd {
 		defaultAppName = serverName
 	}
 
-	if qmgr.UseQueueManager() {
-		qmgrName, err := name.GetQueueManagerName()
-		if err != nil {
-			log.Printf("Error getting queue manager name: %v", err)
-			returnErr := command.BackgroundCmd{}
-			returnErr.ReturnCode = -1
-			returnErr.ReturnError = err
-			return returnErr
-		}
-		return command.RunAsUserBackground("mqm", "ace_integration_server.sh", log, "-w", "/home/aceuser/ace-server", "--name", serverName, "--mq-queue-manager-name", qmgrName, "--log-output-format", logOutputFormat, "--console-log", "--default-application-name", defaultAppName)
-	}
-
 	thisUser, err := user.Current()
 	if err != nil {
 		log.Errorf("Error finding this user: %v", err)
@@ -749,26 +709,15 @@ func startIntegrationServer() command.BackgroundCmd {
 
 func waitForIntegrationServer() error {
 	for {
-		if qmgr.UseQueueManager() {
-			_, rc, err := command.RunAsUser("mqm", "chkaceready")
-			if rc != 0 || err != nil {
-				log.Printf("Integration server not ready yet")
-			}
-			if rc == 0 {
-				break
-			}
-			time.Sleep(5 * time.Second)
-		} else {
-			cmd := exec.Command("chkaceready")
-			_, rc, err := command.RunCmd(cmd)
-			if rc != 0 || err != nil {
-				log.Printf("Integration server not ready yet")
-			}
-			if rc == 0 {
-				break
-			}
-			time.Sleep(5 * time.Second)
+		cmd := exec.Command("chkaceready")
+		_, rc, err := command.RunCmd(cmd)
+		if rc != 0 || err != nil {
+			log.Printf("Integration server not ready yet")
 		}
+		if rc == 0 {
+			break
+		}
+		time.Sleep(5 * time.Second)
 	}
 	return nil
 }
@@ -781,33 +730,14 @@ func stopIntegrationServer(integrationServerProcess command.BackgroundCmd) {
 }
 
 func createWorkDir() error {
-	log.Printf("Checking if work dir is already initialized")
-	f, err := os.Open("/home/aceuser/ace-server")
+	log.Printf("Attempting to initialise /home/aceuser/ace-server")
+	cmd := exec.Command("/opt/ibm/ace-12/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+	_, _, err := command.RunCmd(cmd)
 	if err != nil {
-		log.Printf("Error reading /home/aceuser/ace-server")
+		log.Printf("Error initializing work dir")
 		return err
 	}
-
-	log.Printf("Checking for contents in the work dir")
-	_, err = f.Readdirnames(1)
-	if err != nil {
-		log.Printf("Work dir is not yet initialized - initializing now in /home/aceuser/ace-server")
-
-		if qmgr.UseQueueManager() {
-			_, _, err := command.RunAsUser("mqm", "/opt/ibm/ace-12/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
-			if err != nil {
-				log.Printf("Error reading initializing work dir")
-				return err
-			}
-		} else {
-			cmd := exec.Command("/opt/ibm/ace-12/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
-			_, _, err := command.RunCmd(cmd)
-			if err != nil {
-				log.Printf("Error reading initializing work dir")
-				return err
-			}
-		}
-	}
+	
 	log.Printf("Work dir initialization complete")
 	return nil
 }
