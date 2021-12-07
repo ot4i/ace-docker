@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 // chkacelively checks that ACE is still runing, by checking if the admin REST endpoint port is available.
-// Additionally, if MQ is enabled, it also runs the MQ liveness probe chkmqhealthy.
 package main
 
 import (
@@ -23,9 +22,6 @@ import (
 	"net"
 	"os"
 	"time"
-
-	"github.com/ot4i/ace-docker/internal/command"
-	"github.com/ot4i/ace-docker/internal/qmgr"
 )
 
 const restartIsTimeoutInSeconds = 60
@@ -62,13 +58,4 @@ func main() {
 	}
 	conn.Close()
 
-	// Run MQ's liveness check chkmqhealthy, if enabled
-	if qmgr.UseQueueManager() {
-		out, rc, err := command.RunAsUser("mqm", "chkmqhealthy")
-		if rc != 0 || err != nil {
-			fmt.Println(out)
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	}
 }

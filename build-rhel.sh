@@ -9,10 +9,10 @@ mqImage=$4
 if [ -z "$aceInstall" ]
 then
       echo "Building temporary container with default ACE install parameters"
-      docker build --build-arg  -t ace/builder:11.0.0.4 . -f ./rhel/Dockerfile.build
+      docker build --no-cache --build-arg  -t ace/builder:11.0.0.4 . -f ./rhel/Dockerfile.build
 else
       echo "Building temporary container with ACE install $buildType"
-      docker build --build-arg ACE_INSTALL=$aceInstall -t ace/builder:11.0.0.4 . -f ./rhel/Dockerfile.build
+      docker build --no-cache --build-arg ACE_INSTALL=$aceInstall -t ace/builder:11.0.0.4 . -f ./rhel/Dockerfile.build
 fi
 
 docker create --name builder ace/builder:11.0.0.4
@@ -30,19 +30,19 @@ sed -i "s%^FROM .*%FROM $mqImage%" ./rhel/Dockerfile.acemqrhel
 case $buildType in
 "ace-dev-only")
    echo "Building ACE only for development"
-   docker build -t $buildTag -f ./rhel/Dockerfile.acerhel .
+   docker build --no-cache -t $buildTag -f ./rhel/Dockerfile.acerhel .
    ;;
 "ace-only")
    echo "Building ACE only for production"
-   docker build -t $buildTag -f ./rhel/Dockerfile.acerhel .
+   docker build --no-cache -t $buildTag -f ./rhel/Dockerfile.acerhel .
    ;;
 "ace-mq")
    echo "Building ACE with MQ for production"
-   docker build -t $buildTag --build-arg BASE_IMAGE=$mqImage -f ./rhel/Dockerfile.acemqrhel .
+   docker build --no-cache -t $buildTag --build-arg BASE_IMAGE=$mqImage -f ./rhel/Dockerfile.acemqrhel .
    ;;
 "ace-dev-mq-dev")
    echo "Building ACE with MQ for production"
-   docker build -t $buildTag --build-arg BASE_IMAGE=$mqImage -f ./rhel/Dockerfile.acemqrhel .
+   docker build --no-cache -t $buildTag --build-arg BASE_IMAGE=$mqImage -f ./rhel/Dockerfile.acemqrhel .
   ;;
 *) echo "Invalid option"
    ;;

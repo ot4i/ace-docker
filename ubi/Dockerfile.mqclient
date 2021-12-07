@@ -1,5 +1,5 @@
 
-ARG BASE_IMAGE=ibmcom/ace
+ARG BASE_IMAGE
 FROM $BASE_IMAGE as truststore-builder
 
 USER root
@@ -22,6 +22,11 @@ RUN chmod u+x /usr/local/bin/install-*.sh \
 RUN . /opt/ibm/ace-12/server/bin/mqsiprofile \
       && echo $MQSI_JREPATH \
       && /opt/mqm/bin/runmqckm -keydb -convert -db $MQSI_JREPATH/lib/security/cacerts -old_format jks -new_format kdb -pw changeit -target /tmp/mqcacerts.kdb -stash
+
+# This is to delete any flash files which some customers consider a vulnerability - mostly used by googlelibs
+RUN echo "Removing the following swf files" \
+    && find . -name "*.swf" -type f \
+    && find . -name "*.swf" -type f -delete
 
 FROM $BASE_IMAGE as clientimage
 

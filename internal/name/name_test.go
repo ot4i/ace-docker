@@ -22,21 +22,6 @@ import (
 	"github.com/ot4i/ace-docker/internal/name"
 )
 
-func TestGetQueueManagerNameFromEnv(t *testing.T) {
-	const data string = "foo"
-	err := os.Setenv("MQ_QMGR_NAME", data)
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-	n, err := name.GetQueueManagerName()
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-	if n != data {
-		t.Errorf("Expected name=%v, got name=%v", data, n)
-	}
-}
-
 func TestGetIntegrationServerNameFromEnv(t *testing.T) {
 	const data string = "bar"
 	err := os.Setenv("ACE_SERVER_NAME", data)

@@ -15,16 +15,12 @@ limitations under the License.
 */
 
 // chkaceready checks that ACE is ready for work, by checking if the admin REST endpoint port is available.
-// Additionally, if MQ is enabled, it also runs the MQ readiness probe chkmqready.
 package main
 
 import (
 	"fmt"
 	"net"
 	"os"
-
-	"github.com/ot4i/ace-docker/internal/command"
-	"github.com/ot4i/ace-docker/internal/qmgr"
 )
 
 func main() {
@@ -36,13 +32,4 @@ func main() {
 	}
 	conn.Close()
 
-	// Run MQ's readiness check chkmqready, if enabled
-	if qmgr.UseQueueManager() {
-		out, rc, err := command.RunAsUser("mqm", "chkmqready")
-		if rc != 0 || err != nil {
-			fmt.Println(out)
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	}
 }

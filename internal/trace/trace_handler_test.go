@@ -116,7 +116,7 @@ func TestUserTraceRouterHandler(t *testing.T) {
 		body, _ := io.ReadAll(response.Body)
 		zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 		require.NoError(t, err)
-		
+
 		files := checkZip(t, zipReader)
 		assert.Len(t, files, 1)
 		assert.Contains(t, files, "test.userTrace.txt")
@@ -162,13 +162,9 @@ func TestServiceTraceRouteHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		files := checkZip(t, zipReader)
-		assert.Len(t, files, 6)
 		assert.Contains(t, files, "test.trace.txt")
 		assert.Contains(t, files, "test.exceptionLog.txt")
-		assert.Contains(t, files, "test.designerflows.txt")
-		assert.Contains(t, files, "test.designereventflows.txt")
 		assert.Contains(t, files, "env.txt")
-		assert.Contains(t, files, "ps -ewww.txt")
 	})
 }
 
@@ -211,7 +207,7 @@ func TestZipServiceTrace(t *testing.T) {
 	defer restoreServiceTrace()
 	setUpServiceTrace(t)
 
-	t.Run("Builds a zip with service trace, exception logs, designer operational logs, env, and ps -ewww output", func(t *testing.T) {
+	t.Run("Builds a zip with service trace, exception logs, env, and ps eww output", func(t *testing.T) {
 		var buffer bytes.Buffer
 		zipWriter := zip.NewWriter(&buffer)
 
@@ -223,21 +219,15 @@ func TestZipServiceTrace(t *testing.T) {
 		zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(len(buffer.Bytes())))
 		require.NoError(t, err)
 		files := checkZip(t, zipReader)
-		assert.Len(t, files, 6)
 		assert.Contains(t, files, "test.trace.txt")
 		assert.Contains(t, files, "test.exceptionLog.txt")
-		assert.Contains(t, files, "test.designerflows.txt")
-		assert.Contains(t, files, "test.designereventflows.txt")
 		assert.Contains(t, files, "env.txt")
-		assert.Contains(t, files, "ps -ewww.txt")
 	})
 
 	t.Run("Failure test cases", func(t *testing.T) {
 		failureTestCases := []string{
 			"test.trace.txt",
-			"test.designerflows.txt",
 			"env.txt",
-			"ps -ewww.txt",
 		}
 
 		for _, fileName := range failureTestCases {
@@ -474,7 +464,7 @@ func TestReadBasicAuthCreds(t *testing.T) {
 		require.NoError(t, err)
 
 		err = readBasicAuthCreds(credsDir, &FileReader{})
-		require.EqualError(t, err, "Unable to parse admin-users.txt")
+		require.EqualError(t, err, "Tracing: Unable to parse admin-users.txt")
 	})
 
 	t.Run("Returns nil if the credentials have all been read and parsed - single line files", func(t *testing.T) {
@@ -589,10 +579,14 @@ func TestBasicAuthMiddlware(t *testing.T) {
 		response := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "http://testing", nil)
 
-		handlerToTest := basicAuthMiddlware(nil)
+		var called bool
+		
+		handlerToTest := basicAuthMiddlware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			called = true
+		}))
 		handlerToTest.ServeHTTP(response, req)
 
-		assert.Equal(t, 401, response.Result().StatusCode)
+		assert.True(t, called)
 	})
 
 	t.Run("No basic auth credentials in request", func(t *testing.T) {
@@ -761,29 +755,18 @@ func restoreUserTrace() {
 
 func setUpServiceTrace(t *testing.T) {
 	traceDir = "test/trace"
-	operationalLogDir = "test/log"
 
-	directories := []string{
-		traceDir,
-		operationalLogDir,
-	}
-
-	for _, dir := range directories {
-		err := os.MkdirAll(dir, 0755)
-		require.NoError(t, err)
-	}
+	err := os.MkdirAll(traceDir, 0755)
+	require.NoError(t, err)
 
 	files := []string{
-		traceDir + "/test.trace.txt",
-		traceDir + "/test.exceptionLog.txt",
-		traceDir + "/no-match.txt",
-		operationalLogDir + "/test.designerflows.txt",
-		operationalLogDir + "/test.designereventflows.txt",
-		operationalLogDir + "/no-match.txt",
+		"/test.trace.txt",
+		"/test.exceptionLog.txt",
+		"/no-match.txt",
 	}
 
 	for _, fileName := range files {
-		file, err := os.Create(fileName)
+		file, err := os.Create(traceDir + fileName)
 		require.NoError(t, err)
 		_, err = file.WriteString("This is a test")
 		require.NoError(t, err)

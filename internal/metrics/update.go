@@ -103,10 +103,10 @@ func ReadStatistics(log logger.LoggerInterface) {
 	// Check if the admin server is secure so we know whether to connect with wss or ws
 	aceAdminServerSecurity := os.Getenv("ACE_ADMIN_SERVER_SECURITY")
 	if aceAdminServerSecurity == "" {
-		log.Printf("Can't tell if ace admin server security is enabled defaulting to false")
+		log.Printf("Metrics: Can't tell if ace admin server security is enabled defaulting to false")
 		aceAdminServerSecurity = "false"
 	} else {
-		log.Printf("ACE_ADMIN_SERVER_SECURITY is %s", aceAdminServerSecurity)
+		log.Printf("Metrics: ACE_ADMIN_SERVER_SECURITY is %s", aceAdminServerSecurity)
 	}
 
 	var firstConnect = true
@@ -128,31 +128,31 @@ func ReadStatistics(log logger.LoggerInterface) {
 			caCertPool := x509.NewCertPool()
 			if stat, err := os.Stat(adminServerCACert); err == nil && stat.IsDir() {
 				// path is a directory load all certs
-				log.Printf("Using CA Certificate folder %s", adminServerCACert)
+				log.Printf("Metrics: Using CA Certificate folder %s", adminServerCACert)
 				filepath.Walk(adminServerCACert, func(cert string, info os.FileInfo, err error) error {
 					if strings.HasSuffix(cert, "crt.pem") {
-						log.Printf("Adding Certificate %s to CA pool", cert)
+						log.Printf("Metrics: Adding Certificate %s to CA pool", cert)
 						binaryCert, err := ioutil.ReadFile(cert)
 						if err != nil {
-							log.Errorf("Error reading CA Certificate %s", err)
+							log.Errorf("Metrics: Error reading CA Certificate %s", err)
 						}
 						ok := caCertPool.AppendCertsFromPEM(binaryCert)
 						if !ok {
-							log.Errorf("Failed to parse Certificate %s", cert)
+							log.Errorf("Metrics: Failed to parse Certificate %s", cert)
 						}
 					}
 					return nil
 				})
 			} else {
-				log.Printf("Using CA Certificate file %s", adminServerCACert)
+				log.Printf("Metrics: Using CA Certificate file %s", adminServerCACert)
 				caCert, err := ioutil.ReadFile(adminServerCACert)
 				if err != nil {
-					log.Errorf("Error reading CA Certificate %s", err)
+					log.Errorf("Metrics: Error reading CA Certificate %s", err)
 					return
 				}
 				ok := caCertPool.AppendCertsFromPEM(caCert)
 				if !ok {
-					log.Errorf("failed to parse root CA Certificate")
+					log.Errorf("Metrics:  failed to parse root CA Certificate")
 				}
 			}
 
@@ -162,23 +162,23 @@ func ReadStatistics(log logger.LoggerInterface) {
 			adminServerCerts, err := tls.LoadX509KeyPair(adminServerCert, adminServerKey)
 			if err != nil {
 				if adminServerCert != "" && adminServerKey != "" {
-					log.Errorf("Error reading TLS Certificates: %s", err)
+					log.Errorf("Metrics: Error reading TLS Certificates: %s", err)
 					return
 				}
 			} else {
-				log.Printf("Using provided cert and key for mutual auth")
+				log.Printf("Metrics: Using provided cert and key for mutual auth")
 			}
 
 			aceAdminServerName := os.Getenv("ACE_ADMIN_SERVER_NAME")
 			if aceAdminServerName == "" {
-				log.Printf("No ace admin server name available")
+				log.Printf("Metrics: No ace admin server name available")
 				return
 			} else {
-				log.Printf("ACE_ADMIN_SERVER_NAME is %s", aceAdminServerName)
+				log.Printf("Metrics: ACE_ADMIN_SERVER_NAME is %s", aceAdminServerName)
 			}
 
 			u := url.URL{Scheme: "wss", Host: *addr, Path: "/"}
-			log.Printf("Connecting to %s for statistics gathering", u.String())
+			log.Printf("Metrics: Connecting to %s for statistics gathering", u.String())
 			d := websocket.Dialer{
 				TLSClientConfig: &tls.Config{
 					RootCAs:      caCertPool,
@@ -190,9 +190,9 @@ func ReadStatistics(log logger.LoggerInterface) {
 			// Retrieve session if the webusers exist
 			contentBytes, err := ioutil.ReadFile("/home/aceuser/initial-config/webusers/admin-users.txt")
 			if err != nil {
-				log.Printf("Cannot find admin-users.txt file, not retrieving session cookie")
+				log.Printf("Metrics: Cannot find admin-users.txt file, not retrieving session cookie")
 			} else {
-				log.Printf("Using provided webusers/admin-users.txt for basic auth session cookie")
+				log.Printf("Metrics: Using provided webusers/admin-users.txt for basic auth session cookie")
 				userPassword := strings.Fields(string(contentBytes))
 				username := userPassword[0]
 				password := userPassword[1]
@@ -216,7 +216,7 @@ func ReadStatistics(log logger.LoggerInterface) {
 				req.SetBasicAuth(username, password)
 				resp, err := client.Do(req)
 				if err != nil {
-					log.Errorf("Error retrieving session: %s", err)
+					log.Errorf("Metrics: Error retrieving session: %s", err)
 				}
 
 				jar, _ := cookiejar.New(nil)
@@ -226,10 +226,10 @@ func ReadStatistics(log logger.LoggerInterface) {
 				}
 
 				if jar.Cookies(&httpUrl) != nil {
-					log.Printf("Connecting to %s using session cookie and SSL", u.String())
+					log.Printf("Metrics: Connecting to %s using session cookie and SSL", u.String())
 					d.Jar = jar
 				} else {
-					log.Printf("Connecting to %s with SSL", u.String())
+					log.Printf("Metrics: Connecting to %s with SSL", u.String())
 				}
 			}
 
@@ -237,16 +237,16 @@ func ReadStatistics(log logger.LoggerInterface) {
 			c, _, dialError = d.Dial(u.String(), http.Header{"Origin": {u.String()}})
 		} else {
 			wsUrl := url.URL{Scheme: "ws", Host: *addr, Path: "/"}
-			log.Printf("Connecting to %s for statistics", wsUrl.String())
+			log.Printf("Metrics: Connecting to %s for statistics", wsUrl.String())
 
 			d := websocket.DefaultDialer
 
 			// Retrieve session if the webusers exist
 			contentBytes, err := ioutil.ReadFile("/home/aceuser/initial-config/webusers/admin-users.txt")
 			if err != nil {
-				log.Printf("Cannot find admin-users.txt file, not retrieving session")
+				log.Printf("Metrics: Cannot find admin-users.txt file, not retrieving session")
 			} else {
-				log.Printf("Using provided webusers/admin-users.txt for basic auth session cookie")
+				log.Printf("Metrics: Using provided webusers/admin-users.txt for basic auth session cookie")
 				userPassword := strings.Fields(string(contentBytes))
 				username := userPassword[0]
 				password := userPassword[1]
@@ -257,7 +257,7 @@ func ReadStatistics(log logger.LoggerInterface) {
 				req.SetBasicAuth(username, password)
 				resp, err := client.Do(req)
 				if err != nil {
-					log.Errorf("Error retrieving session: %s", err)
+					log.Errorf("Metrics: Error retrieving session: %s", err)
 				}
 
 				jar, _ := cookiejar.New(nil)
@@ -267,10 +267,10 @@ func ReadStatistics(log logger.LoggerInterface) {
 				}
 
 				if jar.Cookies(&httpUrl) != nil {
-					log.Printf("Connecting to %s using session cookie", wsUrl.String())
+					log.Printf("Metrics: Connecting to %s using session cookie", wsUrl.String())
 					d.Jar = jar
 				} else {
-					log.Printf("Connecting to %s without using session cookie", wsUrl.String())
+					log.Printf("Metrics: Connecting to %s without using session cookie", wsUrl.String())
 				}
 			}
 			// Create the websocket connection
@@ -297,9 +297,9 @@ func ReadStatistics(log logger.LoggerInterface) {
 				}
 			}
 		} else {
-			log.Errorf("Error calling ace admin server webservice endpoint %s", dialError)
-			log.Println("If this repeats then check you have assigned enough memory to your Pod and you aren't running out of memory")
-			log.Println("Sleeping for 5 seconds before retrying to connect to metrics...")
+			log.Errorf("Metrics: Error calling ace admin server webservice endpoint %s", dialError)
+			log.Println("Metrics: If this repeats then check you have assigned enough memory to your Pod and you aren't running out of memory")
+			log.Println("Metrics: Sleeping for 5 seconds before retrying to connect to metrics...")
 			time.Sleep(5 * time.Second)
 		}
 	}
@@ -307,7 +307,7 @@ func ReadStatistics(log logger.LoggerInterface) {
 
 // processMetrics processes publications of metric data and handles describe/collect/stop requests
 func processMetrics(log logger.LoggerInterface, serverName string) {
-	log.Println("Processing metrics...")
+	log.Println("Metrics: Processing metrics...")
 
 	metrics := initialiseMetrics(log)
 
@@ -320,7 +320,7 @@ func processMetrics(log logger.LoggerInterface, serverName string) {
 			newMetrics, parseError := parseMetrics(log, &m)
 
 			if parseError != nil {
-				log.Println("Parse Error:", parseError)
+				log.Println("Metrics: Parse Error:", parseError)
 			} else {
 				updateMetrics(log, metrics, newMetrics)
 			}
@@ -402,7 +402,7 @@ func parseMetrics(log logger.LoggerInterface, m *StatisticsDataStruct) (*Metrics
 	} else if m.Event == AccountingAndStatisticsData {
 		return parseAccountingMetrics(log, m)
 	} else {
-		return nil, fmt.Errorf("Unable to parse data with event: %d", m.Event)
+		return nil, fmt.Errorf("Metrics: Unable to parse data with event: %d", m.Event)
 	}
 }
 
@@ -417,7 +417,7 @@ func parseAccountingMetrics(log logger.LoggerInterface, m *StatisticsDataStruct)
 	msgflowName := m.Data.WMQIStatisticsAccounting.MessageFlow.MessageFlowName
 
 	if msgflowName == "" {
-		err := errors.New("parse error - no message flow name in statistics")
+		err := errors.New("Metrics: parse error - no message flow name in statistics")
 		return parsedMetrics, err
 	}
 
@@ -579,7 +579,7 @@ func updateMetrics(log logger.LoggerInterface, mm1 *MetricsMap, mm2 *MetricsMap)
 					case Current:
 						md1.values[l].value = m2.value
 					default:
-						log.Printf("Should not reach here - only a set enumeration of metric types. %d is unknown...", md1.metricType)
+						log.Printf("Metrics: Should not reach here - only a set enumeration of metric types. %d is unknown...", md1.metricType)
 					}
 				} else {
 					md1.values[l] = m2

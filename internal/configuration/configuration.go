@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"context"
 
 	"github.com/Jeffail/gabs"
 
@@ -161,7 +162,7 @@ func getAllConfigurationsImpl(log logger.LoggerInterface, namespace string, conf
 	for index, configurationName := range configurationsNames {
 
 		res := dynamicClient.Resource(configurationClassGVR).Namespace(namespace)
-		configuration, err := res.Get(configurationName, metav1.GetOptions{})
+		configuration, err := res.Get(context.TODO(), configurationName, metav1.GetOptions{})
 		if err != nil {
 			log.Printf("%s: %#v", "Failed to get configuration: "+configurationName, err)
 			return nil, err

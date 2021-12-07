@@ -28,13 +28,10 @@ import (
 	iscommandsapi "github.com/ot4i/ace-docker/internal/isCommandsApi"
 	"github.com/ot4i/ace-docker/internal/metrics"
 	"github.com/ot4i/ace-docker/internal/name"
-	"github.com/ot4i/ace-docker/internal/qmgr"
 	"github.com/ot4i/ace-docker/internal/trace"
 )
 
 func doMain() error {
-	useQmgr := qmgr.UseQueueManager()
-	var qmgrProcess command.BackgroundCmd
 	var integrationServerProcess command.BackgroundCmd
 
 	name, nameErr := name.GetIntegrationServerName()
@@ -72,10 +69,6 @@ func doMain() error {
 		log.Print("Stopping Integration Server")
 		stopIntegrationServer(integrationServerProcess)
 		log.Print("Integration Server stopped")
-
-		log.Print("Stopping Queue Mgr")
-		qmgr.StopQueueManager(qmgrProcess)
-		log.Print("Queue Mgr stopped")
 
 		checkLogs()
 
@@ -124,40 +117,6 @@ func doMain() error {
 	if runOnly == "true" || runOnly == "1" {
 			log.Println("Run selected so skipping setup")
 	} else {
-		if useQmgr {
-
-			log.Println("Starting MQ Initialisation")
-			err = qmgr.InitializeMQ()
-			if err != nil {
-				logTermination(err)
-				performShutdown()
-				return err
-			}
-
-			log.Println("Starting queue manager")
-			qmgrProcess = qmgr.StartQueueManager(log)
-			if qmgrProcess.ReturnError != nil {
-				logTermination(qmgrProcess.ReturnError)
-				return qmgrProcess.ReturnError
-			}
-
-			log.Println("Waiting for queue manager to be ready")
-			err = qmgr.WaitForQueueManager(log)
-			if err != nil {
-				logTermination(err)
-				performShutdown()
-				return err
-			}
-			log.Println("Queue Manager is ready")
-
-			err = createSystemQueues()
-			if err != nil {
-				logTermination(err)
-				performShutdown()
-				return err
-			}
-		}
-
 		log.Println("Checking for valid working directory")
 		err = createWorkDir()
 		if err != nil {
@@ -244,12 +203,12 @@ func doMain() error {
 		log.Println("Integration API started")
 	}
 
-	log.Println("Starting trace API server")
+	log.Println("Tracing: Starting trace API server")
 	err = trace.StartServer(log, 7981)
 	if err != nil {
 		log.Println("Failed to start trace API server, you will not be able to retrieve trace through the ACE dashboard " + err.Error())
 	} else {
-		log.Println("Trace API server started")
+		log.Println("Tracing: Trace API server started")
 	}
 
 	// Start reaping zombies from now on.

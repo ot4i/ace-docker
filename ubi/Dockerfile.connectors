@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ibmcom/ace
+ARG BASE_IMAGE
 FROM $BASE_IMAGE
 
 USER root
@@ -8,6 +8,10 @@ COPY deps/package-connectors.json /opt/ibm/ace-12/package.json
 RUN export PATH=$PATH:/opt/ibm/ace-12/common/node/bin \
     && cd /opt/ibm/ace-12/node_modules \
     && npm install loopback-connector-mongodb loopback-connector-postgresql --save \
-    && chown -R aceuser:mqbrkrs /opt/ibm/ace-12/node_modules
+    && chown -R aceuser:mqbrkrs /opt/ibm/ace-12/node_modules \ 
+    && echo "Removing the following swf files" \
+    && find . -name "*.swf" -type f \
+    && find . -name "*.swf" -type f -delete
+
 
 USER 1000
