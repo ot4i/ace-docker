@@ -72,6 +72,38 @@ Add the MQ Client libraries to your existing image by running `docker build -t a
 
 `<AceOnlyImageTag>` is the tag of the image you want to add the client libs to i.e. ace-only. You can supply a customer URL for the MQ binaries by setting the argument MQ_URL
 
+### Applying an iFix to an existing image
+
+If you need to apply an iFix to an existing image, this can be done using the following Dockerfile sample. It requires the iFix to use the mqsifixinst.sh installation method.
+
+```Dockerfile
+ARG ACE_IMAGE=cp.icr.io/cp/appc/ace-server-prod@sha256:f31b9adcfd4a77ba8c62b92c6f34985ef1f2d53e8082f628f170013eaf4c9003
+FROM $ACE_IMAGE
+
+ENV IFIX_TAR=12.0.2.0-ACE-LinuxX64-TFIT38649.tar.gz
+ADD $IFIX_TAR ./fix
+
+USER root
+
+RUN  cd /home/aceuser/fix \
+     && IFIX=${IFIX_TAR::${#IFIX_TAR}-7} \
+     && ./mqsifixinst.sh /opt/ibm/ace-12 install $IFIX \
+     && cd /home/aceuser \
+     && rm -rf /home/aceuser/fix
+
+USER 1000
+```
+
+Update the Dockerfile such that
+
+- ACE_IMAGE points at your base image
+- IFIX_TAR is the name of the iFix download file. This must be located in the same directory as the Dockerfile
+- USER must be updated to match the ID of the ace user
+
+To build the image use a command such as the following `docker build -f Dockerfile  --tag myregistry.com/ace/ace-server-prod:12.0.2.0-ACE-LinuxX64-TFIT38649 .`
+
+The resulting image should then be used using the same options as the original base image
+
 ## Usage
 
 ### Accepting the License
