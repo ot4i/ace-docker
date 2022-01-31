@@ -190,9 +190,9 @@ func ReadStatistics(log logger.LoggerInterface) {
 			// Retrieve session if the webusers exist
 			contentBytes, err := ioutil.ReadFile("/home/aceuser/initial-config/webusers/admin-users.txt")
 			if err != nil {
-				log.Printf("Metrics: Cannot find admin-users.txt file, not retrieving session cookie")
+				log.Printf("Metrics: Cannot find webusers/admin-users.txt file, connecting without user authentication")
 			} else {
-				log.Printf("Metrics: Using provided webusers/admin-users.txt for basic auth session cookie")
+				log.Printf("Metrics: Using provided webusers/admin-users.txt, connecting with user authentication")
 				userPassword := strings.Fields(string(contentBytes))
 				username := userPassword[0]
 				password := userPassword[1]
@@ -278,6 +278,7 @@ func ReadStatistics(log logger.LoggerInterface) {
 		}
 
 		if dialError == nil {
+			log.Printf("Metrics: Connected")
 			if firstConnect {
 				firstConnect = false
 				startChannel <- true

@@ -666,7 +666,7 @@ func TestBuildJDBCPolicies(t *testing.T) {
 						"dbType":                  "oracle",
 						"jdbcClassName":           "com.ibm.appconnect.jdbc.oracle.OracleDriver",
 						"jdbcType4DataSourceName": "com.ibm.appconnect.jdbcx.oracle.OracleDataSource",
-						"jdbcURL":                 "jdbc:ibmappconnect:oracle://abc:123;DatabaseName=test;user=[user];password=[password];loginTimeout=40;FetchDateAsTimestamp=false",
+						"jdbcURL":                 "jdbc:ibmappconnect:oracle://abc:123;user=[user];password=[password];DatabaseName=test;FetchDateAsTimestamp=false;loginTimeout=40",
 						"hostname":                jdbAccounts[0].Credentials.Hostname,
 						"port":                    convertToNumber(jdbAccounts[0].Credentials.Port),
 						"maxPoolSize":             convertToNumber(jdbAccounts[0].Credentials.MaxPoolSize),
@@ -720,6 +720,296 @@ func TestBuildJDBCPolicies(t *testing.T) {
 					})
 				})
 
+				t.Run("When write policyxml succeeds for Oracle server account", func(t *testing.T) {
+					t.Run("Returns nil on success", func(t *testing.T) {
+
+						ioutilWriteFile = func(filenameWithPath string, data []byte, perm os.FileMode) error {
+							return nil
+						}
+
+						jdbAccounts := []JdbcAccountInfo{{
+							Name: "acc 1",
+							Credentials: JdbcCredentials{
+								AuthType:        "BASIC",
+								DbType:          "Oracle",
+								Hostname:        "oracle.com",
+								Port:            "1521",
+								Username:        "user1",
+								Password:        "password1",
+								DbName:          "test",
+								AdditonalParams: "jdbcBehaviour=1"}}}
+
+						oracleAccountSha := "6a9b827dae7d8af68ec78086404cc9ec64b49da76da996887c2d65d6b9abb96e"
+						transformXMLTemplate = func(xmlTemplate string, context interface{}) (string, error) {
+
+							assert.Equal(t, map[string]interface{}{
+								"policyName":              "oracle-" + oracleAccountSha,
+								"dbName":                  jdbAccounts[0].Credentials.DbName,
+								"dbType":                  "oracle",
+								"jdbcClassName":           "com.ibm.appconnect.jdbc.oracle.OracleDriver",
+								"jdbcType4DataSourceName": "com.ibm.appconnect.jdbcx.oracle.OracleDataSource",
+								"jdbcURL":                 "jdbc:ibmappconnect:oracle://oracle.com:1521;user=[user];password=[password];DatabaseName=test;FetchDateAsTimestamp=false;loginTimeout=40;jdbcBehaviour=1",
+								"hostname":                jdbAccounts[0].Credentials.Hostname,
+								"port":                    convertToNumber(jdbAccounts[0].Credentials.Port),
+								"maxPoolSize":             convertToNumber(jdbAccounts[0].Credentials.MaxPoolSize),
+								"securityIdentity":        oracleAccountSha,
+							}, context)
+
+							return trasformedXML, nil
+						}
+
+						errorReturned := buildJDBCPolicies(testLogger, testBaseDir, jdbAccounts)
+						assert.Nil(t, errorReturned)
+					})
+
+					t.Run("Returns nil on success - overrides DatabaseName attribute with serviceName in the jdbcURL when found in additional params", func(t *testing.T) {
+
+						ioutilWriteFile = func(filenameWithPath string, data []byte, perm os.FileMode) error {
+							return nil
+						}
+
+						jdbAccounts := []JdbcAccountInfo{{
+							Name: "acc 1",
+							Credentials: JdbcCredentials{
+								AuthType:        "BASIC",
+								DbType:          "Oracle",
+								Hostname:        "oracle.com",
+								Port:            "1521",
+								Username:        "user1",
+								Password:        "password1",
+								DbName:          "test",
+								AdditonalParams: "serviceName=dummy;jdbcBehaviour=1"}}}
+
+						oracleAccountSha := "6a9b827dae7d8af68ec78086404cc9ec64b49da76da996887c2d65d6b9abb96e"
+						transformXMLTemplate = func(xmlTemplate string, context interface{}) (string, error) {
+
+							assert.Equal(t, map[string]interface{}{
+								"policyName":              "oracle-" + oracleAccountSha,
+								"dbName":                  jdbAccounts[0].Credentials.DbName,
+								"dbType":                  "oracle",
+								"jdbcClassName":           "com.ibm.appconnect.jdbc.oracle.OracleDriver",
+								"jdbcType4DataSourceName": "com.ibm.appconnect.jdbcx.oracle.OracleDataSource",
+								"jdbcURL":                 "jdbc:ibmappconnect:oracle://oracle.com:1521;user=[user];password=[password];FetchDateAsTimestamp=false;loginTimeout=40;serviceName=dummy;jdbcBehaviour=1",
+								"hostname":                jdbAccounts[0].Credentials.Hostname,
+								"port":                    convertToNumber(jdbAccounts[0].Credentials.Port),
+								"maxPoolSize":             convertToNumber(jdbAccounts[0].Credentials.MaxPoolSize),
+								"securityIdentity":        oracleAccountSha,
+							}, context)
+
+							return trasformedXML, nil
+						}
+
+						errorReturned := buildJDBCPolicies(testLogger, testBaseDir, jdbAccounts)
+						assert.Nil(t, errorReturned)
+					})
+
+					t.Run("Returns nil on success - overrides DatabaseName attribute with sid in the jdbcURL when found in additional params", func(t *testing.T) {
+
+						ioutilWriteFile = func(filenameWithPath string, data []byte, perm os.FileMode) error {
+							return nil
+						}
+
+						jdbAccounts := []JdbcAccountInfo{{
+							Name: "acc 1",
+							Credentials: JdbcCredentials{
+								AuthType:        "BASIC",
+								DbType:          "Oracle",
+								Hostname:        "oracle.com",
+								Port:            "1521",
+								Username:        "user1",
+								Password:        "password1",
+								DbName:          "test",
+								AdditonalParams: "sid=dummy;jdbcBehaviour=1"}}}
+
+						oracleAccountSha := "6a9b827dae7d8af68ec78086404cc9ec64b49da76da996887c2d65d6b9abb96e"
+						transformXMLTemplate = func(xmlTemplate string, context interface{}) (string, error) {
+
+							assert.Equal(t, map[string]interface{}{
+								"policyName":              "oracle-" + oracleAccountSha,
+								"dbName":                  jdbAccounts[0].Credentials.DbName,
+								"dbType":                  "oracle",
+								"jdbcClassName":           "com.ibm.appconnect.jdbc.oracle.OracleDriver",
+								"jdbcType4DataSourceName": "com.ibm.appconnect.jdbcx.oracle.OracleDataSource",
+								"jdbcURL":                 "jdbc:ibmappconnect:oracle://oracle.com:1521;user=[user];password=[password];FetchDateAsTimestamp=false;loginTimeout=40;sid=dummy;jdbcBehaviour=1",
+								"hostname":                jdbAccounts[0].Credentials.Hostname,
+								"port":                    convertToNumber(jdbAccounts[0].Credentials.Port),
+								"maxPoolSize":             convertToNumber(jdbAccounts[0].Credentials.MaxPoolSize),
+								"securityIdentity":        oracleAccountSha,
+							}, context)
+
+							return trasformedXML, nil
+						}
+
+						errorReturned := buildJDBCPolicies(testLogger, testBaseDir, jdbAccounts)
+						assert.Nil(t, errorReturned)
+					})
+
+					t.Run("Returns nil on success - overrides fetchdateastimestamp in the jdbcURL when found in additional params", func(t *testing.T) {
+
+						ioutilWriteFile = func(filenameWithPath string, data []byte, perm os.FileMode) error {
+							return nil
+						}
+
+						jdbAccounts := []JdbcAccountInfo{{
+							Name: "acc 1",
+							Credentials: JdbcCredentials{
+								AuthType:        "BASIC",
+								DbType:          "Oracle",
+								Hostname:        "oracle.com",
+								Port:            "1521",
+								Username:        "user1",
+								Password:        "password1",
+								DbName:          "test",
+								AdditonalParams: "FetchDateAsTimestamp=true;jdbcBehaviour=1"}}}
+
+						oracleAccountSha := "6a9b827dae7d8af68ec78086404cc9ec64b49da76da996887c2d65d6b9abb96e"
+						transformXMLTemplate = func(xmlTemplate string, context interface{}) (string, error) {
+
+							assert.Equal(t, map[string]interface{}{
+								"policyName":              "oracle-" + oracleAccountSha,
+								"dbName":                  jdbAccounts[0].Credentials.DbName,
+								"dbType":                  "oracle",
+								"jdbcClassName":           "com.ibm.appconnect.jdbc.oracle.OracleDriver",
+								"jdbcType4DataSourceName": "com.ibm.appconnect.jdbcx.oracle.OracleDataSource",
+								"jdbcURL":                 "jdbc:ibmappconnect:oracle://oracle.com:1521;user=[user];password=[password];DatabaseName=test;loginTimeout=40;FetchDateAsTimestamp=true;jdbcBehaviour=1",
+								"hostname":                jdbAccounts[0].Credentials.Hostname,
+								"port":                    convertToNumber(jdbAccounts[0].Credentials.Port),
+								"maxPoolSize":             convertToNumber(jdbAccounts[0].Credentials.MaxPoolSize),
+								"securityIdentity":        oracleAccountSha,
+							}, context)
+
+							return trasformedXML, nil
+						}
+
+						errorReturned := buildJDBCPolicies(testLogger, testBaseDir, jdbAccounts)
+						assert.Nil(t, errorReturned)
+					})
+				})
+
+				t.Run("When write policyxml succeeds for SQL server account", func(t *testing.T) {
+					t.Run("Returns nil on success", func(t *testing.T) {
+
+						ioutilWriteFile = func(filenameWithPath string, data []byte, perm os.FileMode) error {
+							return nil
+						}
+
+						jdbAccounts := []JdbcAccountInfo{{
+							Name: "acc 1",
+							Credentials: JdbcCredentials{
+								AuthType:        "BASIC",
+								DbType:          "Microsoft SQL Server",
+								Hostname:        "sqlserver.com",
+								Port:            "1521",
+								Username:        "user1",
+								Password:        "password1",
+								DbName:          "test",
+								AdditonalParams: "jdbcBehaviour=1"}}}
+
+						sqlserverAccountSha := "4fcfc055979498885b02297e168978a1baccc8bce130dac5277fca7342a48cdf"
+						transformXMLTemplate = func(xmlTemplate string, context interface{}) (string, error) {
+
+							assert.Equal(t, map[string]interface{}{
+								"policyName":              "sqlserver-" + sqlserverAccountSha,
+								"dbName":                  jdbAccounts[0].Credentials.DbName,
+								"dbType":                  "sqlserver",
+								"jdbcClassName":           "com.ibm.appconnect.jdbc.sqlserver.SQLServerDriver",
+								"jdbcType4DataSourceName": "com.ibm.appconnect.jdbcx.sqlserver.SQLServerDataSource",
+								"jdbcURL":                 "jdbc:ibmappconnect:sqlserver://sqlserver.com:1521;DatabaseName=test;user=[user];password=[password];AuthenticationMethod=userIdPassword;loginTimeout=40;jdbcBehaviour=1",
+								"hostname":                jdbAccounts[0].Credentials.Hostname,
+								"port":                    convertToNumber(jdbAccounts[0].Credentials.Port),
+								"maxPoolSize":             convertToNumber(jdbAccounts[0].Credentials.MaxPoolSize),
+								"securityIdentity":        sqlserverAccountSha,
+							}, context)
+
+							return trasformedXML, nil
+						}
+
+						errorReturned := buildJDBCPolicies(testLogger, testBaseDir, jdbAccounts)
+						assert.Nil(t, errorReturned)
+					})
+
+					t.Run("Returns nil on success - override AuthenticationMethod in the jdbcURL", func(t *testing.T) {
+
+						ioutilWriteFile = func(filenameWithPath string, data []byte, perm os.FileMode) error {
+							return nil
+						}
+
+						jdbAccounts := []JdbcAccountInfo{{
+							Name: "acc 1",
+							Credentials: JdbcCredentials{
+								AuthType:        "BASIC",
+								DbType:          "Microsoft SQL Server",
+								Hostname:        "sqlserver.com",
+								Port:            "1521",
+								Username:        "user1",
+								Password:        "password1",
+								DbName:          "test",
+								AdditonalParams: "AuthenticationMethod=ntlmjava;jdbcBehaviour=1"}}}
+
+						sqlserverAccountSha := "4fcfc055979498885b02297e168978a1baccc8bce130dac5277fca7342a48cdf"
+						transformXMLTemplate = func(xmlTemplate string, context interface{}) (string, error) {
+
+							assert.Equal(t, map[string]interface{}{
+								"policyName":              "sqlserver-" + sqlserverAccountSha,
+								"dbName":                  jdbAccounts[0].Credentials.DbName,
+								"dbType":                  "sqlserver",
+								"jdbcClassName":           "com.ibm.appconnect.jdbc.sqlserver.SQLServerDriver",
+								"jdbcType4DataSourceName": "com.ibm.appconnect.jdbcx.sqlserver.SQLServerDataSource",
+								"jdbcURL":                 "jdbc:ibmappconnect:sqlserver://sqlserver.com:1521;DatabaseName=test;user=[user];password=[password];loginTimeout=40;AuthenticationMethod=ntlmjava;jdbcBehaviour=1",
+								"hostname":                jdbAccounts[0].Credentials.Hostname,
+								"port":                    convertToNumber(jdbAccounts[0].Credentials.Port),
+								"maxPoolSize":             convertToNumber(jdbAccounts[0].Credentials.MaxPoolSize),
+								"securityIdentity":        sqlserverAccountSha,
+							}, context)
+
+							return trasformedXML, nil
+						}
+
+						errorReturned := buildJDBCPolicies(testLogger, testBaseDir, jdbAccounts)
+						assert.Nil(t, errorReturned)
+					})
+
+					t.Run("Returns nil on success - override loginTimeout in the jdbcURL", func(t *testing.T) {
+
+						ioutilWriteFile = func(filenameWithPath string, data []byte, perm os.FileMode) error {
+							return nil
+						}
+
+						jdbAccounts := []JdbcAccountInfo{{
+							Name: "acc 1",
+							Credentials: JdbcCredentials{
+								AuthType:        "BASIC",
+								DbType:          "Microsoft SQL Server",
+								Hostname:        "sqlserver.com",
+								Port:            "1521",
+								Username:        "user1",
+								Password:        "password1",
+								DbName:          "test",
+								AdditonalParams: "loginTimeout=100;jdbcBehaviour=1"}}}
+
+						sqlserverAccountSha := "4fcfc055979498885b02297e168978a1baccc8bce130dac5277fca7342a48cdf"
+						transformXMLTemplate = func(xmlTemplate string, context interface{}) (string, error) {
+
+							assert.Equal(t, map[string]interface{}{
+								"policyName":              "sqlserver-" + sqlserverAccountSha,
+								"dbName":                  jdbAccounts[0].Credentials.DbName,
+								"dbType":                  "sqlserver",
+								"jdbcClassName":           "com.ibm.appconnect.jdbc.sqlserver.SQLServerDriver",
+								"jdbcType4DataSourceName": "com.ibm.appconnect.jdbcx.sqlserver.SQLServerDataSource",
+								"jdbcURL":                 "jdbc:ibmappconnect:sqlserver://sqlserver.com:1521;DatabaseName=test;user=[user];password=[password];AuthenticationMethod=userIdPassword;loginTimeout=100;jdbcBehaviour=1",
+								"hostname":                jdbAccounts[0].Credentials.Hostname,
+								"port":                    convertToNumber(jdbAccounts[0].Credentials.Port),
+								"maxPoolSize":             convertToNumber(jdbAccounts[0].Credentials.MaxPoolSize),
+								"securityIdentity":        sqlserverAccountSha,
+							}, context)
+
+							return trasformedXML, nil
+						}
+
+						errorReturned := buildJDBCPolicies(testLogger, testBaseDir, jdbAccounts)
+						assert.Nil(t, errorReturned)
+					})
+				})
 			})
 		})
 	})

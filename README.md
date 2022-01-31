@@ -100,9 +100,13 @@ Update the Dockerfile such that
 - IFIX_TAR is the name of the iFix download file. This must be located in the same directory as the Dockerfile
 - USER must be updated to match the ID of the ace user
 
-To build the image use a command such as the following `docker build -f Dockerfile  --tag myregistry.com/ace/ace-server-prod:12.0.2.0-ACE-LinuxX64-TFIT38649 .`
+To build the image use a command such as the following:
 
-The resulting image should then be used using the same options as the original base image
+```bash
+docker build -f Dockerfile  --tag myregistry.com/ace/ace-server-prod:12.0.2.0-ACE-LinuxX64-TFIT38649 .
+```
+
+The resulting inage should then be used using the same options as the original base image
 
 ## Usage
 
