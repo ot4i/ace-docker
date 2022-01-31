@@ -227,9 +227,10 @@ var buildJDBCPolicies = func(log logger.LoggerInterface, basedir string, jdbcAcc
 	var supportedDBs = map[string]string{
 		"IBM Db2 Linux, UNIX, or Windows (LUW) - client managed": "db2luw",
 		"IBM Db2 Linux, UNIX, or Windows (LUW) - IBM Cloud":      "db2cloud",
-		"IBM Db2 for i": "db2i",
-		"Oracle":        "oracle",
-		"PostgreSQL":    "postgresql",
+		"IBM Db2 for i":        "db2i",
+		"Oracle":               "oracle",
+		"PostgreSQL":           "postgresql",
+		"Microsoft SQL Server": "sqlserver",
 	}
 
 	policyDirName := basedir + string(os.PathSeparator) + workdirName + string(os.PathSeparator) + "overrides" + string(os.PathSeparator) + "gen.jdbcConnectorPolicies"
@@ -373,25 +374,48 @@ func getJDBCPolicyAttributes(log logger.LoggerInterface, dbType, hostname, port,
 	var err error
 	switch dbType {
 	case "db2luw", "db2cloud":
-		jdbcURL = "jdbc:db2://" + hostname + ":" + port + "/" + dbName + ":user=[user];password=[password];loginTimeout=40"
+		jdbcURL = "jdbc:db2://" + hostname + ":" + port + "/" + dbName + ":user=[user];password=[password]"
 		jdbcClassName = classNames["DB2NativeDriverClassName"]
 		jdbcType4DataSourceName = classNames["DB2NativeDataSourceClassName"]
 		endDemiliter = ";"
 	case "db2i":
-		jdbcURL = "jdbc:ibmappconnect:db2://" + hostname + ":" + port + ";DatabaseName=" + dbName + ";user=[user];password=[password];loginTimeout=40"
+		jdbcURL = "jdbc:ibmappconnect:db2://" + hostname + ":" + port + ";DatabaseName=" + dbName + ";user=[user];password=[password]"
 		jdbcClassName = classNames["DB2DriverClassName"]
 		jdbcType4DataSourceName = classNames["DB2DataSourceClassName"]
 	case "oracle":
-		jdbcURL = "jdbc:ibmappconnect:oracle://" + hostname + ":" + port + ";DatabaseName=" + dbName + ";user=[user];password=[password];loginTimeout=40;FetchDateAsTimestamp=false"
+		jdbcURL = "jdbc:ibmappconnect:oracle://" + hostname + ":" + port + ";user=[user];password=[password]"
+
+		if !strings.Contains(strings.ToLower(additonalParams), "servicename=") && !strings.Contains(strings.ToLower(additonalParams), "sid=") {
+			jdbcURL = jdbcURL + ";DatabaseName=" + dbName
+		}
+
+		if !strings.Contains(strings.ToLower(additonalParams), "fetchdateastimestamp=") {
+			jdbcURL = jdbcURL + ";FetchDateAsTimestamp=false"
+		}
+
 		jdbcClassName = classNames["OracleDriverClassName"]
 		jdbcType4DataSourceName = classNames["OracleDataSourceClassName"]
+	case "sqlserver":
+		jdbcURL = "jdbc:ibmappconnect:sqlserver://" + hostname + ":" + port + ";DatabaseName=" + dbName + ";user=[user];password=[password]"
+
+		if !strings.Contains(strings.ToLower(additonalParams), "authenticationmethod=") {
+			jdbcURL = jdbcURL + ";AuthenticationMethod=userIdPassword"
+		}
+
+		jdbcClassName = classNames["SqlServerDriverClassName"]
+		jdbcType4DataSourceName = classNames["SqlServerDataSourceClassName"]
 	case "postgresql":
-		jdbcURL = "jdbc:ibmappconnect:postgresql://" + hostname + ":" + port + ";DatabaseName=" + dbName + ";user=[user];password=[password];loginTimeout=40"
+		jdbcURL = "jdbc:ibmappconnect:postgresql://" + hostname + ":" + port + ";DatabaseName=" + dbName + ";user=[user];password=[password]"
 		jdbcClassName = classNames["PostgresDriveClassName"]
 		jdbcType4DataSourceName = classNames["PostgresDataSourceClassName"]
 	default:
 		err = errors.New("Unsupported database type: " + dbType)
 		return nil, err
+	}
+
+	// default timeout
+	if !strings.Contains(strings.ToLower(additonalParams), "logintimeout=") {
+		jdbcURL = jdbcURL + ";loginTimeout=40"
 	}
 
 	if additonalParams != "" {

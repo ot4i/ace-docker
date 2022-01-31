@@ -542,8 +542,8 @@ func downloadBASIC_AUTH(log logger.LoggerInterface, basedir string, barAuthParse
 	}
 
 	var tr *http.Transport
-	// Allow insecure if InsecureSsl is set
-	if (barAuthParsed.Path("credentials.InsecureSsl").Data() != nil) && (barAuthParsed.Path("credentials.InsecureSsl").Data().(string) == "true") {
+	// Allow insecure if insecureSsl is set
+	if (barAuthParsed.Path("credentials.insecureSsl").Data() != nil) && (barAuthParsed.Path("credentials.insecureSsl").Data().(string) == "true") {
 		tr = &http.Transport{
 			MaxIdleConns:       10,
 			IdleConnTimeout:    30 * time.Second,
@@ -553,7 +553,7 @@ func downloadBASIC_AUTH(log logger.LoggerInterface, basedir string, barAuthParse
 				RootCAs:            rootCAs,
 			},
 		}
-		log.Println("InsecureSsl set so accepting/ignoring all server SSL certificates ")
+		log.Println("insecureSsl set so accepting/ignoring all server SSL certificates ")
 	} else {
 		tr = &http.Transport{
 			MaxIdleConns:       10,
