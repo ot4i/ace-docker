@@ -8,12 +8,14 @@ USER root
 ARG MQ_URL
 ARG MQ_URL_USER
 ARG MQ_URL_PASS
+ARG MQ_PACKAGES="MQSeriesRuntime*.rpm MQSeriesJava*.rpm MQSeriesJRE*.rpm MQSeriesGSKit*.rpm MQSeriesClient*.rpm"
 ARG INSTALL_JRE=1
 
 COPY ubi/install-mq.sh /usr/local/bin/
 COPY ubi/install-mq-client-prereqs.sh /usr/local/bin/
+COPY ubi/create-default-mq-kdb.sh /usr/local/bin/
 # Install MQ.  To avoid a "text file busy" error here, we sleep before installing.
-RUN chmod u+x /usr/local/bin/install-*.sh \
+RUN chmod u+x /usr/local/bin/install-*.sh /usr/local/bin/create-*.sh \
   && sleep 1 \
   && install-mq-client-prereqs.sh \
   && install-mq.sh \
@@ -21,7 +23,7 @@ RUN chmod u+x /usr/local/bin/install-*.sh \
 
 RUN . /opt/ibm/ace-12/server/bin/mqsiprofile \
       && echo $MQSI_JREPATH \
-      && /opt/mqm/bin/runmqckm -keydb -convert -db $MQSI_JREPATH/lib/security/cacerts -old_format jks -new_format kdb -pw changeit -target /tmp/mqcacerts.kdb -stash
+      && /usr/local/bin/create-default-mq-kdb.sh
 
 # This is to delete any flash files which some customers consider a vulnerability - mostly used by googlelibs
 RUN echo "Removing the following swf files" \
@@ -36,6 +38,7 @@ USER root
 ARG MQ_URL
 ARG MQ_URL_USER
 ARG MQ_URL_PASS
+ARG MQ_PACKAGES="MQSeriesRuntime*.rpm MQSeriesJava*.rpm MQSeriesJRE*.rpm MQSeriesGSKit*.rpm MQSeriesClient*.rpm"
 ARG INSTALL_JRE=0
 
 ARG MQM_UID=888
@@ -60,6 +63,7 @@ ENV AMQ_DIAGNOSTIC_MSG_SEVERITY=1 AMQ_ADDITIONAL_JSON_LOG=1
 # Set the integration server to use it by default. A user provided server.conf.yaml will override this behaviour if the mqKeyRepository property is set.
 RUN mkdir /home/aceuser/truststores
 COPY --from=truststore-builder /tmp/mqcacerts.kdb /home/aceuser/truststores/mqcacerts.kdb
+COPY --from=truststore-builder /tmp/mqcacerts.sth /home/aceuser/truststores/mqcacerts.sth
 RUN chmod -R 777 /home/aceuser/truststores \
   && sed -i 's/#.*mqKeyRepository:.*/mqKeyRepository: \/home\/aceuser\/truststores\/mqcacerts/g' /home/aceuser/ace-server/server.conf.yaml
 
