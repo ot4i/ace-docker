@@ -1,0 +1,37 @@
+
+==============================================
+
+!Wed Mar 23 13:16:28 GMT 2022
+
+Processing file CSAPI/Proxy.msgflow
+Successfully added file CSAPI/Proxy.msgflow to archive file
+Elapsed time: 0.082 second(s).
+
+Processing file CSAPI/Proxy.msgflow
+Successfully added file CSAPI/Proxy.msgflow to archive file
+Elapsed time: 0.082 second(s).
+
+Processing file CSAPI/Proxy.msgflow
+Message flow "Proxy.msgflow" can be deployed as source since it does not include any subflows defined in the MSGFLOW files
+or any nodes unsupported by the source deploy. You may select -deployAsSource flag when building the
+BAR with MQSICREATEBAR command or do not select "Compile and  in-line resources" build option on the BAR editor.
+
+==============================================
+
+!Wed Mar 23 13:16:28 GMT 2022
+
+Processing file CSAPI/application.descriptor.
+Successfully added file CSAPI/application.descriptor to BAR file.
+Elapsed time: 0 second(s).
+
+Successfully added file CSAPI/application.descriptor to BAR file.
+
+==============================================
+
+!Wed Mar 23 13:16:28 GMT 2022
+
+Processing file CSAPI/application.descriptor.
+Successfully added file CSAPI/application.descriptor to BAR file.
+Elapsed time: 0 second(s).
+
+Successfully added file CSAPI/application.descriptor to BAR file.

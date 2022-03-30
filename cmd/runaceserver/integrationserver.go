@@ -64,6 +64,9 @@ var yamlUnmarshal = yaml.Unmarshal
 var yamlMarshal = yaml.Marshal
 var writeServerConfFile = writeServerConfFileLocal
 var getConfigurationFromContentServer = getConfigurationFromContentServerLocal
+var commandRunCmd = command.RunCmd
+var packageBarFile = packageBarFileLocal
+var deployBarFile = deployBarFileLocal
 
 // initialIntegrationServerConfig walks through the /home/aceuser/initial-config directory
 // looking for directories (each containing some config data), then runs a shell script
@@ -122,7 +125,10 @@ func initialIntegrationServerConfig() error {
 					return err
 				}
 			}
-			if file.Name() != "webusers" {
+
+			// do not generate script for webusers dir or designerflowyaml
+			// designerflowyaml is where we mount the ConfigMaps containing the IntegrationFlow resources
+			if file.Name() != "webusers" && file.Name() != "designerflowyaml" && file.Name() != "generated-bar" {
 				cmd := exec.Command("ace_config_" + file.Name() + ".sh")
 				out, _, err := command.RunCmd(cmd)
 				if err != nil {
@@ -196,6 +202,17 @@ func initialIntegrationServerConfig() error {
 		}
 	} else {
 		log.Printf("Not Forcing all flows to be https as FORCE_FLOW_HTTPS=%v", forceFlowHttps)
+	}
+
+	isEnabled, checkGlobalCacheError := checkGlobalCacheConfigurations()
+	if checkGlobalCacheError != nil {
+		log.Errorf("Error checking global cache configurations in server.conf.yaml: %v", checkGlobalCacheError)
+		return checkGlobalCacheError
+	}
+	if isEnabled {
+		log.Printf("*******")
+		log.Printf("The embedded global cache is enabled. This configuration is not supported in a containerized environment. For more information, see https://ibm.biz/aceglobalcache.")
+		log.Printf("*******")
 	}
 
 	log.Println("Initial configuration of integration server complete")
@@ -408,7 +425,14 @@ func addMetricsToServerConf(serverconfContent []byte) ([]byte, error) {
 			statistics["Snapshot"] = snapshotObj
 		}
 
-		statistics["Resource"] = resourceObj
+		if statistics["Resource"] != nil {
+			resource := statistics["Resource"].(map[interface{}]interface{})
+			if resource["reportingOn"] == nil {
+				resource["reportingOn"] = true
+			}
+		} else {
+			statistics["Resource"] = resourceObj
+		}
 
 	} else {
 		serverconfMap["Statistics"] = map[string]interface{}{
@@ -443,7 +467,7 @@ func addOpenTracingToServerConf(serverconfContent []byte) ([]byte, error) {
 		userExits["userExitPath"] = "/opt/ACEOpenTracing"
 
 	} else {
-		serverconfMap["UserExits"] = map[interface{}]interface{} {
+		serverconfMap["UserExits"] = map[interface{}]interface{}{
 			"activeUserExitList": "ACEOpenTracingUserExit",
 			"userExitPath":       "/opt/ACEOpenTracing",
 		}
@@ -712,7 +736,12 @@ func waitForIntegrationServer() error {
 		cmd := exec.Command("chkaceready")
 		_, rc, err := command.RunCmd(cmd)
 		if rc != 0 || err != nil {
-			log.Printf("Integration server not ready yet")
+			knative := os.Getenv("KNATIVESERVICE")
+			if knative == "true" || knative == "1" {
+				log.Printf("Integration server & FDR not ready yet")
+			} else {
+				log.Printf("Integration server not ready yet")
+			}
 		}
 		if rc == 0 {
 			break
@@ -730,15 +759,45 @@ func stopIntegrationServer(integrationServerProcess command.BackgroundCmd) {
 }
 
 func createWorkDir() error {
-	log.Printf("Attempting to initialise /home/aceuser/ace-server")
-	cmd := exec.Command("/opt/ibm/ace-12/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+	if _, err := os.Stat("/home/aceuser/ace-server/server.conf.yaml"); errors.Is(err, os.ErrNotExist) {
+		log.Printf("Attempting to initialise /home/aceuser/ace-server")
+
+		// Run mqsicreateworkdir code
+		cmd := exec.Command("/opt/ibm/ace-12/server/bin/mqsicreateworkdir", "/home/aceuser/ace-server")
+		_, _, err := command.RunCmd(cmd)
+		if err != nil {
+			log.Printf("Error initializing work dir")
+			return err
+		}
+		log.Printf("Work dir initialization complete")
+	} else {
+		log.Printf("/home/aceuser/ace-server/server.conf.yaml found, not initializing Work dir")
+	}
+	return nil
+}
+
+func createWorkDirSymLink() error {
+	log.Printf("Attempting to move / symlink /home/aceuser/ace-server to shared mount")
+	cmd := exec.Command("cp", "-r", "/home/aceuser/ace-server", "/workdir-shared/")
 	_, _, err := command.RunCmd(cmd)
 	if err != nil {
-		log.Printf("Error initializing work dir")
+		log.Printf("Error copying workdir to shared work dir")
 		return err
 	}
-	
-	log.Printf("Work dir initialization complete")
+	cmd = exec.Command("rm", "-rf", "/home/aceuser/ace-server")
+	_, _, err = command.RunCmd(cmd)
+	if err != nil {
+		log.Printf("Error deleting original work dir")
+		return err
+	}
+	cmd = exec.Command("ln", "-s", "/workdir-shared/ace-server", "/home/aceuser/")
+	_, _, err = command.RunCmd(cmd)
+	if err != nil {
+		log.Printf("Error creating symlink")
+		return err
+	}
+
+	log.Printf("Work dir symlink complete")
 	return nil
 }
 
@@ -905,6 +964,37 @@ func addforceFlowsHttpsToServerConf(serverconfContent []byte) ([]byte, error) {
 	return serverconfYaml, nil
 }
 
+func checkGlobalCacheConfigurations() (bool, error) {
+	isEmbeddedCacheEnabled := false
+	serverconfContent, readError := readServerConfFile()
+	if readError != nil {
+		if !os.IsNotExist(readError) {
+			// Error is different from file not existing (if the file does not exist we will create it ourselves)
+			log.Errorf("Error reading server.conf.yaml: %v", readError)
+			return isEmbeddedCacheEnabled, readError
+		}
+	}
+
+	serverconfMap := make(map[interface{}]interface{})
+	unmarshallError := yaml.Unmarshal([]byte(serverconfContent), &serverconfMap)
+	if unmarshallError != nil {
+		log.Errorf("Error unmarshalling server.conf.yaml: %v", unmarshallError)
+		return isEmbeddedCacheEnabled, unmarshallError
+	}
+
+	if serverconfMap["ResourceManagers"] != nil {
+		resourceManagers := serverconfMap["ResourceManagers"].(map[interface{}]interface{})
+		if resourceManagers["GlobalCache"] != nil {
+			globalCache := resourceManagers["GlobalCache"].(map[interface{}]interface{})
+			if globalCache["cacheOn"] == true && globalCache["enableCatalogService"] == true && globalCache["enableContainerService"] == true {
+				isEmbeddedCacheEnabled = true
+			}
+		}
+	}
+
+	return isEmbeddedCacheEnabled, nil
+}
+
 func generatePassword(length int64) string {
 	var i, e = big.NewInt(length), big.NewInt(10)
 	bigInt, _ := rand.Int(rand.Reader, i.Exp(e, i, nil))
@@ -1035,4 +1125,106 @@ func localPatchHTTPSConnector(uds string) {
 	} else {
 		log.Println("Call made to restart HTTPSConnector for Force Flows HTTPS")
 	}
+
+}
+
+func deployIntegrationFlowResources() error {
+	log.Println("Deploying IntegrationFlow resources")
+	err := packageBarFile()
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	err = deployBarFile()
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func packageBarFileLocal() error {
+	cmd := exec.Command("/opt/ibm/ace-12/common/node/bin/node", "/opt/ibm/acecc-bar-gen/acecc-bar-gen.js", "2>&1")
+	out, _, err := commandRunCmd(cmd)
+	if err != nil {
+		log.Println("Error packaging BAR file :", err)
+		return err
+	}
+	log.Print(out)
+
+	return nil
+}
+
+func deployBarFileLocal() error {
+	mqsiCommand := exec.Command("/bin/sh", "-c", "source /opt/ibm/ace-12/server/bin/mqsiprofile; /opt/ibm/ace-12/server/bin/ibmint deploy --input-bar-file /home/aceuser/initial-config/generated-bar/integrationFlowResources.bar  --output-work-directory /home/aceuser/ace-server")
+	out, _, err := commandRunCmd(mqsiCommand)
+	if err != nil {
+		fmt.Println("Error deploying BAR file :", err)
+		return err
+	}
+	log.Print(out)
+	return nil
+}
+
+func deployCSAPIFlows() error {
+	csAPIProxy := os.Getenv("CONNECTOR_SERVICE")
+	if csAPIProxy == "true" || csAPIProxy == "1" {
+		log.Println("Deploying Connector Service API Proxy Flow")
+		cpCommand := exec.Command("cp", "--recursive", "/home/aceuser/deps/CSAPI", "/home/aceuser/ace-server/run/CSAPI")
+		out, _, err := commandRunCmd(cpCommand)
+		if err != nil {
+			log.Println("Error deploying copy CS API flow files :", err)
+			return err
+		}
+		log.Print(out)
+		log.Println("Connector Service API flow deployed")
+	}
+	return nil
+}
+
+// This function updates the server.conf.yaml with the fields required to
+// force basic auth on all flows
+func forceflowbasicauthServerConfUpdate() error {
+
+	log.Println("Enabling basic auth on all flows in server.conf.yaml")
+
+	serverconfContent, readError := readServerConfFile()
+	if readError != nil {
+		if !os.IsNotExist(readError) {
+			// Error is different from file not existing (if the file does not exist we will create it ourselves)
+			log.Errorf("Error reading server.conf.yaml: %v", readError)
+			return readError
+		}
+	}
+
+	serverconfMap := make(map[interface{}]interface{})
+	unmarshallError := yamlUnmarshal([]byte(serverconfContent), &serverconfMap)
+	if unmarshallError != nil {
+		log.Errorf("Error unmarshalling server.conf.yaml: %v", unmarshallError)
+		return unmarshallError
+	}
+
+	if  serverconfMap["forceServerHTTPSecurityProfile"] == nil {
+		serverconfMap["forceServerHTTPSecurityProfile"] = "{DefaultPolicies}:SecProfLocal"
+	} else {
+		log.Println("WARNING: You have asked to force basic auth on all flows but already have forceServerHTTPSecurityProfile set")
+		log.Println("WARNING: We will not override this existing value which may prevent the basic working. ")
+	}
+
+	serverconfYaml, marshallError := yamlMarshal(&serverconfMap)
+	if marshallError != nil {
+		log.Errorf("Error marshalling server.conf.yaml: %v", marshallError)
+		return marshallError
+	}
+
+	writeError := writeServerConfFile(serverconfYaml)
+	if writeError != nil {
+		return writeError
+	}
+
+	log.Println("forceServerHTTPSecurityProfile enabled in server.conf.yaml")
+
+	return nil
 }

@@ -1,0 +1,36 @@
+
+==============================================
+
+!Wed Mar 23 13:16:28 GMT 2022
+Message flow CSAPI/Proxy.msgflow successfully loaded
+Message flow CSAPI/Proxy.msgflow successfully compiled
+Message flow CSAPI/Proxy.msgflow successfully added to archive file
+
+Node                Flow                Version             Reason              
+----------------------------------------------------------------------------------------------------
+Failure Handler     Proxy               5.0                 Generate 5.0 compatible ESQL by default.
+This compatibility level supports ESQL source code debugging.
+Deploying 5.0 compatible ESQL code will cause a syntax error on version 2.1 or previous brokers.
+Configure Request   Proxy               5.0                 Generate 5.0 compatible ESQL by default.
+This compatibility level supports ESQL source code debugging.
+Deploying 5.0 compatible ESQL code will cause a syntax error on version 2.1 or previous brokers.
+Message flow CSAPI/Proxy.msgflow successfully loaded
+Message flow CSAPI/Proxy.msgflow successfully compiled
+Message flow CSAPI/Proxy.msgflow successfully added to archive file
+
+Node                Flow                Version             Reason              
+----------------------------------------------------------------------------------------------------
+Failure Handler     Proxy               5.0                 Generate 5.0 compatible ESQL by default.
+This compatibility level supports ESQL source code debugging.
+Deploying 5.0 compatible ESQL code will cause a syntax error on version 2.1 or previous brokers.
+Configure Request   Proxy               5.0                 Generate 5.0 compatible ESQL by default.
+This compatibility level supports ESQL source code debugging.
+Deploying 5.0 compatible ESQL code will cause a syntax error on version 2.1 or previous brokers.
+
+Successfully added file CSAPI/application.descriptor to BAR file.
+
+Successfully added file CSAPI/application.descriptor to BAR file.
+
+Successfully added file CSAPI/application.descriptor to BAR file.
+
+Successfully added file CSAPI/application.descriptor to BAR file.

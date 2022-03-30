@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><Broker>
+<CompiledApplication>
+<ConfigurableProperty uri="startMode"/>
+</CompiledApplication>
+<CompiledMessageFlow name="Proxy">
+<ConfigurableProperty uri="Proxy#additionalInstances"/>
+<ConfigurableProperty uri="Proxy#commitCount"/>
+<ConfigurableProperty uri="Proxy#commitInterval"/>
+<ConfigurableProperty uri="Proxy#coordinatedTransaction"/>
+<ConfigurableProperty uri="Proxy#consumerPolicySet"/>
+<ConfigurableProperty uri="Proxy#providerPolicySet"/>
+<ConfigurableProperty uri="Proxy#consumerPolicySetBindings"/>
+<ConfigurableProperty uri="Proxy#providerPolicySetBindings"/>
+<ConfigurableProperty uri="Proxy#securityProfileName"/>
+<ConfigurableProperty uri="Proxy#monitoringProfile"/>
+<ConfigurableProperty uri="Proxy#startMode"/>
+<ConfigurableProperty uri="Proxy#startInstancesWhenFlowStarts"/>
+<ConfigurableProperty uri="Proxy#maximumRateMsgsPerSec"/>
+<ConfigurableProperty uri="Proxy#wlmPolicy"/>
+<ConfigurableProperty uri="Proxy#notificationThresholdMsgsPerSec"/>
+<ConfigurableProperty uri="Proxy#processingTimeoutSec"/>
+<ConfigurableProperty uri="Proxy#processingTimeoutAction"/>
+<ConfigurableProperty uri="Proxy#Configure Request.connectDatasourceBeforeFlowStarts"/>
+<ConfigurableProperty uri="Proxy#Configure Request.dataSource"/>
+<ConfigurableProperty uri="Proxy#Configure Request.validateMaster"/>
+<ConfigurableProperty uri="Proxy#Failure Handler.connectDatasourceBeforeFlowStarts"/>
+<ConfigurableProperty uri="Proxy#Failure Handler.dataSource"/>
+<ConfigurableProperty uri="Proxy#Failure Handler.validateMaster"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.AddRequestToGroup"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.GroupRequestFolderName"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.GroupRequestTimeout"/>
+<ConfigurableProperty override="http://localhost:3001/" uri="Proxy#HTTP Async Request.URLSpecifier"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.acceptCompressedResponses"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.allowedCiphers"/>
+<ConfigurableProperty override="CS_API_Proxy" uri="Proxy#HTTP Async Request.asyncResponseCorrelator"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.enableCRLCheck"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.hostnameChecking"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.httpProxyLocation"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.keyAlias"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.protocol"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.requestCompressionType"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.securityProfileName"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Request.timeoutForServer"/>
+<ConfigurableProperty override="CS_API_Proxy" uri="Proxy#HTTP Async Response.asyncRequestCorrelator"/>
+<ConfigurableProperty uri="Proxy#HTTP Async Response.validateMaster"/>
+<ConfigurableProperty override="/csapi/*" uri="Proxy#HTTP Input.URLSpecifier"/>
+<ConfigurableProperty uri="Proxy#HTTP Input.decompressInputMessage"/>
+<ConfigurableProperty uri="Proxy#HTTP Input.faultFormat"/>
+<ConfigurableProperty uri="Proxy#HTTP Input.securityProfileName"/>
+<ConfigurableProperty uri="Proxy#HTTP Input.timeoutForClient"/>
+<ConfigurableProperty uri="Proxy#HTTP Input.useHTTPS"/>
+<ConfigurableProperty uri="Proxy#HTTP Input.validateMaster"/>
+<ConfigurableProperty uri="Proxy#HTTP Reply.validateMaster"/>
+</CompiledMessageFlow>
+</Broker>

@@ -55,7 +55,7 @@ LABEL summary="$SUMMARY" \
 # Add required license as text file in Liceses directory (GPL, MIT, APACHE, Partner End User Agreement, etc)
 COPY /licenses/ /licenses/
 
-RUN microdnf update && microdnf install findutils util-linux unzip python3 tar procps openssl && microdnf clean all \
+RUN microdnf update && microdnf install findutils util-linux unzip python39 tar procps openssl && microdnf clean all \
    && ln -s /usr/bin/python3 /usr/local/bin/python \
    && mkdir /etc/ACEOpenTracing /opt/ACEOpenTracing /var/log/ACEOpenTracing && chmod 777 /var/log/ACEOpenTracing /etc/ACEOpenTracing
 
