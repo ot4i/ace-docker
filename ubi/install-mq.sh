@@ -109,3 +109,4 @@ rm -rf ${DIR_TMP}
 
 # Create the directory for MQ configuration files
 install --directory --mode 2775 --owner 1001 --group root /etc/mqm
+

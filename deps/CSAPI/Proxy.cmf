@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MessageFlow><ConfigurablePropertyTable><Documentation><longDesc/><version/></Documentation><ConfigurableProperty brokerDefault="no" nodeName="ComIbmCompute" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" propertyCompiler="com.ibm.etools.mft.ibmnodes.compilers.BooleanPropertyCompiler" type="Boolean" uri="Proxy#Configure Request.connectDatasourceBeforeFlowStarts"><Documentation><longDesc/></Documentation><TargetProperty name="connectDatasourceBeforeFlowStarts" uuid="Proxy#FCMComposite_1_4"/></ConfigurableProperty><ConfigurableProperty nodeName="ComIbmCompute" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#Configure Request.dataSource"><Documentation><longDesc/></Documentation><TargetProperty name="dataSource" uuid="Proxy#FCMComposite_1_4"/></ConfigurableProperty><ConfigurableProperty brokerDefault="none" nodeName="ComIbmCompute" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#Configure Request.validateMaster"><Documentation><longDesc/></Documentation><TargetProperty name="validateMaster" uuid="Proxy#FCMComposite_1_4"/></ConfigurableProperty><ConfigurableProperty brokerDefault="no" nodeName="ComIbmCompute" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" propertyCompiler="com.ibm.etools.mft.ibmnodes.compilers.BooleanPropertyCompiler" type="Boolean" uri="Proxy#Failure Handler.connectDatasourceBeforeFlowStarts"><Documentation><longDesc/></Documentation><TargetProperty name="connectDatasourceBeforeFlowStarts" uuid="Proxy#FCMComposite_1_9"/></ConfigurableProperty><ConfigurableProperty nodeName="ComIbmCompute" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#Failure Handler.dataSource"><Documentation><longDesc/></Documentation><TargetProperty name="dataSource" uuid="Proxy#FCMComposite_1_9"/></ConfigurableProperty><ConfigurableProperty brokerDefault="none" nodeName="ComIbmCompute" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#Failure Handler.validateMaster"><Documentation><longDesc/></Documentation><TargetProperty name="validateMaster" uuid="Proxy#FCMComposite_1_9"/></ConfigurableProperty><ConfigurableProperty brokerDefault="no" nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" propertyCompiler="com.ibm.etools.mft.ibmnodes.compilers.BooleanPropertyCompiler" type="Boolean" uri="Proxy#HTTP Async Request.AddRequestToGroup"><Documentation><longDesc/></Documentation><TargetProperty name="AddRequestToGroup" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Request.GroupRequestFolderName"><Documentation><longDesc/></Documentation><TargetProperty name="GroupRequestFolderName" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty brokerDefault="0.0" nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="Double" uri="Proxy#HTTP Async Request.GroupRequestTimeout"><Documentation><longDesc/></Documentation><TargetProperty name="GroupRequestTimeout" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Request.URLSpecifier"><Documentation><longDesc/></Documentation><TargetProperty name="URLSpecifier" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty brokerDefault="no" nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" propertyCompiler="com.ibm.etools.mft.ibmnodes.compilers.BooleanPropertyCompiler" type="Boolean" uri="Proxy#HTTP Async Request.acceptCompressedResponses"><Documentation><longDesc/></Documentation><TargetProperty name="acceptCompressedResponses" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Request.allowedCiphers"><Documentation><longDesc/></Documentation><TargetProperty name="allowedCiphers" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Request.asyncResponseCorrelator"><Documentation><longDesc/></Documentation><TargetProperty name="asyncResponseCorrelator" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty brokerDefault="false" nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="Boolean" uri="Proxy#HTTP Async Request.enableCRLCheck"><Documentation><longDesc/></Documentation><TargetProperty name="enableCRLCheck" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty brokerDefault="true" nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="Boolean" uri="Proxy#HTTP Async Request.hostnameChecking"><Documentation><longDesc/></Documentation><TargetProperty name="hostnameChecking" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Request.httpProxyLocation"><Documentation><longDesc/></Documentation><TargetProperty name="httpProxyLocation" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Request.keyAlias"><Documentation><longDesc/></Documentation><TargetProperty name="keyAlias" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty brokerDefault="TLS" nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Request.protocol"><Documentation><longDesc/></Documentation><TargetProperty name="protocol" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty brokerDefault="none" nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Request.requestCompressionType"><Documentation><longDesc/></Documentation><TargetProperty name="requestCompressionType" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty brokerDefault="" nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Request.securityProfileName"><Documentation><longDesc/></Documentation><TargetProperty name="securityProfileName" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty brokerDefault="120" nodeName="ComIbmHTTPAsyncRequest" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="Integer" uri="Proxy#HTTP Async Request.timeoutForServer"><Documentation><longDesc/></Documentation><TargetProperty name="timeoutForServer" uuid="Proxy#FCMComposite_1_6"/></ConfigurableProperty><ConfigurableProperty nodeName="ComIbmHTTPAsyncResponse" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Response.asyncRequestCorrelator"><Documentation><longDesc/></Documentation><TargetProperty name="asyncRequestCorrelator" uuid="Proxy#FCMComposite_1_7"/></ConfigurableProperty><ConfigurableProperty brokerDefault="none" nodeName="ComIbmHTTPAsyncResponse" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Async Response.validateMaster"><Documentation><longDesc/></Documentation><TargetProperty name="validateMaster" uuid="Proxy#FCMComposite_1_7"/></ConfigurableProperty><ConfigurableProperty nodeName="ComIbmWSInput" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Input.URLSpecifier"><Documentation><longDesc/></Documentation><TargetProperty name="URLSpecifier" uuid="Proxy#FCMComposite_1_1"/></ConfigurableProperty><ConfigurableProperty brokerDefault="no" nodeName="ComIbmWSInput" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" propertyCompiler="com.ibm.etools.mft.ibmnodes.compilers.BooleanPropertyCompiler" type="Boolean" uri="Proxy#HTTP Input.decompressInputMessage"><Documentation><longDesc/></Documentation><TargetProperty name="decompressInputMessage" uuid="Proxy#FCMComposite_1_1"/></ConfigurableProperty><ConfigurableProperty brokerDefault="SOAP 1.1" nodeName="ComIbmWSInput" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Input.faultFormat"><Documentation><longDesc/></Documentation><TargetProperty name="faultFormat" uuid="Proxy#FCMComposite_1_1"/></ConfigurableProperty><ConfigurableProperty brokerDefault="" nodeName="ComIbmWSInput" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Input.securityProfileName"><Documentation><longDesc/></Documentation><TargetProperty name="securityProfileName" uuid="Proxy#FCMComposite_1_1"/></ConfigurableProperty><ConfigurableProperty brokerDefault="180" nodeName="ComIbmWSInput" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="Integer" uri="Proxy#HTTP Input.timeoutForClient"><Documentation><longDesc/></Documentation><TargetProperty name="timeoutForClient" uuid="Proxy#FCMComposite_1_1"/></ConfigurableProperty><ConfigurableProperty brokerDefault="no" nodeName="ComIbmWSInput" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" propertyCompiler="com.ibm.etools.mft.ibmnodes.compilers.BooleanPropertyCompiler" type="Boolean" uri="Proxy#HTTP Input.useHTTPS"><Documentation><longDesc/></Documentation><TargetProperty name="useHTTPS" uuid="Proxy#FCMComposite_1_1"/></ConfigurableProperty><ConfigurableProperty brokerDefault="none" nodeName="ComIbmWSInput" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Input.validateMaster"><Documentation><longDesc/></Documentation><TargetProperty name="validateMaster" uuid="Proxy#FCMComposite_1_1"/></ConfigurableProperty><ConfigurableProperty brokerDefault="inherit" nodeName="ComIbmWSReply" nodePluginId="com.ibm.etools.mft.ibmnodes.definitions" type="String" uri="Proxy#HTTP Reply.validateMaster"><Documentation><longDesc/></Documentation><TargetProperty name="validateMaster" uuid="Proxy#FCMComposite_1_2"/></ConfigurableProperty></ConfigurablePropertyTable><ComIbmWSInputNode label="HTTP Input" setDestinationList="yes" uuid="Proxy#FCMComposite_1_1"/><ComIbmWSReplyNode label="HTTP Reply" uuid="Proxy#FCMComposite_1_2"/><ComIbmComputeNode computeMode="destinationAndMessage" label="Configure Request" uuid="Proxy#FCMComposite_1_4"><computeExpressionProperty xml:space="preserve">
+CREATE SCHEMA "" PATH ""
+
+CREATE COMPUTE MODULE Proxy_Configure_Request
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		
+		SET OutputRoot = InputRoot;
+		
+		/*
+LE section when "Set destination list" is checked on the input node:
+
+  (0x01000000:Name):HTTP        = (
+    (0x01000000:Name):Input = (
+      (0x01000000:Name):RequestLine = (
+        (0x03000000:NameValue):Method      = 'GET' (CHARACTER)
+        (0x03000000:NameValue):RequestURI  = '/csapi/abc/def' (CHARACTER)
+        (0x03000000:NameValue):HTTPVersion = 'HTTP/1.1' (CHARACTER)
+      )
+    )
+  )
+*/ 
+		-- Keep everything after /csapi (include the slash)		
+		IF LENGTH( InputRoot.HTTPInputHeader."X-Query-String" ) &gt; 0 THEN 
+			SET OutputLocalEnvironment.Destination.HTTP.RequestLine.RequestURI = SUBSTRING(InputLocalEnvironment.HTTP.Input.RequestLine.RequestURI FROM 7) || '?' || InputRoot.HTTPInputHeader."X-Query-String";
+		ELSE
+			SET OutputLocalEnvironment.Destination.HTTP.RequestLine.RequestURI = SUBSTRING(InputLocalEnvironment.HTTP.Input.RequestLine.RequestURI FROM 7);
+		END IF;
+		SET OutputLocalEnvironment.Destination.HTTP.RequestLine.Method = InputLocalEnvironment.HTTP.Input.RequestLine.Method;
+		
+		RETURN TRUE;
+	END;
+
+END MODULE;</computeExpressionProperty></ComIbmComputeNode><ComIbmHTTPAsyncRequestNode label="HTTP Async Request" uuid="Proxy#FCMComposite_1_6"/><ComIbmHTTPAsyncResponseNode label="HTTP Async Response" messageDomainProperty="JSON" uuid="Proxy#FCMComposite_1_7"/><ComIbmThrowNode label="Throw" uuid="Proxy#FCMComposite_1_8"/><ComIbmComputeNode computeMode="all" label="Failure Handler" uuid="Proxy#FCMComposite_1_9"><computeExpressionProperty xml:space="preserve">
+CREATE SCHEMA "" PATH ""
+
+CREATE COMPUTE MODULE Proxy_Failure_Handler
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		SET OutputRoot = InputRoot;
+
+		-- Set response code
+		SET OutputLocalEnvironment.Destination.HTTP.ReplyStatusCode = 500;
+		
+		if InputExceptionList IS NOT NULL THEN
+	        -- Check the BIP message and put out an appropriate error message
+		    DECLARE messageNumber INTEGER;
+	        DECLARE messageText char;
+	        CALL getLastExceptionDetail(InputExceptionList, messageNumber, messageText);
+	
+	        SET OutputRoot.JSON.Data.BIP.Number = messageNumber;
+	        SET OutputRoot.JSON.Data.BIP.Message = messageText;		
+		END IF;
+		
+		-- Just forward on the original message
+   
+        
+	END;
+END MODULE;CREATE PROCEDURE getLastExceptionDetail(IN InputTree reference, OUT messageNumber integer, OUT messageText char)
+BEGIN
+	-- Create a reference to the first child of the exception list
+    declare ptrException reference to InputTree.*[1];
+    -- keep looping while the moves to the child of exception list work
+	WHILE lastmove(ptrException) DO
+		-- store the current values for the error number and text
+		IF ptrException.Number is not null THEN
+    		SET messageNumber = ptrException.Number;
+    		SET messageText = ptrException.Text;
+		END IF;
+		-- now move to the last child which should be the next exceptionlist
+		move ptrException lastchild;
+	END WHILE;
+END;
+</computeExpressionProperty></ComIbmComputeNode><Connection sourceNode="Proxy#FCMComposite_1_1" sourceTerminal="out" targetNode="Proxy#FCMComposite_1_4" targetTerminal="in"/><Connection sourceNode="Proxy#FCMComposite_1_4" sourceTerminal="out" targetNode="Proxy#FCMComposite_1_6" targetTerminal="in"/><Connection sourceNode="Proxy#FCMComposite_1_7" sourceTerminal="out" targetNode="Proxy#FCMComposite_1_2" targetTerminal="in"/><Connection sourceNode="Proxy#FCMComposite_1_9" sourceTerminal="out" targetNode="Proxy#FCMComposite_1_2" targetTerminal="in"/><Connection sourceNode="Proxy#FCMComposite_1_6" sourceTerminal="failure" targetNode="Proxy#FCMComposite_1_9" targetTerminal="in"/><Connection sourceNode="Proxy#FCMComposite_1_7" sourceTerminal="failure" targetNode="Proxy#FCMComposite_1_9" targetTerminal="in"/><Connection sourceNode="Proxy#FCMComposite_1_9" sourceTerminal="out" targetNode="Proxy#FCMComposite_1_8" targetTerminal="in"/><Connection sourceNode="Proxy#FCMComposite_1_7" sourceTerminal="error" targetNode="Proxy#FCMComposite_1_9" targetTerminal="in"/></MessageFlow>

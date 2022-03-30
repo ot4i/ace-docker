@@ -3,6 +3,7 @@ package configuration
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -18,7 +19,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"context"
 
 	"github.com/Jeffail/gabs"
 
@@ -466,6 +466,7 @@ func runCommand(log logger.LoggerInterface, command string, params []string) err
 	err := cmd.Run()
 	if err != nil {
 		log.Printf("Error executing command: %s %s", stdout.String(), stderr.String())
+
 	} else {
 		log.Printf("Successfully executed command.")
 	}

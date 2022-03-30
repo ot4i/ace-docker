@@ -131,6 +131,35 @@ Statistics:
     publicationOn: mockValue3
     threadDataLevel: mockValue4
 `},
+{ // User's yaml has accountingOrigin in Statistics.Snapshot and overriden outputFormat. It keeps these values.
+`
+Statistics:
+ Resource:
+   outputFormat: file`,
+`Statistics:
+  Resource:
+    outputFormat: file
+    reportingOn: true
+  Snapshot:
+    accountingOrigin: none
+    nodeDataLevel: basic
+    outputFormat: json
+    publicationOn: active
+    threadDataLevel: none
+`},
+{ // User's yaml has bare minimum. Our defaults added.
+`
+Statistics:`,
+`Statistics:
+  Resource:
+    reportingOn: true
+  Snapshot:
+    accountingOrigin: none
+    nodeDataLevel: basic
+    outputFormat: json
+    publicationOn: active
+    threadDataLevel: none
+`},
 }
 
 func TestAddMetricsToServerConf(t *testing.T) {
@@ -356,6 +385,70 @@ func TestAddforceFlowsHttpsToServerConf(t *testing.T) {
 	}
 }
 
+func TestCheckGlobalCacheConfigurations(t *testing.T) {
+	t.Run("When global cache is not configured, no warning message is issued.", func(t *testing.T) {
+		serverConfigYaml := `ResourceManagers:`
+
+		readServerConfFile = func() ([]byte, error) {
+			return []byte(serverConfigYaml), nil
+		}
+
+		isEmbeddedCacheEnabled, err := checkGlobalCacheConfigurations()
+		assert.NoError(t, err)
+		assert.Equal(t, isEmbeddedCacheEnabled, false, "The WXS server should be disabled.")
+	})
+
+	t.Run("When global cache is disabled, no warning message is issued.", func(t *testing.T) {
+		serverConfigYaml :=
+`ResourceManagers:
+  GlobalCache:
+    cacheOn: false
+    enableCatalogService: false
+    enableContainerService: false`
+
+		readServerConfFile = func() ([]byte, error) {
+			return []byte(serverConfigYaml), nil
+		}
+
+		isEmbeddedCacheEnabled, err := checkGlobalCacheConfigurations()
+		assert.NoError(t, err)
+		assert.Equal(t, isEmbeddedCacheEnabled, false, "The WXS server should be disabled.")
+	})
+
+	t.Run("When global cache is enabled without the WXS server, no warning message is issued.", func(t *testing.T) {
+		serverConfigYaml :=
+`ResourceManagers:
+  GlobalCache:
+    cacheOn: true
+    enableCatalogService: false
+    enableContainerService: false`
+
+		readServerConfFile = func() ([]byte, error) {
+			return []byte(serverConfigYaml), nil
+		}
+
+		isEmbeddedCacheEnabled, err := checkGlobalCacheConfigurations()
+		assert.NoError(t, err)
+		assert.Equal(t, isEmbeddedCacheEnabled, false, "The WXS server should be disabled.")
+	})
+
+	t.Run("When both global cache and the WXS server are enabled, a warning message is issued.", func(t *testing.T) {
+		serverConfigYaml :=
+`ResourceManagers:
+  GlobalCache:
+    cacheOn: true
+    enableCatalogService: true
+    enableContainerService: true`
+
+		readServerConfFile = func() ([]byte, error) {
+			return []byte(serverConfigYaml), nil
+		}
+
+		isEmbeddedCacheEnabled, err := checkGlobalCacheConfigurations()
+		assert.NoError(t, err)
+		assert.Equal(t, isEmbeddedCacheEnabled, true, "The WXS server should be enabled.")
+	})
+}
 
 func TestGetConfigurationFromContentServer(t *testing.T) {
 

@@ -115,7 +115,7 @@ func doMain() error {
 
 	runOnly := os.Getenv("ACE_RUN_ONLY")
 	if runOnly == "true" || runOnly == "1" {
-			log.Println("Run selected so skipping setup")
+		log.Println("Run selected so skipping setup")
 	} else {
 		log.Println("Checking for valid working directory")
 		err = createWorkDir()
@@ -123,6 +123,17 @@ func doMain() error {
 			logTermination(err)
 			performShutdown()
 			return err
+		}
+
+		workdirShared := os.Getenv("WORKDIR-SHARED")
+		if workdirShared == "true" || workdirShared == "1" {
+			log.Println("Add symlink into shared workdir")
+			err = createWorkDirSymLink()
+			if err != nil {
+				logTermination(err)
+				performShutdown()
+				return err
+			}
 		}
 
 		// Note: this will do nothing if there are no crs set in the environment
@@ -163,6 +174,35 @@ func doMain() error {
 			performShutdown()
 			return err
 		}
+
+		// Deploy Connector Service API
+		err = deployCSAPIFlows()
+		if err != nil {
+			logTermination(err)
+			performShutdown()
+			return err
+		}
+
+		designerIntegrationFlows := os.Getenv("DESIGNER_INTEGRATION_FLOWS")
+		if designerIntegrationFlows == "true" {
+			err = deployIntegrationFlowResources()
+			if err != nil {
+				logTermination(err)
+				performShutdown()
+				return err
+			}
+		}
+
+		forceflowbasicauth := os.Getenv("FORCEFLOWBASICAUTH")
+		if forceflowbasicauth == "true" || forceflowbasicauth == "1" {
+			err = forceflowbasicauthServerConfUpdate()
+			if err != nil {
+				logTermination(err)
+				performShutdown()
+				return err
+			}
+		}
+
 	}
 
 	setupOnly := os.Getenv("ACE_SETUP_ONLY")

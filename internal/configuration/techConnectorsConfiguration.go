@@ -148,7 +148,7 @@ func SetupTechConnectorsConfigurations(log logger.LoggerInterface, basedir strin
 				log.Printf("Connector %s accounts processed %v", connector, len(connectorAccounts))
 			}
 		} else {
-			log.Printf("No accounts found for connector %s\n", connector)
+			log.Printf("No accounts found for connector %s", connector)
 		}
 	}
 

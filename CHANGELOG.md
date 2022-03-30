@@ -4,9 +4,13 @@
 
 **Updates**
 
+* Ability to override Statistics->Resource in server.conf.yaml
 * Improved the logging for metrics when authentication is not enabled
 * Includes IT39515
 * Includes IT39573
+* Includes IT39917
+* Remove need for python
+* Fix for CVE-2022-21698
 
 ## 12.0.3.0-r1
 

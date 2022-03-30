@@ -42,4 +42,3 @@ else
   $MQSI_JREPATH/bin/keytool -importkeystore -srckeystore $MQSI_JREPATH/lib/security/cacerts -srcstorepass changeit -destkeystore /tmp/java-cacerts.p12 -deststoretype pkcs12 -deststorepass changeit 
   /opt/mqm/bin/runmqakm -keydb -convert -db /tmp/java-cacerts.p12 -old_format p12 -new_format kdb -pw changeit -target /tmp/mqcacerts.kdb -stash
 fi
-
