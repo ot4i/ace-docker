@@ -1,6 +1,0 @@
-*.tar.gz
-*.tgz
-OpenTracing/config/*
-OpenTracing/library/*
-!OpenTracing/config/README
-!OpenTracing/library/README
