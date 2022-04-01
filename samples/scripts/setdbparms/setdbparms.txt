@@ -1,0 +1,6 @@
+# Lines starting with a "#" are ignored
+# Each line which starts mqsisetdbparms will be run as written 
+# Alternatively each line should specify the <resource> <userId> <password>, separated by a single space
+# Each line will be processed by calling...
+#   mqsisetdbparms ${ACE_SERVER_NAME} -n <resource> -u <userId> -p <password>
+resource1 user1 password1

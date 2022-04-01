@@ -1,0 +1,3 @@
+StartupScripts:
+  SetDBParms:
+    command: '/home/aceuser/initial-config/ace_config_setdbparms.sh'
