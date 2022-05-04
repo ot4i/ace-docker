@@ -23,13 +23,13 @@
 */server/messages/Zh_CN/BIPmsgs.cat
 */server/messages/Zh_TW/BIPmsgs.cat
 */server/tools/ibm-dfdl-java.zip
+*/server/tools/proxyservlet.war
 */server/bin/bipbroker
 */server/bin/biptestbridge
 */server/classes/adminagent
 */common/ace.chk
 */common/ace.notools.chk
 */server/isadc
-*/server/tools
 */server/sample/Salesforce
 */server/sample/BluemixReporting
 */server/sample/Monitoring

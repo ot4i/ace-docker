@@ -1,15 +1,15 @@
 FROM ubuntu:20.04
 MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
 
-# docker build -t ace-full:12.0.2.0-ubuntu -f Dockerfile.ubuntu .
+# docker build -t ace-full:12.0.4.0-ubuntu -f Dockerfile.ubuntu .
 
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.2.0-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-12.0.2.0
+ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.4.0-ACE-LINUX64-DEVELOPER.tar.gz
+ARG PRODUCT_LABEL=ace-12.0.4.0
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
 
-# Install ACE v12.0.2.0 and accept the license
+# Install ACE v12.0.4.0 and accept the license
 RUN apt-get update && apt-get install -y --no-install-recommends curl && \
     mkdir /opt/ibm && echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} | tar zx --directory /opt/ibm && \
@@ -21,7 +21,7 @@ RUN echo "ACE_12:" > /etc/debian_chroot \
   && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /root/.bashrc
 
 # mqsicreatebar prereqs; need to run "Xvfb -ac :99 &" and "export DISPLAY=:99"
-RUN apt-get -y install libgtk2.0-0 libxtst6 xvfb
+RUN apt-get -y install libgtk2.0-0 libxtst6 xvfb libswt-gtk-4-java
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
 ENV BASH_ENV=/opt/ibm/ace-12/server/bin/mqsiprofile
