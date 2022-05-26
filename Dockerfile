@@ -19,7 +19,14 @@ ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/i
 
 RUN mkdir -p /opt/ibm/ace-12 \
     && if [ -z $USERNAME ]; then curl ${DOWNLOAD_URL}; else curl -u "${USERNAME}:${PASSWORD}" ${DOWNLOAD_URL}; fi | \
-        tar zx --absolute-names --exclude ace-12.\*/tools --exclude ace-12.\*/server/bin/TADataCollector.sh --exclude ace-12.\*/server/transformationAdvisor/ta-plugin-ace.jar --strip-components 1 --directory /opt/ibm/ace-12
+    tar zx --absolute-names \
+    --exclude ace-12.0.*.0/tools \
+    --exclude ace-12.0.*.0/server/tools/ibm-dfdl-java.zip \
+    --exclude ace-12.0.*.0/server/tools/proxyservlet.war \
+    --exclude ace-12.0.*.0/server/bin/TADataCollector.sh \
+    --exclude ace-12.0.*.0/server/transformationAdvisor/ta-plugin-ace.jar \
+    --strip-components 1 \
+    --directory /opt/ibm/ace-12
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 
