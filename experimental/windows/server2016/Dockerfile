@@ -11,3 +11,6 @@ RUN c:\\tmp\\ACESetup.exe /quiet LICENSE_ACCEPTED=true InstallFolder=C:\\ace-v11
 # RUN c:\\ace-v11\\server\\\bin\\\runCommand.cmd C:\\ace-v11\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v11\\server\\bin\\microsoft.crm.sdk.proxy.dll
 # RUN c:\\ace-v11\\server\\\bin\\\runCommand.cmd C:\\ace-v11\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v11\\server\\bin\\microsoft.xrm.sdk.dll
 # RUN c:\\ace-v11\\server\\\bin\\\runCommand.cmd C:\\ace-v11\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v11\\server\\bin\\Microsoft.IdentityModel.dll
+
+# Could also be set to ContainerUser
+USER ContainerAdministrator
