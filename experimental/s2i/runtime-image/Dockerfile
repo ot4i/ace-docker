@@ -18,9 +18,9 @@ LABEL io.k8s.description="App Connect Enterprise S2I Runtime Image" \
 
 WORKDIR "/tmp"
 
-ENV STI_SCRIPTS_PATH="/usr/local/s2i" \ 
+ENV STI_SCRIPTS_PATH="/usr/local/s2i" \
     WORKDIR="/usr/local/workdir" \
-    S2I_DESTINATION="/tmp" 
+    S2I_DESTINATION="/tmp"
 
 COPY ./s2i/bin/ /usr/local/s2i
 
@@ -30,6 +30,8 @@ RUN chmod +x /usr/local/s2i/assemble && \
     chmod +x /usr/local/s2i/assemble-runtime && \
     chmod +x /usr/local/s2i/run && \
     chmod +x /usr/local/s2i/usage
+
+USER 1001
 
 # Default setting for the verbose option
 # ARG VERBOSE=false

@@ -11,3 +11,6 @@ RUN c:\\ace-v12\\server\\\bin\\\runCommand.cmd C:\\ace-v12\\server\\bin\\mqsiAss
 RUN c:\\ace-v12\\server\\\bin\\\runCommand.cmd C:\\ace-v12\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v12\\server\\bin\\microsoft.crm.sdk.proxy.dll
 RUN c:\\ace-v12\\server\\\bin\\\runCommand.cmd C:\\ace-v12\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v12\\server\\bin\\microsoft.xrm.sdk.dll
 RUN c:\\ace-v12\\server\\\bin\\\runCommand.cmd C:\\ace-v12\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v12\\server\\bin\\Microsoft.IdentityModel.dll
+
+# Could also be set to ContainerUser
+USER ContainerAdministrator
