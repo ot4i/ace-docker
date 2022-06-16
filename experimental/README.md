@@ -19,7 +19,7 @@ docker run -e LICENSE=accept --rm -ti ace-sample:12.0.4.0-minimal-alpine
 and then curl http://[container IP]:7800/test should return '{"data":"a string from ACE"}'
 
 ## Various sizes
-Local on kenya.hursley.uk.ibm.com (debian 10) with defaults in Dockerfiles:
+Local on Debian 10 machine with defaults in Dockerfiles:
 
 ```
 ace-minimal      12.0.4.0-alpine-openjdk16     2d02c13096c9        24 minutes ago      496MB
