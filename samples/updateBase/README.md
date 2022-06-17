@@ -6,7 +6,7 @@ This sample applies updates all the base OS packages. This can be used to resolv
 
 ## Building the sample
 
-- First [build the ACE image](../README.md#Building-a-container-image) or obtain one of the shipped images
+- First [build the ACE image](../../README.md#Building-a-container-image) or obtain one of the shipped images
 - In the `sample/scripts/updateBase` folder:
 
     ```bash

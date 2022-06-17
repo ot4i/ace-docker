@@ -7,7 +7,7 @@
 
 ## Building the sample
 
-First [build the ACE image](../README.md#Building-a-container-image) or obtain one of the shipped images
+First [build the ACE image](../../README.md#Building-a-container-image) or obtain one of the shipped images
 
 In the `sample/bars` folder:
 
