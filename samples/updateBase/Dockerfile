@@ -3,6 +3,6 @@ FROM ${FROMIMAGE}
 
 USER root
 
-RUN RUN microdnf update && microdnf clean all
+RUN microdnf update && microdnf clean all
 
 USER 1001
