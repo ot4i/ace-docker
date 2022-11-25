@@ -1,5 +1,3 @@
-*/tools
-*/server/wsrrcomponent
 */server/messages/BIPmsgs_de.properties
 */server/messages/BIPmsgs_es.properties
 */server/messages/BIPmsgs_fr.properties
@@ -28,7 +26,6 @@
 */server/tools/proxyservlet.war
 */server/bin/bipbroker
 */server/bin/biptestbridge
-*/server/bin/TADataCollector.sh
 */server/classes/adminagent
 */common/ace.chk
 */common/ace.notools.chk
