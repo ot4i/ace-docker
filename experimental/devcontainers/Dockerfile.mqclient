@@ -42,7 +42,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl zip binuti
 
 # Source profile automatically
 RUN usermod -a -G mqbrkrs vscode \
-  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.bashrc
+  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.bashrc \ 
+  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.profile
 
 # Install MQ client libraries
 RUN mkdir /opt/mqm && curl ${MQ_DOWNLOAD_URL} | tar zx --exclude=tools --directory /opt/mqm

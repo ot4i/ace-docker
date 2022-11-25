@@ -61,7 +61,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl zip binuti
 
 # Source profile automatically
 RUN usermod -a -G mqbrkrs vscode \
-  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.bashrc
+  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.bashrc \ 
+  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.profile
 
 # Install Maven for development use.
 #
