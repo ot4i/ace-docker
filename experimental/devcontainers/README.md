@@ -1,6 +1,7 @@
 # GitHub codespaces devcontainer images
 
-Images for use with GitHub codespaces and ACE v12.
+Images for use with GitHub codespaces and ACE v12. Built on top of the GitHub-provided
+Ubuntu 22.04 standard image.
 
 These images can be built and pushed to dockerhub or any other container registry, or
 built as needed by the codespaces infrastructure. The pre-built container startup times
