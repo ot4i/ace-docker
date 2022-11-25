@@ -1,0 +1,56 @@
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-22.04
+
+MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
+
+# Build:
+#
+# docker build -t ace-devcontainer-mqclient:12.0.4.0 -f Dockerfile.mqclient .
+
+ARG USERNAME
+ARG PASSWORD
+ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.4.0-ACE-LINUX64-DEVELOPER.tar.gz
+ARG PRODUCT_LABEL=ace-12.0.4.0
+ARG MQ_DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.3.1.0-IBM-MQC-Redist-LinuxX64.tar.gz
+
+# Prevent errors about having no terminal when using apt-get
+ENV DEBIAN_FRONTEND noninteractive
+
+# Set up exclusions
+COPY excludes*txt /tmp/
+
+RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
+# Toolkit is optional
+    cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt && \
+# WSRR nodes are optional
+    cat /tmp/excludes-wsrr.txt >> /tmp/all-excludes.txt
+
+# Install ACE and accept the license
+RUN apt-get update && apt-get install -y --no-install-recommends curl zip binutils && \
+    mkdir /opt/ibm && \
+    echo Downloading package ${DOWNLOAD_URL} && \
+    curl ${DOWNLOAD_URL} \
+    | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
+    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-12 && \
+    find /opt/ibm -name "*.so*" -exec strip {} ";" && \
+    find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
+    find /opt/ibm -name "*.lil" -exec strip {} ";" && \
+    ( strip /opt/ibm/ace-12/server/bin/* 2>/dev/null || /bin/true ) && \
+    zip -d /opt/ibm/ace-12/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
+    if [ $(uname -m) = x86_64 ]; then apt-get remove -y zip binutils binutils-common libbinutils binutils-x86-64-linux-gnu; else apt-get remove -y zip binutils binutils-common libbinutils; fi && \
+    rm -rf /var/lib/apt/lists/*  && \
+    /opt/ibm/ace-12/ace make registry global accept license deferred
+
+# Source profile automatically
+RUN usermod -a -G mqbrkrs vscode \
+  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.bashrc
+
+# Install MQ client libraries
+RUN mkdir /opt/mqm && curl ${MQ_DOWNLOAD_URL} | tar zx --exclude=tools --directory /opt/mqm
+
+# Install Maven for development use.
+#
+# The standard Maven packages on most distros bring a lot of extra packages with
+# them so we install Maven directly. 
+RUN cd /opt && \
+    curl -k https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz | tar -xzf - && \
+    ln -s /opt/apache-maven-3.8.4/bin/mvn /usr/local/bin/mvn
