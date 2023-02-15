@@ -21,7 +21,7 @@ ARG PRODUCT_LABEL=ace-12.0.4.0
 ENV DEBIAN_FRONTEND noninteractive
 
 # Install ACE v12.0.4.0 and accept the license
-RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+RUN apt-get update && apt-get install -y curl && \
     mkdir /opt/ibm && echo Downloading package ${DOWNLOAD_URL} && \
     if [ -z $USERNAME ]; then curl ${DOWNLOAD_URL}; else curl -u ${USERNAME}:{PASSWORD} ${DOWNLOAD_URL}; fi | \
     tar zx --exclude=tools --exclude server/bin/TADataCollector.sh --exclude server/transformationAdvisor/ta-plugin-ace.jar --directory /opt/ibm && \

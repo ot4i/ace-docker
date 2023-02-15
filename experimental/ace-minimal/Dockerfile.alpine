@@ -1,22 +1,25 @@
-FROM alpine:3.15
+FROM alpine:3.17
 
 # docker build -t ace-minimal:12.0.4.0-alpine -f Dockerfile.alpine .
 
-MAINTAINER Trevor Dolby <tdolby@uk.ibm.com> (@tdolby)
+MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.4.0-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-12.0.4.0
+# Later versions from the same site, or else via the Developer edition download site linked from
+# https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.4.0-ACE-LINUX64-DEVELOPER.tar.gz
+# Can be set higher if needed
+ARG DOWNLOAD_CONNECTION_COUNT=1
 
 RUN apk --update add --no-cache --virtual .build-deps curl binutils zstd \
-    && GLIBC_VER="2.31-r0" \
+    && GLIBC_VER="2.34-r0" \
     && ALPINE_GLIBC_REPO="https://github.com/sgerrand/alpine-pkg-glibc/releases/download" \
     && GCC_LIBS_URL="https://archive.archlinux.org/packages/g/gcc-libs/gcc-libs-10.1.0-2-x86_64.pkg.tar.zst" \
     && GCC_LIBS_SHA256=f80320a03ff73e82271064e4f684cd58d7dbdb07aa06a2c4eea8e0f3c507c45c \
-    && ZLIB_URL="https://archive.archlinux.org/packages/z/zlib/zlib-1%3A1.2.11-4-x86_64.pkg.tar.xz" \
-    && ZLIB_SHA256=43a17987d348e0b395cb6e28d2ece65fb3b5a0fe433714762780d18c0451c149 \
+    && ZLIB_URL="https://archive.archlinux.org/packages/z/zlib/zlib-1%3A1.2.13-2-x86_64.pkg.tar.zst" \
+    && ZLIB_SHA256=c4f394724b20b84d7304b23bbb58442b6ef53e5cbac89eb51e39d7f0a46abafd \    
     && curl -Ls https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -o /etc/apk/keys/sgerrand.rsa.pub \
     && curl -Ls ${ALPINE_GLIBC_REPO}/${GLIBC_VER}/glibc-${GLIBC_VER}.apk > /tmp/${GLIBC_VER}.apk \
-    && apk add /tmp/${GLIBC_VER}.apk \
+    && apk add --force-overwrite /tmp/${GLIBC_VER}.apk \
     && curl -Ls ${GCC_LIBS_URL} -o /tmp/gcc-libs.tar.zst \
     && echo "${GCC_LIBS_SHA256}  /tmp/gcc-libs.tar.zst" | sha256sum -c - \
     && mkdir /tmp/gcc \
@@ -24,10 +27,11 @@ RUN apk --update add --no-cache --virtual .build-deps curl binutils zstd \
     && tar -xf /tmp/gcc-libs.tar -C /tmp/gcc \
     && mv /tmp/gcc/usr/lib/libgcc* /tmp/gcc/usr/lib/libstdc++* /usr/glibc-compat/lib \
     && strip /usr/glibc-compat/lib/libgcc_s.so.* /usr/glibc-compat/lib/libstdc++.so* \
-    && curl -Ls ${ZLIB_URL} -o /tmp/libz.tar.xz \
-    && echo "${ZLIB_SHA256}  /tmp/libz.tar.xz" | sha256sum -c - \
+    && curl -Ls ${ZLIB_URL} -o /tmp/libz.tar.zst \
+    && echo "${ZLIB_SHA256}  /tmp/libz.tar.zst" | sha256sum -c - \
     && mkdir /tmp/libz \
-    && tar -xf /tmp/libz.tar.xz -C /tmp/libz \
+    && zstd -d /tmp/libz.tar.zst \
+    && tar -xf /tmp/libz.tar -C /tmp/libz \
     && mv /tmp/libz/usr/lib/libz.so* /usr/glibc-compat/lib \
     && apk del --purge .build-deps \
     && rm -rf /tmp/${GLIBC_VER}.apk /tmp/gcc /tmp/gcc-libs.tar* /tmp/libz /tmp/libz.tar* /var/cache/apk/* \
@@ -68,17 +72,19 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
 # XSLT nodes are optional
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
-# Set the env vars mentioned above
+# Set the environment correctly
 COPY profile-with-product-java-paths.sh /etc/profile.d/profile-with-product-java-paths.sh
 COPY product-java-paths.sh /etc/profile.d/product-java-paths.sh
 
 # Install ACE 
 RUN mkdir -p /opt/ibm && \
-    apk add mksh bash curl binutils zip && \
+    apk add mksh bash aria2 binutils zip && \
+    cd /tmp && \
     echo Downloading package ${DOWNLOAD_URL} && \
-    curl ${DOWNLOAD_URL} \
-    | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
-    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-12 && \
+    aria2c -s ${DOWNLOAD_CONNECTION_COUNT} -j ${DOWNLOAD_CONNECTION_COUNT} -x ${DOWNLOAD_CONNECTION_COUNT} "${DOWNLOAD_URL}" && \
+    tar -zxf *12.0*tar.gz --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
+    rm -f *12.0*tar.gz && \
+    mv /opt/ibm/ace-12* /opt/ibm/ace-12 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
@@ -87,6 +93,9 @@ RUN mkdir -p /opt/ibm && \
     apk del --purge binutils zip && \
     addgroup mqbrkrs && \
     cat /etc/profile.d/product-java-paths.sh >> /root/.bashrc
+
+# Copy in the disabled components list
+COPY image.components.yaml /opt/ibm/ace-12/image.components.yaml
 
 # Issues with 5.1.4(1)-release (x86_64-alpine-linux-musl) on alpine
 RUN sed -i 's/\/bin\/bash/\/bin\/mksh/g' /opt/ibm/ace-12/ace /opt/ibm/ace-12/server/bin/mqsicreateworkdir /opt/ibm/ace-12/server/bin/mqsipackagebar
