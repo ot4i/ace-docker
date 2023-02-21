@@ -35,9 +35,6 @@ RUN microdnf update && microdnf install findutils util-linux && microdnf clean a
 # Force reinstall tzdata package to get zoneinfo files
 RUN microdnf reinstall tzdata -y
 
-# Prevent errors about having no terminal when using apt-get
-ENV DEBIAN_FRONTEND noninteractive
-
 # Install ACE v12.0.4.0 and accept the license
 COPY --from=builder /opt/ibm/ace-12 /opt/ibm/ace-12
 RUN /opt/ibm/ace-12/ace make registry global accept license deferred \
