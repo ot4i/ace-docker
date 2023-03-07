@@ -10,8 +10,8 @@ Integration Server work directory. When the server starts, the application will 
 
 The [Dockerfile](Dockerfile) can also be used with a base image that contains an MQ client or
 other pre-requisites; the CustomerDatabaseV1.bar application does not require any pre-reqs, but
-some other applications (if any are added into this directory) may do. To see more details about
-the CustomerDatabaseV1 application, see the `Using a REST API to manage a set of records` tutorial
+some other applications (if any are added into this directory) may do. For more details about the 
+CustomerDatabaseV1 application, see the `Using a REST API to manage a set of records` tutorial
 in the ACE v12 toolkit.
 
 The image build process compiles maps and schema files to avoid this needing to be done when the
@@ -31,15 +31,16 @@ docker build -t aceapp --build-arg FROMIMAGE=ace:12.0.7.0-r1 --file Dockerfile .
 
 ## Running the sample
 
-The sample application is a copy of one of the ACE samples called CustomerDB. This provides a RestAPI which can be queries which will return information about customers.
+The sample application is a copy of one of the ACE samples called CustomerDB. This provides a RestAPI 
+which can be queried over HTTP to find out information about customers.
 
-To run the application launch the container using a command such as:
+To run the application, launch the container using a command such as:
 
 ```bash
 docker run -d -p 7600:7600 -p 7800:7800 -e LICENSE=accept aceapp
 ```
 
-To exercise the flow run a command such as:
+To exercise the flow, run a command such as:
 
 ```bash
 curl --request GET \
