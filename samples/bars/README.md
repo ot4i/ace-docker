@@ -37,7 +37,7 @@ which can be queried over HTTP to find out information about customers.
 To run the application, launch the container using a command such as:
 
 ```bash
-docker run -d -p 7600:7600 -p 7800:7800 -e LICENSE=accept aceapp
+docker run -d --name aceapp -p 7600:7600 -p 7800:7800 -e LICENSE=accept aceapp
 ```
 
 To exercise the flow, run a command such as:
