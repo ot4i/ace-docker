@@ -1,14 +1,14 @@
 #!/bin/bash
 
-docker ps | grep -q ace
+docker ps | grep -q aceapp
 i=0
 
-while ! docker logs ace | grep -q "Integration server has finished initialization";
+while ! docker logs aceapp | grep -q "Integration server has finished initialization";
 do
     if [ $i -gt 30 ];
     then
         echo "Failed to start - logs:"
-        docker logs ace
+        docker logs aceapp
         exit 1
     fi
     sleep 1
