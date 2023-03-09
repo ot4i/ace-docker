@@ -9,7 +9,6 @@ MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 ARG USERNAME
 ARG PASSWORD
 ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.4.0-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-12.0.4.0
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
@@ -49,7 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl zip binuti
     echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} \
     | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
-    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-12 && \
+    mv /opt/ibm/ace-12.* /opt/ibm/ace-12 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
@@ -63,6 +62,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl zip binuti
 RUN usermod -a -G mqbrkrs vscode \
   && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.bashrc \ 
   && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.profile
+
+# Switch off the components that aren't in the image
+COPY minimal-image.components.yaml /opt/ibm/ace-12/image.components.yaml
 
 # Install Maven for development use.
 #

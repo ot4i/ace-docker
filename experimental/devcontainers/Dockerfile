@@ -9,7 +9,6 @@ MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 ARG USERNAME
 ARG PASSWORD
 ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.4.0-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-12.0.4.0
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
@@ -18,6 +17,8 @@ ENV DEBIAN_FRONTEND noninteractive
 COPY excludes*txt /tmp/
 
 RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
+# ToolkitDiscovery connectors are optional
+    cat /tmp/excludes-nodejs-all.txt >> /tmp/all-excludes.txt && \
 # Toolkit is optional
     cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt && \
 # WSRR nodes are optional
@@ -29,7 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl zip binuti
     echo Downloading package ${DOWNLOAD_URL} && \
     curl ${DOWNLOAD_URL} \
     | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
-    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-12 && \
+    mv /opt/ibm/ace-12.* /opt/ibm/ace-12 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \

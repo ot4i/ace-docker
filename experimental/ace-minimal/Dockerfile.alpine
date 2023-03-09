@@ -105,6 +105,9 @@ RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001 -h /home/aceuser -s 
     su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-product-java-paths.sh && /opt/ibm/ace-12/server/bin/mqsicreateworkdir /home/aceuser/ace-server" && \
     echo ". /etc/profile.d/profile-with-product-java-paths.sh" >> /home/aceuser/.bashrc
 
+# Switch off the components that aren't in the image
+COPY minimal-image.components.yaml /opt/ibm/ace-12/image.components.yaml
+
 # aceuser
 USER 1001
 
