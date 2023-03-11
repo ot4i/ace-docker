@@ -1,16 +1,22 @@
-FROM mcr.microsoft.com/windows/servercore:2009
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
+
+# docker build -t ace-basic:12.0.7.0-windows .
+
+ARG DOWNLOAD_URL=https://iwm.dhe.ibm.com/sdfdl/v2/regs2/mbford/Xa.2/Xb.WJL1CuPI9gANpdUEf4UfdB-O_Mf7CPkAf9dEO0vRpso/Xc.12.0.7.0-ACE-WIN64-DEVELOPER.zip/Xd./Xf.lPr.D1vk/Xg.12199496/Xi.swg-wmbfd/XY.regsrvs/XZ.vY3FyO2s-bRuhcv7h54zG1uOZPS_RVLQ/12.0.7.0-ACE-WIN64-DEVELOPER.zip
 
 WORKDIR c:\\tmp
-COPY ACESetup11.0.16742.4.exe c:\\tmp\\ACESetup.exe
+
+#COPY download-ace.cmd c:\\tmp\\download-ace.cmd
+#RUN c:\\tmp\\download-ace.cmd %DOWNLOAD_URL%
+#COPY unpack-ace.cmd c:\\tmp\\unpack-ace.cmd
+#RUN c:\\tmp\\unpack-ace.cmd
+#COPY install-ace.cmd c:\\tmp\\install-ace.cmd
+#RUN c:\\tmp\\install-ace.cmd
+
 # Install the product, but do not install the .Net support DLLs; installer issues prevent this from working
 # in a Docker container
-RUN c:\\tmp\\ACESetup.exe /quiet LICENSE_ACCEPTED=true InstallFolder=C:\\ace-v11 InstallToolkit=0 InstallGAC=0
-# Install the .Net support DLLs
-RUN c:\\ace-v11\\server\\\bin\\\runCommand.cmd C:\\ace-v11\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v11\\server\\bin\\IBM.Broker.Plugin.dll
-RUN c:\\ace-v11\\server\\\bin\\\runCommand.cmd C:\\ace-v11\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v11\\server\\bin\\IBM.Broker.Support.dll
-RUN c:\\ace-v11\\server\\\bin\\\runCommand.cmd C:\\ace-v11\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v11\\server\\bin\\microsoft.crm.sdk.proxy.dll
-RUN c:\\ace-v11\\server\\\bin\\\runCommand.cmd C:\\ace-v11\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v11\\server\\bin\\microsoft.xrm.sdk.dll
-RUN c:\\ace-v11\\server\\\bin\\\runCommand.cmd C:\\ace-v11\\server\\bin\\mqsiAssemblyInstall -i C:\\ace-v11\\server\\bin\\Microsoft.IdentityModel.dll
+COPY download-and-install-ace.cmd c:\\tmp\\download-and-install-ace.cmd
+RUN c:\\tmp\\download-and-install-ace.cmd %DOWNLOAD_URL%
 
 # Could also be set to ContainerUser
 USER ContainerAdministrator
