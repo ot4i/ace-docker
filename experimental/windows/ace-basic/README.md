@@ -16,7 +16,7 @@ docker build -t ace-basic:12.0.7.0-windows  .
 The Dockerfile is constructed to minimize the resulting image size, with the downloaded
 files extracted, installed, and deleted within a single RUN command to avoid persisting
 the install image in a layer. See [Google's image-creation best practices](https://cloud.google.com/architecture/best-practices-for-building-containers#reduce_the_amount_of_clutter_in_your_image)
-for more information on that approach.
+for more information on that approach and how it helps reduce image size.
 
 ### Setting the correct product URL
 
