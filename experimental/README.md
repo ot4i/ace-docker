@@ -12,7 +12,7 @@ Dockefiles in the following directories are used for various purposes:
 
 See build-all.sh for details on building the images; setting LICENSE=accept is required for all but the initial image builds.
 
-## Setting the correct product version
+## Setting the correct product URL
 
 The Dockerfiles in the various directories take a `DOWNLOAD_URL` parameter that may
 need to be specified to build a specific version of the product. This is provided on
@@ -39,7 +39,7 @@ To run the sample after building:
 ```
 docker run -e LICENSE=accept --rm -ti ace-sample:12.0.7.0-alpine
 ```
-and then curl http://[container IP]:7800/test should return '{"data":"a string from ACE"}'
+and then `curl http://[container IP]:7800/test` should return '{"data":"a string from ACE"}'
 
 ## Various sizes
 Local on Ubuntu with defaults in Dockerfiles:
