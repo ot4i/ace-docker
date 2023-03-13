@@ -1,5 +1,5 @@
-# ARG FROMIMAGE=mcr.microsoft.com/windows/servercore:ltsc2019
-ARG FROMIMAGE=jenkins/agent:windowsservercore-ltsc2019
+ARG FROMIMAGE=mcr.microsoft.com/windows/servercore:ltsc2019
+#ARG FROMIMAGE=jenkins/agent:windowsservercore-ltsc2019
 FROM ${FROMIMAGE}
 
 # docker build -t ace-basic:12.0.7.0-windows .

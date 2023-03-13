@@ -47,3 +47,16 @@ To run the sample after building:
 docker run --rm -ti -p 7800:7800 ace-sample:12.0.7.0-windows
 ```
 and then `curl http://localhost:7800/test` should return '{"data":"a string from ACE"}'
+
+## Building a Jenkins worker image
+
+ACE can be used in a Jenkins container built from the standard Jenkins-provided 
+Windows container. To build an ACE-enabled container image, add 
+`--build-arg FROMIMAGE=jenkins/agent:windowsservercore-ltsc2019` to the server build line above:
+```
+docker build --build-arg FROMIMAGE=jenkins/agent:windowsservercore-ltsc2019 -t ace-jenkins:12.0.7.0-windows  .
+```
+and refer to it as normal from Jenkins. For a Jenkins pipeline, this might look as follows:
+```
+  agent { docker { image 'ace-jenkins:12.0.7.0-windows' } }
+```
