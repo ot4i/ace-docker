@@ -11,23 +11,24 @@ ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/
 ARG DOWNLOAD_CONNECTION_COUNT=1
 
 RUN apk --update add --no-cache --virtual .build-deps curl binutils zstd \
+    && set -x \
     && GLIBC_VER="2.34-r0" \
     && ALPINE_GLIBC_REPO="https://github.com/sgerrand/alpine-pkg-glibc/releases/download" \
     && GCC_LIBS_URL="https://archive.archlinux.org/packages/g/gcc-libs/gcc-libs-10.1.0-2-x86_64.pkg.tar.zst" \
     && GCC_LIBS_SHA256=f80320a03ff73e82271064e4f684cd58d7dbdb07aa06a2c4eea8e0f3c507c45c \
     && ZLIB_URL="https://archive.archlinux.org/packages/z/zlib/zlib-1%3A1.2.13-2-x86_64.pkg.tar.zst" \
     && ZLIB_SHA256=c4f394724b20b84d7304b23bbb58442b6ef53e5cbac89eb51e39d7f0a46abafd \    
-    && curl -Ls https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -o /etc/apk/keys/sgerrand.rsa.pub \
-    && curl -Ls ${ALPINE_GLIBC_REPO}/${GLIBC_VER}/glibc-${GLIBC_VER}.apk > /tmp/${GLIBC_VER}.apk \
+    && curl -Lks https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -o /etc/apk/keys/sgerrand.rsa.pub \
+    && curl -Lks ${ALPINE_GLIBC_REPO}/${GLIBC_VER}/glibc-${GLIBC_VER}.apk > /tmp/${GLIBC_VER}.apk \
     && apk add --force-overwrite /tmp/${GLIBC_VER}.apk \
-    && curl -Ls ${GCC_LIBS_URL} -o /tmp/gcc-libs.tar.zst \
+    && curl -Lks ${GCC_LIBS_URL} -o /tmp/gcc-libs.tar.zst \
     && echo "${GCC_LIBS_SHA256}  /tmp/gcc-libs.tar.zst" | sha256sum -c - \
     && mkdir /tmp/gcc \
     && zstd -d /tmp/gcc-libs.tar.zst \
     && tar -xf /tmp/gcc-libs.tar -C /tmp/gcc \
     && mv /tmp/gcc/usr/lib/libgcc* /tmp/gcc/usr/lib/libstdc++* /usr/glibc-compat/lib \
     && strip /usr/glibc-compat/lib/libgcc_s.so.* /usr/glibc-compat/lib/libstdc++.so* \
-    && curl -Ls ${ZLIB_URL} -o /tmp/libz.tar.zst \
+    && curl -Lks ${ZLIB_URL} -o /tmp/libz.tar.zst \
     && echo "${ZLIB_SHA256}  /tmp/libz.tar.zst" | sha256sum -c - \
     && mkdir /tmp/libz \
     && zstd -d /tmp/libz.tar.zst \
@@ -63,6 +64,8 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-npm.txt >> /tmp/all-excludes.txt && \
 # ODBC drivers are optional
     cat /tmp/excludes-odbc.txt >> /tmp/all-excludes.txt && \
+# Telemetry is optional
+    cat /tmp/excludes-telemetry.txt >> /tmp/all-excludes.txt && \
 # Toolkit is optional
     cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt && \
 # Web UI support optional; use --admin-rest-api -1 on server start line

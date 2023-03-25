@@ -33,6 +33,8 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-npm.txt >> /tmp/all-excludes.txt && \
 # ODBC drivers are optional
     cat /tmp/excludes-odbc.txt >> /tmp/all-excludes.txt && \
+# Telemetry is optional
+    cat /tmp/excludes-telemetry.txt >> /tmp/all-excludes.txt && \
 # Toolkit is optional
     cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt && \
 # Web UI support optional; use --admin-rest-api -1 on server start line

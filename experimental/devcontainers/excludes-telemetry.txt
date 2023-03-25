@@ -1,0 +1,2 @@
+*/server/lib/libimbtelemetry.so
+*/server/lil/imbopentelemetry.lil
