@@ -9,12 +9,14 @@
 
 First [build the ACE image](../../README.md#Building-a-container-image) or obtain one of the shipped images.
 
-Download a copy of the MQ redistributable client Example URL: https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.2.0.4-IBM-MQC-Redist-LinuxX64.tar.gz
+Determine the link for the version of the MQ client to be used, using FixCentral or the standard redistributable
+client download site. An example URL would be https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.3.2.0-IBM-MQC-Redist-LinuxX64.tar.gz
+for the client.
 
-In the `sample/mqclient` folder:
+In this folder, run the docker command as follows (replacing the product version and MQ link as appropriate):
 
 ```bash
-docker build -t aceapp --build-arg FROMIMAGE=ace:12.0.4.0-r1 --build-arg MQ_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.2.0.4-IBM-MQC-Redist-LinuxX64.tar.gz --file Dockerfile .
+docker build -t aceapp --build-arg FROMIMAGE=cp.icr.io/cp/appc/ace:12.0.8.0-r1 --build-arg MQ_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.3.2.0-IBM-MQC-Redist-LinuxX64.tar.gz --file Dockerfile .
 ```
 
 ## Running the sample
@@ -22,7 +24,7 @@ docker build -t aceapp --build-arg FROMIMAGE=ace:12.0.4.0-r1 --build-arg MQ_URL=
 To run the container, launch the pod using a command such as:
 
 ```bash
-`docker run -d -p 7600:7600 -p 7800:7800 -e LICENSE=accept aceapp`
+docker run -d -p 7600:7600 -p 7800:7800 -e LICENSE=accept aceapp
 ```
 
-This wll then start an IntegrationServer with a MQ Client installed.
+This wll then start an IntegrationServer with the MQ Client installed.
