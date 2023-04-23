@@ -4,11 +4,13 @@ MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
 # Build:
 #
-# docker build -t ace-devcontainer:12.0.4.0 -f Dockerfile .
+# docker build -t ace-devcontainer:12.0.8.0 -f Dockerfile .
 
-ARG USERNAME
-ARG PASSWORD
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.4.0-ACE-LINUX64-DEVELOPER.tar.gz
+# Later versions from the same site, or else via the Developer edition download site linked from
+# https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.8.0-ACE-LINUX64-DEVELOPER.tar.gz
+# Can be set higher if needed
+ARG DOWNLOAD_CONNECTION_COUNT=1
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
@@ -25,11 +27,13 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-wsrr.txt >> /tmp/all-excludes.txt
 
 # Install ACE and accept the license
-RUN apt-get update && apt-get install -y --no-install-recommends curl zip binutils && \
+RUN apt-get update && apt-get install -y aria2 zip binutils && \
     mkdir /opt/ibm && \
+    cd /tmp && \
     echo Downloading package ${DOWNLOAD_URL} && \
-    curl ${DOWNLOAD_URL} \
-    | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
+    aria2c -s ${DOWNLOAD_CONNECTION_COUNT} -j ${DOWNLOAD_CONNECTION_COUNT} -x ${DOWNLOAD_CONNECTION_COUNT} "${DOWNLOAD_URL}" && \
+    tar -zxf *12.0*tar.gz --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
+    rm -f *12.0*tar.gz && \
     mv /opt/ibm/ace-12.* /opt/ibm/ace-12 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \

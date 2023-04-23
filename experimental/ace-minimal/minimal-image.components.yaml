@@ -20,7 +20,6 @@ JavaNodes:              # If JVM is set to false then the JavaNodes section will
   Adapters: false      # Controls whether the SAP, Oracle JD Edwards, Oracle Peoplesoft and Oracle Siebel nodes are loaded.
   CICS: false          # Controls whether the CICSRequest node is loaded.
   IMS: false           # Controls whether the IMSRequest node is loaded.
-  Mapping: false       # Controls whether the Mapping node is loaded.
   ODM: false           # Controls whether the ODMRules node is loaded.
   XSLT: false          # Controls whether the XSLTransform nodes are loaded.
   WSRR: false          # Controls whether the WSRR EndpointLookup and RegistryLookup nodes are loaded (if this component is installed).

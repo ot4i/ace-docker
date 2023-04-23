@@ -4,23 +4,27 @@ MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
 # Build:
 #
-# docker build -t ace-basic-mqclient:12.0.4.0 -f Dockerfile.mqclient .
+# docker build -t ace-basic-mqclient:12.0.8.0 -f Dockerfile.mqclient .
 
-ARG USERNAME
-ARG PASSWORD
-ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.4.0-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-12.0.4.0
-ARG MQ_DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.3.1.0-IBM-MQC-Redist-LinuxX64.tar.gz
+# Later versions from the same site, or else via the Developer edition download site linked from
+# https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.8.0-ACE-LINUX64-DEVELOPER.tar.gz
+ARG MQ_DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.3.2.0-IBM-MQC-Redist-LinuxX64.tar.gz
+# Can be set higher if needed
+ARG DOWNLOAD_CONNECTION_COUNT=1
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
 
-# Install ACE v12.0.4.0 and accept the license
-RUN apt-get update && apt-get install -y curl && \
+# Install ACE v12 and accept the license
+RUN apt-get update && apt-get install -y aria2 curl && \
     mkdir /opt/ibm && echo Downloading package ${DOWNLOAD_URL} && \
-    if [ -z $USERNAME ]; then curl ${DOWNLOAD_URL}; else curl -u ${USERNAME}:{PASSWORD} ${DOWNLOAD_URL}; fi | \
-    tar zx --exclude=tools --exclude server/nodejs_all --exclude server/bin/TADataCollector.sh --exclude server/transformationAdvisor/ta-plugin-ace.jar --directory /opt/ibm && \
-    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-12 && \
+    cd /tmp && \
+    echo Downloading package ${DOWNLOAD_URL} && \
+    aria2c -s ${DOWNLOAD_CONNECTION_COUNT} -j ${DOWNLOAD_CONNECTION_COUNT} -x ${DOWNLOAD_CONNECTION_COUNT} "${DOWNLOAD_URL}" && \
+    tar -zxf *12.0*tar.gz --directory /opt/ibm && \
+    rm -f *12.0*tar.gz && \
+    mv /opt/ibm/ace-12* /opt/ibm/ace-12 && \
     /opt/ibm/ace-12/ace make registry global accept license deferred
 
 # Create a user to run as, create the ace workdir, and chmod script files
