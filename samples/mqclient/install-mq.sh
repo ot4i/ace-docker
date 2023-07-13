@@ -36,9 +36,13 @@ if [ -f "${DIR_TMP}/bin/genmqpkg.sh" ]
 then 
   # Generate MQ package in INSTALLATION_DIR
   # 
-  # Used if the downloaded package is the MQ redistributable client. Example URL:
-  #    
-  # https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.2.0.4-IBM-MQC-Redist-LinuxX64.tar.gz
+  # Used if the downloaded package is the MQ redistributable client package from FixCentral. Example URL:
+  #
+  # https://ak-delivery04-mul.dhe.ibm.com/sdfdl/v2/sar/CM/WS/0b41k/0/Xa.2/Xb.juSYLTSp44S03gmhuuKNya5CV2_SpQJ-2LPjgK-iHtqctHmMpcuW1gX5kas/Xc.CM/WS/0b41k/0/9.3.1.1-IBM-MQC-Redist-LinuxX64.tar.gz/Xd./Xf.LPR.D1VK/Xg.12236559/Xi.habanero/XY.habanero/XZ.0CQLlyfoENy06FxypR3Q8j0XiSzkn_t0/9.3.1.1-IBM-MQC-Redist-LinuxX64.tar.gz  
+  #
+  # or directly from
+  #
+  # https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.3.2.0-IBM-MQC-Redist-LinuxX64.tar.gz
   #
   echo "Detected genmqpkg.sh; installing MQ client components"
   export genmqpkg_inc32=0
@@ -80,12 +84,12 @@ else
   fi
   # 
   # Used if the downloaded package is the MQ client package from FixCentral. Example URL:
-  #    
-  # https://ak-delivery04-mul.dhe.ibm.com/sdfdl/v2/sar/CM/WS/0a3ih/0/Xa.2/Xb.jusyLTSp44S0BnrSUlhcQXsmOX33PXiMu_opTWF4XkF7jFZV8UxrP0RFSE0/Xc.CM/WS/0a3ih/0/9.2.0.4-IBM-MQC-LinuxX64.tar.gz/Xd./Xf.LPR.D1VK/Xg.11634360/Xi.habanero/XY.habanero/XZ.m7uIgNXpo_VTCGzC-hylOC79m0eKS5pi/9.2.0.4-IBM-MQC-LinuxX64.tar.gz
+  #
+  # https://ak-delivery04-mul.dhe.ibm.com/sdfdl/v2/sar/CM/WS/0b41a/0/Xa.2/Xb.jusyLTSp44S03gmhUUKWLqYocJ4a4bPB68Y8a4ir1VLbUn2OCPlMcoPXCfk/Xc.CM/WS/0b41a/0/9.3.1.1-IBM-MQC-LinuxX64.tar.gz/Xd./Xf.LPR.D1VK/Xg.12236562/Xi.habanero/XY.habanero/XZ.vr1ZpkKu0T03LhrAVMoMz9ec8315viqv/9.3.1.1-IBM-MQC-LinuxX64.tar.gz
   # 
   # Also used if the downloaded package is the full MQ developer package. Example URL:
   #
-  # https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqadv/mqadv_dev924_linux_x86-64.tar.gz
+  # https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqadv/mqadv_dev932_linux_x86-64.tar.gz
   #
   echo "Did not find genmqpkg.sh; installing MQ client components using rpm"
   $RPM && DIR_RPM=$(find ${DIR_TMP} -name "*.rpm" -printf "%h\n" | sort -u | head -1)
