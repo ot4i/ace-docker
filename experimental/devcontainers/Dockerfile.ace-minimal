@@ -29,6 +29,8 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
 # IMS is optional
     cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
+# Java11 is not required
+    cat /tmp/excludes-java11.txt >> /tmp/all-excludes.txt && \
 # node.js support is optional; use --no-nodejs on server start line
     cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
