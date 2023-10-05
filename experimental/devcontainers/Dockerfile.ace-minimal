@@ -47,11 +47,13 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
 # Install ACE and accept the license
-RUN apt-get update && apt-get install -y --no-install-recommends curl zip binutils && \
+RUN apt-get update && apt-get install -y aria2 zip binutils && \
     mkdir /opt/ibm && \
+    cd /tmp && \
     echo Downloading package ${DOWNLOAD_URL} && \
-    curl ${DOWNLOAD_URL} \
-    | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
+    aria2c -s ${DOWNLOAD_CONNECTION_COUNT} -j ${DOWNLOAD_CONNECTION_COUNT} -x ${DOWNLOAD_CONNECTION_COUNT} "${DOWNLOAD_URL}" && \
+    tar -zxf *12.0*tar.gz --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
+    rm -f *12.0*tar.gz && \
     mv /opt/ibm/ace-12.* /opt/ibm/ace-12 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
