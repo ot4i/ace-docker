@@ -3,18 +3,18 @@ MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
 # Build and run:
 #
-# docker build -t ace-basic:12.0.8.0-ubuntu -f Dockerfile .
-# docker run -e LICENSE=accept -p 7600:7600 -p 7800:7800 --rm -ti ace-basic:12.0.8.0-ubuntu
+# docker build -t ace-basic:12.0.10.0-ubuntu -f Dockerfile .
+# docker run -e LICENSE=accept -p 7600:7600 -p 7800:7800 --rm -ti ace-basic:12.0.10.0-ubuntu
 #
 # Can also mount a volume for the work directory:
 #
-# docker run -e LICENSE=accept -v /what/ever/dir:/home/aceuser/ace-server -p 7600:7600 -p 7800:7800 --rm -ti ace-basic:12.0.8.0-ubuntu
+# docker run -e LICENSE=accept -v /what/ever/dir:/home/aceuser/ace-server -p 7600:7600 -p 7800:7800 --rm -ti ace-basic:12.0.10.0-ubuntu
 #
 # This might require a local directory with the right permissions, or changing the userid further down . . .
 
 # Later versions from the same site, or else via the Developer edition download site linked from
 # https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
-ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.8.0-ACE-LINUX64-DEVELOPER.tar.gz
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz
 # Can be set higher if needed
 ARG DOWNLOAD_CONNECTION_COUNT=1
 
