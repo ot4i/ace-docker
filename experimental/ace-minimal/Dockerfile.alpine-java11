@@ -1,6 +1,6 @@
 FROM alpine:3.17
 
-# docker build -t ace-minimal:12.0.10.0-alpine -f Dockerfile.alpine .
+# docker build -t ace-minimal:12.0.10.0-alpine-java11 -f Dockerfile.alpine-java11 .
 
 MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
@@ -56,10 +56,10 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
 # IMS is optional
     cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
-# JDK provided by the product
-#    cat /tmp/excludes-jdk.txt >> /tmp/all-excludes.txt && \
-# Java11 is not required
-    cat /tmp/excludes-java11.txt >> /tmp/all-excludes.txt && \
+# Use Java11 instead of default Java8
+    cat /tmp/excludes-jdk.txt >> /tmp/all-excludes.txt && \
+# Java11 is provided by the product
+#    cat /tmp/excludes-java11.txt >> /tmp/all-excludes.txt && \
 # node.js support is optional; use --no-nodejs on server start line
     cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
@@ -78,8 +78,8 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
 # Set the environment correctly
-COPY profile-with-product-java-paths.sh /etc/profile.d/profile-with-product-java-paths.sh
-COPY product-java-paths.sh /etc/profile.d/product-java-paths.sh
+COPY profile-with-product-java11-paths.sh /etc/profile.d/profile-with-product-java11-paths.sh
+COPY product-java11-paths.sh /etc/profile.d/product-java11-paths.sh
 
 # Install ACE 
 RUN mkdir -p /opt/ibm && \
@@ -97,24 +97,27 @@ RUN mkdir -p /opt/ibm && \
     zip -d /opt/ibm/ace-12/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     apk del --purge binutils zip && \
     addgroup mqbrkrs && \
-    cat /etc/profile.d/product-java-paths.sh >> /root/.bashrc
+    rm -rf /opt/ibm/ace-12/common/java11/jmods && \
+    cat /etc/profile.d/product-java11-paths.sh >> /root/.bashrc && \
+    ln -s /opt/ibm/ace-12/common/java11 /opt/ibm/ace-12/common/jdk && \
+    ln -s . /opt/ibm/ace-12/common/java11/jre 
 
 # Issues with 5.1.4(1)-release (x86_64-alpine-linux-musl) on alpine
 RUN sed -i 's/\/bin\/bash/\/bin\/mksh/g' /opt/ibm/ace-12/ace /opt/ibm/ace-12/server/bin/mqsicreateworkdir /opt/ibm/ace-12/server/bin/mqsipackagebar
 
-RUN bash -c '. /etc/profile.d/product-java-paths.sh && /opt/ibm/ace-12/ace make registry global accept license deferred'
+RUN bash -c '. /etc/profile.d/product-java11-paths.sh && /opt/ibm/ace-12/ace make registry global accept license deferred'
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
-ENV BASH_ENV=/etc/profile.d/profile-with-product-java-paths.sh
+ENV BASH_ENV=/etc/profile.d/profile-with-product-java11-paths.sh
 
 # Create a user to run as, create the ace workdir, and chmod script files
 RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001 -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \
     adduser aceuser mqbrkrs && \
-    cat /etc/profile.d/product-java-paths.sh >> /home/aceuser/.bashrc && \
+    cat /etc/profile.d/product-java11-paths.sh >> /home/aceuser/.bashrc && \
     chown aceuser /home/aceuser/.bashrc && \
     chmod 664 /home/aceuser/.bashrc && \
-    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-product-java-paths.sh && /opt/ibm/ace-12/server/bin/mqsicreateworkdir /home/aceuser/ace-server" && \
-    echo ". /etc/profile.d/profile-with-product-java-paths.sh" >> /home/aceuser/.bashrc
+    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-product-java11-paths.sh && /opt/ibm/ace-12/server/bin/mqsicreateworkdir /home/aceuser/ace-server" && \
+    echo ". /etc/profile.d/profile-with-product-java11-paths.sh" >> /home/aceuser/.bashrc
 
 # Switch off the components that aren't in the image
 COPY minimal-image.components.yaml /opt/ibm/ace-12/image.components.yaml

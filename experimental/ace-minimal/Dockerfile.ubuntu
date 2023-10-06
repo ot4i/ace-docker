@@ -74,9 +74,6 @@ RUN echo "ACE_12:" > /etc/debian_chroot \
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
 ENV BASH_ENV=/opt/ibm/ace-12/server/bin/mqsiprofile
 
-# Copy in the disabled components list
-COPY image.components.yaml /opt/ibm/ace-12/image.components.yaml
-
 # Create a user to run as, create the ace workdir, and chmod script files
 RUN useradd  --uid 1001 --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \
   && su - aceuser -c "export LICENSE=accept && . /opt/ibm/ace-12/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server" \
