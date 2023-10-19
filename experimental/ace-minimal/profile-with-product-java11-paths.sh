@@ -2,6 +2,9 @@
 export MQSI_SIGNAL_EXCLUSIONS=11
 export MQSI_NO_CACHE_SUPPORT=1
 
+# Don't use JSSE2
+export MQSI_JAVA_AVOID_SSL_SETTINGS=1
+
 # Needed to avoid errors in ibmint
 export _JAVA_OPTIONS="-Dmqsipackagebar.noExtendClasspath=1"
 # Needed for javax.xml packages
