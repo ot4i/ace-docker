@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y aria2 curl && \
     cd /tmp && \
     echo Downloading package ${DOWNLOAD_URL} && \
     aria2c -s ${DOWNLOAD_CONNECTION_COUNT} -j ${DOWNLOAD_CONNECTION_COUNT} -x ${DOWNLOAD_CONNECTION_COUNT} "${DOWNLOAD_URL}" && \
-    tar -zxf *12.0*tar.gz --exclude=tools --exclude server/bin/TADataCollector.sh --exclude common/java11 --exclude server/nodejs_partial -exclude server/transformationAdvisor/ta-plugin-ace.jar --directory /opt/ibm && \
+    tar -zxf *12.0*tar.gz --exclude=tools --exclude server/bin/TADataCollector.sh --exclude server/nodejs_partial -exclude server/transformationAdvisor/ta-plugin-ace.jar --directory /opt/ibm && \
     rm -f *12.0*tar.gz && \
     mv /opt/ibm/ace-12* /opt/ibm/ace-12 && \
     /opt/ibm/ace-12/ace make registry global accept license deferred
