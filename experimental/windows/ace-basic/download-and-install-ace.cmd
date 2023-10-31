@@ -29,7 +29,7 @@ REM
 REM **************************************************************** 
 c:\tmp\aria-unzip\aria2-1.36.0-win-64bit-build1\aria2c.exe -s 10 -j 10 -x 10 %1
 dir c:\tmp
-powershell -Command "Expand-Archive -Path c:\tmp\12.0.7.0-ACE-WIN64-DEVELOPER.zip -DestinationPath c:\tmp\ace-unzip"
+powershell -Command "Expand-Archive -Path c:\tmp\12.0.10.0-ACE-WIN64-DEVELOPER.zip -DestinationPath c:\tmp\ace-unzip"
 dir c:\tmp\ace-unzip
 
 REM **************************************************************** 
@@ -50,7 +50,7 @@ REM [0660:0760][2023-03-10T17:21:57]i000: Initializing string variable 'InstallG
 REM 
 REM **************************************************************** 
 cd c:\tmp\ace-unzip\
-.\ACESetup12.0.7.0.exe /quiet LICENSE_ACCEPTED=true InstallFolder=C:\ace-12 InstallToolkit=0 InstallGAC=0 InstallElectronApp=0
+.\ACESetup12.0.10.0.exe /quiet LICENSE_ACCEPTED=true InstallFolder=C:\ace-12 InstallToolkit=0 InstallGAC=0 InstallElectronApp=0
 REM Install the .Net support DLLs
 call c:\ace-12\server\bin\runCommand.cmd C:\ace-12\server\bin\mqsiAssemblyInstall -i C:\ace-12\server\bin\IBM.Broker.Plugin.dll
 call c:\ace-12\server\bin\runCommand.cmd C:\ace-12\server\bin\mqsiAssemblyInstall -i C:\ace-12\server\bin\IBM.Broker.Support.dll

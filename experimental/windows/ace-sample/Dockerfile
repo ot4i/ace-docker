@@ -1,9 +1,9 @@
 # Override for other variants
-ARG BASE_IMAGE=ace-basic:12.0.7.0-windows
+ARG BASE_IMAGE=ace-basic:12.0.10.0-windows
 FROM $BASE_IMAGE
 
-# docker build -t ace-sample:12.0.7.0-windows .
-# docker run -p 7800:7800 --rm -ti ace-sample:12.0.7.0-windows
+# docker build -t ace-sample:12.0.10.0-windows .
+# docker run -p 7800:7800 --rm -ti ace-sample:12.0.10.0-windows
 
 COPY aceFunction.bar c:\\tmp\\aceFunction.bar
 

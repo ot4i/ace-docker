@@ -10,7 +10,7 @@ but does include all the server components except the WSRR nodes.
 
 Build as follows: 
 ```
-docker build -t ace-basic:12.0.7.0-windows  .
+docker build -t ace-basic:12.0.10.0-windows  .
 ```
 
 The Dockerfile is constructed to minimize the resulting image size, with the downloaded
@@ -32,7 +32,7 @@ and proceed through the pages until the main download page with a link:
 
 The link is likely to be of the form
 ```
-https://iwm.dhe.ibm.com/sdfdl/v2/regs2/mbford/Xa.2/Xb.WJL1cUPI9gANEhP8GuPD_qX1rj6x5R4yTUM7s_C2ue8/Xc.12.0.7.0-ACE-WIN64-DEVELOPER.zip/Xd./Xf.LpR.D1vk/Xg.12164875/Xi.swg-wmbfd/XY.regsrvs/XZ.pPVETUejcqPsVfDVKbdNu6IRpo4TkyKu/12.0.7.0-ACE-WIN64-DEVELOPER.zip
+https://iwm.dhe.ibm.com/sdfdl/v2/regs2/mbford/Xa.2/Xb.WJL1cUPI9gANEhP8GuPD_qX1rj6x5R4yTUM7s_C2ue8/Xc.12.0.10.0-ACE-WIN64-DEVELOPER.zip/Xd./Xf.LpR.D1vk/Xg.12164875/Xi.swg-wmbfd/XY.regsrvs/XZ.pPVETUejcqPsVfDVKbdNu6IRpo4TkyKu/12.0.10.0-ACE-WIN64-DEVELOPER.zip
 ```
 Copy that link into the Dockerfile itself or use it as the DOWNLOAD_URL build parameter.
 
@@ -42,9 +42,9 @@ ACE can be used in a Jenkins container built from the standard Jenkins-provided
 Windows container. To build an ACE-enabled container image, add 
 `--build-arg FROMIMAGE=jenkins/agent:windowsservercore-ltsc2019` to the server build line above:
 ```
-docker build --build-arg FROMIMAGE=jenkins/agent:windowsservercore-ltsc2019 -t ace-jenkins:12.0.7.0-windows  .
+docker build --build-arg FROMIMAGE=jenkins/agent:windowsservercore-ltsc2019 -t ace-jenkins:12.0.10.0-windows  .
 ```
 and refer to it as normal from Jenkins. For a Jenkins pipeline, this might look as follows:
 ```
-  agent { docker { image 'ace-jenkins:12.0.7.0-windows' } }
+  agent { docker { image 'ace-jenkins:12.0.10.0-windows' } }
 ```

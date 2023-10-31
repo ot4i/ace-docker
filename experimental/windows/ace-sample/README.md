@@ -8,11 +8,11 @@ is built on top of the [ace-basic](../ace-basic) container.
 
 Build as follows: 
 ```
-docker build -t ace-sample:12.0.7.0-windows  .
+docker build -t ace-sample:12.0.10.0-windows  .
 ```
 
 To run the sample after building:
 ```
-docker run --rm -ti -p 7800:7800 ace-sample:12.0.7.0-windows
+docker run --rm -ti -p 7800:7800 ace-sample:12.0.10.0-windows
 ```
 and then `curl http://localhost:7800/test` should return `{"data":"a string from ACE"}`
