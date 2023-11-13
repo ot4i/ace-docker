@@ -50,6 +50,14 @@ If you find there are vulnerabilities in the base redhat software there are two 
 - Apply the fix yourself using a sample docker file to install all available updates - [Samples/updateBase](samples/updateBase/Dockerfile)
 - Pick up the latest version of the image which will include all fixes at the point it was built.
 
+### DOWNLOAD_URL
+
+The link is likely to be of the form
+```
+https://iwm.dhe.ibm.com/sdfdl/v2/regs2/mbford/Xa.2/Xb.WJL1cUPI9gANEhP8GuPD_qX1rj6x5R4yTUM7s_C2ue8/Xc.12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz/Xd./Xf.LpR.D1vk/Xg.12164875/Xi.swg-wmbfd/XY.regsrvs/XZ.pPVETUejcqPsVfDVKbdNu6IRpo4TkyKu/12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz
+```
+Use this link as the DOWNLOAD_URL build parameter, adjusting the version numbers in the other files and parameters as needed.
+
 ### Fixing issues with ACE
 
 If you find a problem with ACE software, raise a PMR to obtain a fix. Once the fix is provided this can be applied to any existing image using a [Samples](samples/README.md#ifix-sample) dockerfile
