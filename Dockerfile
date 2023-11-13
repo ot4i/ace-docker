@@ -11,7 +11,7 @@
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal as builder
 
-RUN microdnf update && microdnf install util-linux curl tar
+RUN microdnf update -y && microdnf install util-linux curl tar
 
 ARG USERNAME
 ARG PASSWORD
@@ -31,7 +31,7 @@ RUN mkdir -p /opt/ibm/ace-12 \
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal
 
-RUN microdnf update && microdnf install findutils util-linux && microdnf clean all
+RUN microdnf update -y && microdnf install findutils util-linux && microdnf clean all
 
 # Force reinstall tzdata package to get zoneinfo files
 RUN microdnf reinstall tzdata -y
