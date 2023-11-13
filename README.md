@@ -29,8 +29,6 @@ i.e.
 docker build -t ace --build-arg USERNAME=<Username> --build-arg PASSWORD=<Password> --build-arg DOWNLOAD_URL=${DOWNLOAD_URL}  --file ./Dockerfile .
 ```
 
-NOTE: If no DOWNLOAD_URL is provided the build will use a copy of the App Connect Enterprise developer edition as referenced in the Dockerfile
-
 ### Running the image
 
 To run the image use a command such as
