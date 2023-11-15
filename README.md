@@ -29,7 +29,13 @@ i.e.
 docker build -t ace --build-arg USERNAME=<Username> --build-arg PASSWORD=<Password> --build-arg DOWNLOAD_URL=${DOWNLOAD_URL}  --file ./Dockerfile .
 ```
 
-NOTE: If no DOWNLOAD_URL is provided the build will use a copy of the App Connect Enterprise developer edition as referenced in the Dockerfile
+### DOWNLOAD_URL
+
+The link is likely to be of the form
+```
+https://iwm.dhe.ibm.com/sdfdl/v2/regs2/mbford/Xa.2/Xb.WJL1cUPI9gANEhP8GuPD_qX1rj6x5R4yTUM7s_C2ue8/Xc.12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz/Xd./Xf.LpR.D1vk/Xg.12164875/Xi.swg-wmbfd/XY.regsrvs/XZ.pPVETUejcqPsVfDVKbdNu6IRpo4TkyKu/12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz
+```
+Use this link as the DOWNLOAD_URL build parameter, adjusting the version numbers in the other files and parameters as needed.
 
 ### Running the image
 
