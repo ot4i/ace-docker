@@ -22,10 +22,10 @@ test -f /usr/bin/microdnf && MICRODNF=true || MICRODNF=false
 test -f /usr/bin/rpm && RPM=true || RPM=false
 
 if ($RPM); then
-  EXTRA_RPMS="bash bc ca-certificates file findutils gawk glibc-common grep ncurses-compat-libs passwd procps-ng sed shadow-utils tar util-linux which"
-  $MICRODNF && microdnf install ${EXTRA_RPMS}
+  EXTRA_RPMS="bash bc ca-certificates file findutils gawk glibc-common grep passwd procps-ng sed shadow-utils tar util-linux which"
+  $MICRODNF && microdnf install -y ${EXTRA_RPMS}
 else
-  $MICRODNF && microdnf install findutils
+  $MICRODNF && microdnf install -y findutils
 fi
 
 # Clean up cached files

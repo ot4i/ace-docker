@@ -1,0 +1,37 @@
+---
+# ACE Integration Server components file
+#
+# Created at 12.0.7.0 - 42cd3bab4d5746527981157e644b9cab-a00f286a885cfbb65a3fae1ad292e418
+#
+# General notes :
+#  - Integration Server will load server.components.yaml from directory set via --work-dir
+#  - To ensure valid YAML avoid any use of TAB characters
+
+serverComponentsVersion: 1
+# reportExcludedComponents: true # Controls whether messages are written on integration server start-up indicating components are excluded. Default is true.
+
+# Main embedded run-times
+NodeJS: false   # Do not create NodeJS run-time within the Integration Server
+
+Nodes:
+  .NET: false          # Controls whether the .NET nodes are loaded.
+
+JavaNodes:              # If JVM is set to false then the JavaNodes section will not apply
+  Adapters: false      # Controls whether the SAP, Oracle JD Edwards, Oracle Peoplesoft and Oracle Siebel nodes are loaded.
+  CICS: false          # Controls whether the CICSRequest node is loaded.
+  IMS: false           # Controls whether the IMSRequest node is loaded.
+  ODM: false           # Controls whether the ODMRules node is loaded.
+  XSLT: false          # Controls whether the XSLTransform nodes are loaded.
+  WSRR: false          # Controls whether the WSRR EndpointLookup and RegistryLookup nodes are loaded (if this component is installed).
+
+JavaScriptNodes:        # If NodeJS is set to false then the JavaScriptNodes section will not apply
+  Salesforce: false    # Controls if the Salesforce connector is loaded.
+  LoopBack:   false    # Controls if the LoopBack connector is loaded.
+
+ResourceManagers:
+  GlobalCache: false   # Controls whether the GlobalCache resources are loaded.
+
+FlowSecurityProviders:  
+  LDAP: false          # Controls whether the LDAP Security provider is loaded for message flow security.
+  TFIM: false          # Controls whether the TFIM Security provider is loaded for message flow security.
+  WS-Trust: false      # Controls whether the WS-Trust v1.3 STS Security provider is loaded for message flow security.

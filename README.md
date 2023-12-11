@@ -41,7 +41,9 @@ Use this link as the DOWNLOAD_URL build parameter, adjusting the version numbers
 
 To run the image use a command such as
 
-`docker run -d -p 7600:7600 -p 7800:7800 -e LICENSE=accept ace:latest`
+`docker run -d -p 7600:7600 -p 7800:7800 -e LICENSE=accept -e ACE_SERVER_NAME=myserver ace:latest`
+
+where `ACE_SERVER_NAME` is the name of the Integration Server that will be running.
 
 ### Extending the image
 

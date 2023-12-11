@@ -4,12 +4,13 @@ MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
 # Build:
 #
-# docker build -t ace-minimal-devcontainer:12.0.4.0 -f Dockerfile.ace-minimal .
+# docker build -t ace-minimal-devcontainer:12.0.10.0 -f Dockerfile.ace-minimal .
 
-ARG USERNAME
-ARG PASSWORD
-ARG DOWNLOAD_URL=http://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.4.0-ACE-LINUX64-DEVELOPER.tar.gz
-ARG PRODUCT_LABEL=ace-12.0.4.0
+# Later versions from the same site, or else via the Developer edition download site linked from
+# https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz
+# Can be set higher if needed
+ARG DOWNLOAD_CONNECTION_COUNT=1
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
@@ -28,12 +29,16 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
 # IMS is optional
     cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
+# Java11 is not required
+    cat /tmp/excludes-java11.txt >> /tmp/all-excludes.txt && \
 # node.js support is optional; use --no-nodejs on server start line
     cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
     cat /tmp/excludes-npm.txt >> /tmp/all-excludes.txt && \
 # ODBC drivers are optional
     cat /tmp/excludes-odbc.txt >> /tmp/all-excludes.txt && \
+# Telemetry is optional
+    cat /tmp/excludes-telemetry.txt >> /tmp/all-excludes.txt && \
 # Toolkit is optional
     cat /tmp/excludes-tools.txt >> /tmp/all-excludes.txt && \
 # Web UI support optional; use --admin-rest-api -1 on server start line
@@ -44,12 +49,14 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
 # Install ACE and accept the license
-RUN apt-get update && apt-get install -y --no-install-recommends curl zip binutils && \
+RUN apt-get update && apt-get install -y aria2 zip binutils && \
     mkdir /opt/ibm && \
+    cd /tmp && \
     echo Downloading package ${DOWNLOAD_URL} && \
-    curl ${DOWNLOAD_URL} \
-    | tar zx --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
-    mv /opt/ibm/${PRODUCT_LABEL} /opt/ibm/ace-12 && \
+    aria2c -s ${DOWNLOAD_CONNECTION_COUNT} -j ${DOWNLOAD_CONNECTION_COUNT} -x ${DOWNLOAD_CONNECTION_COUNT} "${DOWNLOAD_URL}" && \
+    tar -zxf *12.0*tar.gz --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
+    rm -f *12.0*tar.gz && \
+    mv /opt/ibm/ace-12.* /opt/ibm/ace-12 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
@@ -63,6 +70,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl zip binuti
 RUN usermod -a -G mqbrkrs vscode \
   && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.bashrc \ 
   && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.profile
+
+# Switch off the components that aren't in the image
+COPY minimal-image.components.yaml /opt/ibm/ace-12/image.components.yaml
 
 # Install Maven for development use.
 #

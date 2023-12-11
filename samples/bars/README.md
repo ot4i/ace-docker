@@ -26,7 +26,7 @@ First [build the ACE image](../../README.md#Building-a-container-image) or obtai
 In the `sample/bars` folder:
 
 ```bash
-docker build -t aceapp --build-arg FROMIMAGE=ace:12.0.7.0-r1 --file Dockerfile .
+docker build -t aceapp --build-arg FROMIMAGE=ace:12.0.10.0-r1 --file Dockerfile .
 ```
 
 ## Running the sample
@@ -44,6 +44,6 @@ To exercise the flow, run a command such as:
 
 ```bash
 curl --request GET \
-  --url 'http://96fa448ea76e:7800/customerdb/v1/customers?max=REPLACE_THIS_VALUE' \
+  --url 'http://localhost:7800/customerdb/v1/customers?max=10' \
   --header 'accept: application/json'
 ```

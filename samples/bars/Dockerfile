@@ -1,4 +1,4 @@
-ARG  FROMIMAGE=cp.icr.io/cp/appc/ace:12.0.7.0-r1
+ARG  FROMIMAGE=cp.icr.io/cp/appc/ace:12.0.10.0-r1
 FROM ${FROMIMAGE}
 
 USER root
@@ -20,6 +20,7 @@ RUN export LICENSE=accept \
        ibmint package --compile-maps-and-schemas --input-bar-file "$FILE" --output-bar-file /tmp/temp.bar  2>&1 | tee -a /tmp/deploys && \
        ibmint deploy --input-bar-file /tmp/temp.bar --output-work-directory /home/aceuser/ace-server/ 2>&1 | tee -a /tmp/deploys; done \
     && ibmint optimize server --work-dir /home/aceuser/ace-server \
-    && chmod -R ugo+rwx /home/aceuser/
+    && chmod -R ugo+rwx /home/aceuser/ \
+    && chmod -R ugo+rwx /var/mqsi/
 
 USER 1001

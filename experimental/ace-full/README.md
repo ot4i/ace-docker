@@ -11,6 +11,11 @@ in this directory.
 Containers must be started with the LICENSE environment variable set to "accept" for the 
 product to be usable (for example, "-e LICENSE=accept" on a docker run command).
 
+See the [ace-non-application-flows](https://github.com/trevor-dolby-at-ibm-com/ace-non-application-flows) 
+demo repo for an example using this image to build non-application (top-level) resources. 
+The `ibmint` command is not intended to be used to build such resources, and so mqsicreatebar
+(which requires a full image) is needed for the GitHub Action in that repo.
+
 ## Build image with mqsicreatebar
 
 This container can be used as a base image for other build containers, or could be run with a 
