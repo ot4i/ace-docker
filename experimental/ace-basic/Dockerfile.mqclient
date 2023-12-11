@@ -1,20 +1,15 @@
 FROM ubuntu:22.04
+
 MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
-# Build and run:
+# Build:
 #
-# docker build -t ace-basic:12.0.10.0-ubuntu -f Dockerfile .
-# docker run -e LICENSE=accept -p 7600:7600 -p 7800:7800 --rm -ti ace-basic:12.0.10.0-ubuntu
-#
-# Can also mount a volume for the work directory:
-#
-# docker run -e LICENSE=accept -v /what/ever/dir:/home/aceuser/ace-server -p 7600:7600 -p 7800:7800 --rm -ti ace-basic:12.0.10.0-ubuntu
-#
-# This might require a local directory with the right permissions, or changing the userid further down . . .
+# docker build -t ace-basic-mqclient:12.0.10.0 -f Dockerfile.mqclient .
 
 # Later versions from the same site, or else via the Developer edition download site linked from
 # https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
 ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz
+ARG MQ_DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.3.2.0-IBM-MQC-Redist-LinuxX64.tar.gz
 # Can be set higher if needed
 ARG DOWNLOAD_CONNECTION_COUNT=1
 
@@ -22,23 +17,30 @@ ARG DOWNLOAD_CONNECTION_COUNT=1
 ENV DEBIAN_FRONTEND noninteractive
 
 # Install ACE v12 and accept the license
-RUN apt-get update && apt-get install -y aria2 && \
+RUN apt-get update && apt-get install -y aria2 curl && \
     mkdir /opt/ibm && echo Downloading package ${DOWNLOAD_URL} && \
     cd /tmp && \
     echo Downloading package ${DOWNLOAD_URL} && \
     aria2c -s ${DOWNLOAD_CONNECTION_COUNT} -j ${DOWNLOAD_CONNECTION_COUNT} -x ${DOWNLOAD_CONNECTION_COUNT} "${DOWNLOAD_URL}" && \
-    tar -zxf *12.0*tar.gz --exclude=tools --exclude server/bin/TADataCollector.sh --exclude server/nodejs_partial --exclude server/transformationAdvisor/ta-plugin-ace.jar --directory /opt/ibm && \
+    tar -zxf *12.0*tar.gz --exclude=tools --exclude server/bin/TADataCollector.sh --exclude server/nodejs_partial -exclude server/transformationAdvisor/ta-plugin-ace.jar --directory /opt/ibm && \
     rm -f *12.0*tar.gz && \
     mv /opt/ibm/ace-12* /opt/ibm/ace-12 && \
     /opt/ibm/ace-12/ace make registry global accept license deferred
 
 # Create a user to run as, create the ace workdir, and chmod script files
 RUN useradd --uid 1001 --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \
-  && su - aceuser -c "export LICENSE=accept && . /opt/ibm/ace-12/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server" \
-  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/aceuser/.bashrc
+  && su - aceuser -c "export LICENSE=accept && . /opt/ibm/ace-12/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server"
+
+# Install MQ client libraries
+RUN mkdir /opt/mqm && curl ${MQ_DOWNLOAD_URL} | tar zx --exclude=tools --directory /opt/mqm
+
+# Install Maven for development use.
+#
+# The standard Maven packages on most distros bring a lot of extra packages with
+# them so we install Maven directly. 
+RUN cd /opt && \
+    curl -k https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz | tar -xzf - && \
+    ln -s /opt/apache-maven-3.8.4/bin/mvn /usr/local/bin/mvn
 
 # aceuser
 USER 1001
-
-# Set entrypoint to run the server
-ENTRYPOINT ["bash", "-c", ". /opt/ibm/ace-12/server/bin/mqsiprofile && IntegrationServer -w /home/aceuser/ace-server"]

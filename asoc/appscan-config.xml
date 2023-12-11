@@ -1,0 +1,8 @@
+<Configuration>
+  <Targets>
+    <Target path="../">
+      <Exclude>asoc/</Exclude>
+      <Exclude>jenkins-build-scripts/</Exclude>
+    </Target>
+  </Targets>
+</Configuration>
