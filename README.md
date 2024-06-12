@@ -8,25 +8,25 @@ This repo is designed to provide information about how to build a simple ACE con
 
 If you would like to use pre-built containers please refer to [Pre-Built Containers](#pre-built-containers)
 
-If your looking for information on the previous images that were documented in this repo, please refer to the previous [releases](https://github.com/ot4i/ace-docker/releases). The previous images are designed only for use with the App Connect operator. They are not designed for use in your own non operator led deployment.
+If you are looking for information on the previous images that were documented in this repo, please refer to the previous [releases](https://github.com/ot4i/ace-docker/releases). The previous images are designed only for use with the App Connect operator. They are not designed for use in your own non-operator deployment.
 
 ## Building a container image
 
 **Important:** Only ACE version **12.0.1.0 or greater** is supported.
 
-Before building the image you must obtain a copy of the relavent build of ACE and make it available on a HTTP endpoint.
+Before building the image you must obtain a copy of the relevant build of ACE and make sure it is available on an HTTP endpoint.
 
 When using an insecure http endpoint, build the image using a command such as:
 
 ```bash
-docker build -t ace --build-arg DOWNLOAD_URL=${DOWNLOAD_URL}  --file ./Dockerfile .
+docker build -t ace --build-arg DOWNLOAD_URL=<download URL>  --file ./Dockerfile .
 ```
 
 If you want to connect to a secure endpoint build the image using a command such as:
 i.e.
 
 ```bash
-docker build -t ace --build-arg USERNAME=<Username> --build-arg PASSWORD=<Password> --build-arg DOWNLOAD_URL=${DOWNLOAD_URL}  --file ./Dockerfile .
+docker build -t ace --build-arg USERNAME=<Username> --build-arg PASSWORD=<Password> --build-arg DOWNLOAD_URL=<download URL>  --file ./Dockerfile .
 ```
 
 ### DOWNLOAD_URL
