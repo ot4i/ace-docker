@@ -21,11 +21,11 @@ ARG DOWNLOAD_URL=<Your downloaded location>/12.0.4.0-ACE-LINUX64-DEVELOPER.tar.g
 RUN mkdir -p /opt/ibm/ace-12 \
     && if [ -z $USERNAME ]; then curl ${DOWNLOAD_URL}; else curl -u "${USERNAME}:${PASSWORD}" ${DOWNLOAD_URL}; fi | \
     tar zx --absolute-names \
-    --exclude ace-12.0.*.0/tools \
-    --exclude ace-12.0.*.0/server/tools/ibm-dfdl-java.zip \
-    --exclude ace-12.0.*.0/server/tools/proxyservlet.war \
-    --exclude ace-12.0.*.0/server/bin/TADataCollector.sh \
-    --exclude ace-12.0.*.0/server/transformationAdvisor/ta-plugin-ace.jar \
+    --exclude ace-12.0.*.*/tools \
+    --exclude ace-12.0.*.*/server/tools/ibm-dfdl-java.zip \
+    --exclude ace-12.0.*.*/server/tools/proxyservlet.war \
+    --exclude ace-12.0.*.*/server/bin/TADataCollector.sh \
+    --exclude ace-12.0.*.*/server/transformationAdvisor/ta-plugin-ace.jar \
     --strip-components 1 \
     --directory /opt/ibm/ace-12
 
