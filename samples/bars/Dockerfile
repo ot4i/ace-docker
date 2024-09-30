@@ -1,4 +1,4 @@
-ARG  FROMIMAGE=cp.icr.io/cp/appc/ace:12.0.10.0-r1
+ARG  FROMIMAGE=cp.icr.io/cp/appc/ace:13.0.1.0-r1
 FROM ${FROMIMAGE}
 
 USER root
@@ -14,7 +14,7 @@ USER root
 #
 COPY *.bar /tmp
 RUN export LICENSE=accept \
-    && . /opt/ibm/ace-12/server/bin/mqsiprofile \
+    && . /opt/ibm/ace-13/server/bin/mqsiprofile \
     && set -x && for FILE in /tmp/*.bar; do \
        echo "$FILE" >> /tmp/deploys && \
        ibmint package --compile-maps-and-schemas --input-bar-file "$FILE" --output-bar-file /tmp/temp.bar  2>&1 | tee -a /tmp/deploys && \

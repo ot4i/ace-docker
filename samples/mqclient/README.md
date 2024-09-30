@@ -16,7 +16,7 @@ for the client.
 In this folder, run the docker command as follows (replacing the product version and MQ link as appropriate):
 
 ```bash
-docker build -t aceappmqclient --build-arg FROMIMAGE=cp.icr.io/cp/appc/ace:12.0.10.0-r1 --build-arg MQ_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.3.2.0-IBM-MQC-Redist-LinuxX64.tar.gz --file Dockerfile .
+docker build -t aceappmqclient --build-arg FROMIMAGE=cp.icr.io/cp/appc/ace:13.0.1.0-r1 --build-arg MQ_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.3.2.0-IBM-MQC-Redist-LinuxX64.tar.gz --file Dockerfile .
 ```
 
 ## Running the sample
