@@ -13,5 +13,5 @@ This sample applies an iFix provided by IBM to an existing image.
 - In the `sample/scripts/applyIfix` folder:
 
     ```bash
-    docker build -t aceapp --build-arg FROMIMAGE=cp.icr.io/cp/appc/ace:12.0.4.0-r1 --file Dockerfile .
+    docker build -t aceapp --build-arg FROMIMAGE=cp.icr.io/cp/appc/ace:13.0.1.0-r1 --file Dockerfile .
     ```

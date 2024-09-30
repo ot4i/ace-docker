@@ -12,7 +12,7 @@ If you are looking for information on the previous images that were documented i
 
 ## Building a container image
 
-**Important:** Only ACE version **12.0.1.0 or greater** is supported.
+**Important:** Only ACE version **13.0.1.0 or greater** is supported.
 
 Before building the image you must obtain a copy of the relevant build of ACE and make sure it is available on an HTTP endpoint.
 

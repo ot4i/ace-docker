@@ -10,5 +10,5 @@ This sample applies updates all the base OS packages. This can be used to resolv
 - In the `sample/scripts/updateBase` folder:
 
     ```bash
-    docker build -t aceapp --build-arg FROMIMAGE=cp.icr.io/cp/appc/ace:12.0.4.0-r1 --file Dockerfile .
+    docker build -t aceapp --build-arg FROMIMAGE=cp.icr.io/cp/appc/ace:13.0.1.0-r1 --file Dockerfile .
     ```

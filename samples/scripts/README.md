@@ -12,7 +12,7 @@ First [build the ACE image](../../README.md#Building-a-container-image) or obtai
 In the `sample/scripts` folder:
 
 ```bash
-docker build -t aceapp --build-arg FROMIMAGE=ace:12.0.10.0-r1 --file Dockerfile .
+docker build -t aceapp --build-arg FROMIMAGE=ace:13.0.1.0-r1 --file Dockerfile .
 ```
 
 ## Running the sample

@@ -23,7 +23,7 @@ function argStrings {
 }
 
 if [ -z "$MQSI_VERSION" ]; then
-  source /opt/ibm/ace-12/server/bin/mqsiprofile
+  source /opt/ibm/ace-13/server/bin/mqsiprofile
 fi
 
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
