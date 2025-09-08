@@ -35,7 +35,7 @@ and proceed through the pages until the main download page with a link:
 
 The link is likely to be of the form
 ```
-https://iwm.dhe.ibm.com/sdfdl/v2/regs2/mbford/Xa.2/Xb.WJL1cUPI9gANEhP8GuPD_qX1rj6x5R4yTUM7s_C2ue8/Xc.13.0.1.0-ACE-LINUX64-EVALUATION.tar.gz/Xd./Xf.LpR.D1vk/Xg.12164875/Xi.swg-wmbfd/XY.regsrvs/XZ.pPVETUejcqPsVfDVKbdNu6IRpo4TkyKu/13.0.1.0-ACE-LINUX64-EVALUATION.tar.gz
+https://iwm.dhe.ibm.com/sdfdl/v2/regs2/mbford/Xa.2/Xb.WJL1cUPI9gANEhP8GuPD_qX1rj6x5R4yTUM7s_C2ue8/Xc.13.0.4.0-ACE-LINUX64-EVALUATION.tar.gz/Xd./Xf.LpR.D1vk/Xg.12164875/Xi.swg-wmbfd/XY.regsrvs/XZ.pPVETUejcqPsVfDVKbdNu6IRpo4TkyKu/13.0.4.0-ACE-LINUX64-EVALUATION.tar.gz
 ```
 Copy that link into the aceDownloadUrl parameter or use it as the DOWNLOAD_URL build
 parameter, adjusting the version numbers in the other files and parameters as needed.
@@ -44,7 +44,7 @@ parameter, adjusting the version numbers in the other files and parameters as ne
 
 To run the sample after building:
 ```
-docker run -e LICENSE=accept --rm -ti ace-sample:13.0.1.0-alpine
+docker run -e LICENSE=accept --rm -ti ace-sample:13.0.4.0-alpine
 ```
 and then `curl http://[container IP]:7800/test` should return '{"data":"a string from ACE"}'
 

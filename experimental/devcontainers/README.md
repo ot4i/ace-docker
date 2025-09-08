@@ -22,7 +22,7 @@ contents similar to the following:
 ```
 {
     "name": "my-repo-devcontainer",
-    "image": "my-container-registry/ace-minimal-devcontainer:13.0.1.0",
+    "image": "my-container-registry/ace-minimal-devcontainer:13.0.4.0",
     "containerEnv": {
         "LICENSE": "accept"
     },
