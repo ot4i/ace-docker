@@ -8,6 +8,12 @@ Dockefiles in the following directories are used for various purposes:
 - ace-basic can run the product server, including all files except the toolkit.
 - ace-sample contains a sample BAR file and Dockerfiles for building runnable images to serve HTTP clients.
 
+## Docker Engine versus Docker Desktop
+
+Docker Desktop for Windows may require licensing, and Docker Engine can be used instead.
+Follow the instructions at 
+https://docs.docker.com/engine/install/binaries/#install-server-and-client-binaries-on-windows
+to install and start the Docker service.
 
 ## Notes on Windows base images
 
@@ -26,10 +32,11 @@ if Windows Defender scans every file, so running
 ```
 Add-MpPreference -ExclusionPath C:\ProgramData\docker\windowsfilter
 ```
-from an Administrator PowerShell should improve build times. The `dockerd` process will
-still use `C:\Windows\SystemTemp` for temporary file storage unless the `SystemTemp` 
-environment variable is set (which is hard to do for a normal service without affecting
-the whole machine), but moving this to an excluded directory does not seem to change
+from an Administrator PowerShell should improve build times. 
+
+The `dockerd` process will still use `C:\Windows\SystemTemp` for temporary file storage
+unless the `SystemTemp` environment variable is set (which is hard to do for a normal
+service without affecting the whole machine but can be done by running `dockerd -D` from
+an Adminstrator shell), but moving this to an excluded directory does not seem to change
 the build times by very much; it seems the layer copy triggers Defender scanning even
 when copying to and from an excluded location (possibly due to NTFS file log updates).
-
