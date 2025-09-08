@@ -7,7 +7,7 @@ export DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphe
 export PRODUCT_VERSION=13.0.4.0
 
 # Used for ace-minimal and ace-devcontainer mqclient variants
-export MQ_DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.4.3.0-IBM-MQC-Redist-LinuxX64.tar.gz
+export MQ_DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.4.3.1-IBM-MQC-Redist-LinuxX64.tar.gz
 export DOWNLOAD_CONNECTION_COUNT=10
 
 

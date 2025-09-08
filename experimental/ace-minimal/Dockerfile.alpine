@@ -11,7 +11,7 @@ ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/
 ARG DOWNLOAD_CONNECTION_COUNT=1
 
 # If specified, this triggers an install of the MQ client libraries. Should be set to
-# https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.4.1.0-IBM-MQC-Redist-LinuxX64.tar.gz
+# https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.4.3.1-IBM-MQC-Redist-LinuxX64.tar.gz
 # or equivalent. If set, the image would normally be tagged as ace-minimal:13.0.1.0-alpine-mqclient
 ARG MQ_DOWNLOAD_URL
 
