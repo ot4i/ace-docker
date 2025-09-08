@@ -2,7 +2,13 @@
 
 Simple docker images for ACE v13 on Linux (amd64 and s390x) and Windows
 
-Dockefiles in the following directories are used for various purposes:
+These images are intended to show various ways to build containers for various purposes with
+varying sizes, depending on the use case. All are built from the same ACE product package, and
+the general picture looks like this:
+
+![ace-images-light](/experimental/pictures/ace-images-light.png#gh-light-mode-only)![ace-images-dark](/experimental/pictures/ace-images-dark.png#gh-dark-mode-only)
+
+Dockerfiles for the various options are in the following directories:
 
 - ace-full can run the full product, including mqsicreatebar with a virtual X server.
 - ace-basic can run the product server, including all files except the toolkit.
@@ -20,8 +26,9 @@ the command line using the `--build-arg` parameter, and for the demo repos that 
 Tekton to build the image, the URL is the `aceDownloadUrl` value in ace-minimal-image-pipeline-run.yaml.
 
 This value may need updating, either to another version in the same server directory
-(if available) or else to an ACE developer edition URL from the IBM website. In the latter
-case, start at https://www.ibm.com/docs/en/app-connect/13.0?topic=enterprise-download-ace-developer-edition-get-started
+(if available) or else to an ACE evaluation edition (previously known as the "developer edition) 
+URL from the IBM website. In the latter case, start at
+https://www.ibm.com/docs/en/app-connect/13.0?topic=enterprise-download-ace-developer-edition-get-started
 and proceed through the pages until the main download page with a link: 
 
 ![download page](ace-dev-edition-download.png)
@@ -46,23 +53,29 @@ and then `curl http://[container IP]:7800/test` should return '{"data":"a string
 Local on Ubuntu with defaults in Dockerfiles:
 
 ```
-ace-minimal      13.0.1.0-alpine-java8         f5fd8880aac2   14 hours ago     723MB
-ace-minimal      13.0.1.0-alpine               0d0a36b729ed   14 hours ago     772MB
-ace-minimal      13.0.1.0-alpine-mqclient      0ed6a3e42872   13 minutes ago   915MB
-ace-minimal      13.0.1.0-ubuntu               42f4213b7872   14 hours ago     1.13GB
-ace-basic        13.0.1.0-ubuntu               68f30d39fc7a   14 hours ago     2.61GB
-ace-full         13.0.1.0-ubuntu               e193df427153   14 hours ago     4.94GB
+ace-minimal                13.0.4.0-alpine-java8     8ced641cbc9d  8 weeks ago   762MB
+ace-minimal                13.0.4.0-alpine           bf88f5220666  8 weeks ago   811MB
+ace-minimal                13.0.4.0-alpine-mqclient  70d1956d93e2  8 weeks ago   963MB
+ace-minimal                13.0.4.0-ubuntu           942cd6ea5243  8 weeks ago   1.16GB
+ace-minimal-devcontainer   13.0.4.0                  9154ea32ec9a  8 weeks ago   1.51GB
+ace-devcontainer           13.0.4.0                  cea5a3bdf889  8 weeks ago   2.25GB
+ace-devcontainer-mqclient  13.0.4.0                  0b6b0adc1ae9  8 weeks ago   2.52GB
+ace-basic                  13.0.4.0-ubuntu           a34cb877aadc  8 weeks ago   3.38GB
+ace-full                   13.0.4.0-ubuntu           6dba71e0c668  8 weeks ago   6.27GB
 ```
 
 Compressed sizes on DockerHub:
 
 ```
-ace-minimal      13.0.1.0-alpine-java8         421.04 MB
-ace-minimal      13.0.1.0-alpine               397.06 MB
-ace-minimal      13.0.1.0-alpine-mqclient      441.58 MB
-ace-minimal      13.0.1.0-ubuntu               588.08 MB
-ace-basic        13.0.1.0-ubuntu               1.18 GB
-ace-full         13.0.1.0-ubuntu               2.36 GB
+ace-minimal               13.0.4.0-alpine-java8         434.97 MB
+ace-minimal               13.0.4.0-alpine               411.37 MB
+ace-minimal               13.0.4.0-alpine-mqclient      458.28 MB
+ace-minimal               13.0.4.0-ubuntu               599.90 MB
+ace-minimal-devcontainer  13.0.4.0                      673.25 MB
+ace-devcontainer          13.0.4.0                      1.06 GB
+ace-devcontainer-mqclient 13.0.4.0                      1.15 GB
+ace-basic                 13.0.4.0-ubuntu               1.38 GB
+ace-full                  13.0.4.0-ubuntu               2.74 GB
 ```
 
 Some of these will fit into the IBM Cloud container registry free tier due to compression, but ace-full and ace-basic are too big for that.
