@@ -1,6 +1,6 @@
 # GitHub codespaces devcontainer images
 
-Images for use with GitHub codespaces and ACE v12. Built on top of the GitHub-provided
+Images for use with GitHub codespaces and ACE v13. Built on top of the GitHub-provided
 Ubuntu 22.04 standard image.
 
 These images can be built and pushed to dockerhub or any other container registry, or
@@ -22,7 +22,7 @@ contents similar to the following:
 ```
 {
     "name": "my-repo-devcontainer",
-    "image": "my-container-registry/ace-minimal-devcontainer:12.0.4.0",
+    "image": "my-container-registry/ace-minimal-devcontainer:13.0.4.0",
     "containerEnv": {
         "LICENSE": "accept"
     },

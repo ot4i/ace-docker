@@ -1,14 +1,19 @@
-FROM alpine:3.18
+FROM alpine:3.20
 
-# docker build -t ace-minimal:12.0.10.0-alpine -f Dockerfile.alpine .
+# docker build -t ace-minimal:13.0.4.0-alpine -f Dockerfile.alpine .
 
 MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
 # Later versions from the same site, or else via the Developer edition download site linked from
 # https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
-ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/13.0.4.0-ACE-LINUX64-EVALUATION.tar.gz
 # Can be set higher if needed
 ARG DOWNLOAD_CONNECTION_COUNT=1
+
+# If specified, this triggers an install of the MQ client libraries. Should be set to
+# https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.4.3.1-IBM-MQC-Redist-LinuxX64.tar.gz
+# or equivalent. If set, the image would normally be tagged as ace-minimal:13.0.4.0-alpine-mqclient
+ARG MQ_DOWNLOAD_URL
 
 RUN apk --update add --no-cache --virtual .build-deps curl binutils zstd \
     && set -x \
@@ -56,10 +61,16 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
 # IMS is optional
     cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
-# JDK provided by the product
-#    cat /tmp/excludes-jdk.txt >> /tmp/all-excludes.txt && \
-# Java11 is not required
-    cat /tmp/excludes-java11.txt >> /tmp/all-excludes.txt && \
+# Use Java17 only
+    cat /tmp/excludes-jdk.txt >> /tmp/all-excludes.txt && \
+# Java17 is provided by the product
+#    cat /tmp/excludes-java17.txt >> /tmp/all-excludes.txt && \
+# JDBC connector is optional
+    cat /tmp/excludes-jdbc.txt >> /tmp/all-excludes.txt && \
+# Kafka connector is optional
+    cat /tmp/excludes-kafka.txt >> /tmp/all-excludes.txt && \
+# MQTT connector is optional
+    cat /tmp/excludes-mqtt.txt >> /tmp/all-excludes.txt && \
 # node.js support is optional; use --no-nodejs on server start line
     cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
@@ -78,8 +89,7 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-xmlt.txt >> /tmp/all-excludes.txt
 
 # Set the environment correctly
-COPY profile-with-product-java-paths.sh /etc/profile.d/profile-with-product-java-paths.sh
-COPY product-java-paths.sh /etc/profile.d/product-java-paths.sh
+COPY profile-with-product-java17-paths.sh /etc/profile.d/profile-with-product-java17-paths.sh
 
 # Install ACE 
 RUN mkdir -p /opt/ibm && \
@@ -87,37 +97,60 @@ RUN mkdir -p /opt/ibm && \
     cd /tmp && \
     echo Downloading package ${DOWNLOAD_URL} && \
     aria2c -s ${DOWNLOAD_CONNECTION_COUNT} -j ${DOWNLOAD_CONNECTION_COUNT} -x ${DOWNLOAD_CONNECTION_COUNT} "${DOWNLOAD_URL}" && \
-    tar -zxf *12.0*tar.gz --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
-    rm -f *12.0*tar.gz && \
-    mv /opt/ibm/ace-12* /opt/ibm/ace-12 && \
+    tar -zxf *13.0*tar.gz --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
+    rm -f *13.0*tar.gz && \
+    mv /opt/ibm/ace-13* /opt/ibm/ace-13 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
-    ( strip /opt/ibm/ace-12/server/bin/* 2>/dev/null || /bin/true ) && \
-    zip -d /opt/ibm/ace-12/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
+    ( strip /opt/ibm/ace-13/server/bin/* 2>/dev/null || /bin/true ) && \
+    zip -d /opt/ibm/ace-13/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     apk del --purge binutils zip && \
     addgroup mqbrkrs && \
-    cat /etc/profile.d/product-java-paths.sh >> /root/.bashrc
+    rm -rf /opt/ibm/ace-13/common/java17/jmods && \
+    cat /etc/profile.d/profile-with-product-java17-paths.sh >> /root/.bashrc && \
+    ln -s /opt/ibm/ace-13/common/java17 /opt/ibm/ace-13/common/jdk && \
+    ln -s . /opt/ibm/ace-13/common/java17/jre 
 
 # Issues with 5.1.4(1)-release (x86_64-alpine-linux-musl) on alpine
-RUN sed -i 's/\/bin\/bash/\/bin\/mksh/g' /opt/ibm/ace-12/ace /opt/ibm/ace-12/server/bin/mqsicreateworkdir /opt/ibm/ace-12/server/bin/mqsipackagebar
+RUN sed -i 's/\/bin\/bash/\/bin\/mksh/g' /opt/ibm/ace-13/ace /opt/ibm/ace-13/server/bin/mqsicreateworkdir /opt/ibm/ace-13/server/bin/mqsipackagebar
 
-RUN bash -c '. /etc/profile.d/product-java-paths.sh && /opt/ibm/ace-12/ace make registry global accept license deferred'
+RUN bash -c '. /etc/profile.d/profile-with-product-java17-paths.sh && /opt/ibm/ace-13/ace make registry global accept license deferred'
 
 # Set BASH_ENV to source mqsiprofile when using docker exec bash -c
-ENV BASH_ENV=/etc/profile.d/profile-with-product-java-paths.sh
+ENV BASH_ENV=/etc/profile.d/profile-with-product-java17-paths.sh
 
 # Create a user to run as, create the ace workdir, and chmod script files
 RUN ( echo "Passw0rd" ; echo "Passw0rd" ) | adduser -u 1001 -h /home/aceuser -s /bin/bash aceuser mqbrkrs && \
     adduser aceuser mqbrkrs && \
-    cat /etc/profile.d/product-java-paths.sh >> /home/aceuser/.bashrc && \
+    cat /etc/profile.d/profile-with-product-java17-paths.sh >> /home/aceuser/.bashrc && \
     chown aceuser /home/aceuser/.bashrc && \
     chmod 664 /home/aceuser/.bashrc && \
-    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-product-java-paths.sh && /opt/ibm/ace-12/server/bin/mqsicreateworkdir /home/aceuser/ace-server" && \
-    echo ". /etc/profile.d/profile-with-product-java-paths.sh" >> /home/aceuser/.bashrc
+    su - aceuser -c "export LICENSE=accept && . /etc/profile.d/profile-with-product-java17-paths.sh && /opt/ibm/ace-13/server/bin/mqsicreateworkdir /home/aceuser/ace-server" && \
+    echo ". /etc/profile.d/profile-with-product-java17-paths.sh" >> /home/aceuser/.bashrc
 
 # Switch off the components that aren't in the image
-COPY minimal-image.components.yaml /opt/ibm/ace-12/image.components.yaml
+COPY minimal-image.components.yaml /opt/ibm/ace-13/image.components.yaml
+
+# Install MQ client libraries and hack the results to keep the image small enough to
+# fit in the IBM Cloud Container Registry free tier with a limit of 512MB; the 32-bit
+# programs and libraries don't actually work in this container anyway as compatibility
+# libraries would also be needed, and we're running an English-only ACE install.
+RUN if [ -z $MQ_DOWNLOAD_URL ]; then echo "Not installing an MQ client"; else \
+    mkdir /opt/mqm && \
+    chmod 775 /opt/mqm && \
+    cd /tmp && \
+    aria2c -o mq-client.tar.gz  ${MQ_DOWNLOAD_URL} && \
+    tar -xf /tmp/mq-client.tar.gz --directory /opt/mqm && \
+    rm /tmp/mq-client.tar.gz && \
+    rm -rf /opt/mqm/gskit8/bin/gsk8capicmd /opt/mqm/gskit8/lib /opt/mqm/lib/lib*.so /opt/mqm/samp/dotnet /opt/mqm/msg/cs_CZ /opt/mqm/msg/de_DE /opt/mqm/msg/es_ES /opt/mqm/msg/fr_FR /opt/mqm/msg/hu_HU /opt/mqm/msg/it_IT /opt/mqm/msg/ja_JP /opt/mqm/msg/ko_KR /opt/mqm/msg/pl_PL /opt/mqm/msg/pt_BR /opt/mqm/msg/ru_RU /opt/mqm/msg/zh_CN /opt/mqm/msg/zh_TW ; \
+    fi
+
+# Kaniko seems to chmod this directory 755 by mistake sometimes, which causes trouble later
+RUN chmod 1777 /tmp
+
+# This seems to be needed for OpenShift support due to random userids at runtime
+RUN chmod -R 777 /home/aceuser /var/mqsi || /bin/true
 
 # aceuser
 USER 1001
