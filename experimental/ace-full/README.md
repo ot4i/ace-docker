@@ -1,10 +1,10 @@
 # ace-full
 
-This image exists to enable the use of mqsicreatebar in build pipelines with ACE v12.
+This image exists to enable the use of mqsicreatebar in build pipelines with ACE v13.
  
 To build the image, run
 ```
-docker build -t ace-full:12.0.4.0-ubuntu -f Dockerfile.ubuntu .
+docker build -t ace-full:13.0.4.0-ubuntu -f Dockerfile.ubuntu .
 ```
 in this directory.
  
@@ -42,7 +42,7 @@ container. To do this, mount the .Xauthority file from the host into the contain
 
 ```
 chmod 664 ~/.Xauthority
-docker run -e LICENSE=accept -e DISPLAY --network=host -v $HOME/.Xauthority:/home/aceuser/.Xauthority --rm -ti ace-full:12.0.4.0-ubuntu
+docker run -e LICENSE=accept -e DISPLAY --network=host -v $HOME/.Xauthority:/home/aceuser/.Xauthority --rm -ti ace-full:13.0.4.0-ubuntu
 ```
 with the "--network=host" and "-e DISPLAY" settings allowing the container the network access 
 it needs to get to the host X server. If there is no .Xauthority file in the home directory, it
@@ -59,12 +59,12 @@ able to connect to the host display.
 Assuming permissions are set correctly, then the docker run command above should lead to the 
 standard ACE profile banner, and at that point it should be possible to start the toolkit:
 ```
-MQSI 12.0.4.0
-/opt/ibm/ace-12/server
+MQSI 13.0.4.0
+/opt/ibm/ace-13/server
 
-(ACE_12:)aceuser@tdolby-laptop:/$ /opt/ibm/ace-12/ace tools
+(ACE_13:)aceuser@tdolby-laptop:/$ /opt/ibm/ace-13/ace tools
 Starting App Connect Enterprise Toolkit interactively
-(ACE_12:)aceuser@tdolby-laptop:/$
+(ACE_13:)aceuser@tdolby-laptop:/$
 ```
 
 The toolkit may take some time to start, but should succeed in bringing up a splash screen 
@@ -75,7 +75,7 @@ and then a prompt for a workspace location.
 Attempting to run the Xvfb command from the mqsicreatebar section above while also using the
 X-Windows forwarding described in this section will lead to errors:
 ```
-(ACE_12:)aceuser@tdolby-laptop:/$ Xvfb
+(ACE_13:)aceuser@tdolby-laptop:/$ Xvfb
 _XSERVTransSocketUNIXCreateListener: ...SocketCreateListener() failed
 _XSERVTransMakeAllCOTSServerListeners: server already running
 (EE)

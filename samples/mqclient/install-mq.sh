@@ -42,7 +42,7 @@ then
   #
   # or directly from
   #
-  # https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.3.2.0-IBM-MQC-Redist-LinuxX64.tar.gz
+  # https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.4.3.1-IBM-MQC-Redist-LinuxX64.tar.gz
   #
   echo "Detected genmqpkg.sh; installing MQ client components"
   export genmqpkg_inc32=0

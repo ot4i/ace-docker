@@ -1,11 +1,6 @@
 ---
 # ACE Integration Server components file
 #
-# Created at 12.0.7.0 - 42cd3bab4d5746527981157e644b9cab-a00f286a885cfbb65a3fae1ad292e418
-#
-# General notes :
-#  - Integration Server will load server.components.yaml from directory set via --work-dir
-#  - To ensure valid YAML avoid any use of TAB characters
 
 serverComponentsVersion: 1
 # reportExcludedComponents: true # Controls whether messages are written on integration server start-up indicating components are excluded. Default is true.
@@ -28,8 +23,10 @@ JavaScriptNodes:        # If NodeJS is set to false then the JavaScriptNodes sec
   Salesforce: false    # Controls if the Salesforce connector is loaded.
   LoopBack:   false    # Controls if the LoopBack connector is loaded.
 
-ResourceManagers:
-  GlobalCache: false   # Controls whether the GlobalCache resources are loaded.
+GlobalCacheBackends:
+  Embedded: false
+  Redis: false
+  WXS: false
 
 FlowSecurityProviders:  
   LDAP: false          # Controls whether the LDAP Security provider is loaded for message flow security.

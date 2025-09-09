@@ -1,14 +1,14 @@
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-22.04
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
 # Build:
 #
-# docker build -t ace-minimal-devcontainer:12.0.10.0 -f Dockerfile.ace-minimal .
+# docker build -t ace-minimal-devcontainer:13.0.4.0 -f Dockerfile.ace-minimal .
 
 # Later versions from the same site, or else via the Developer edition download site linked from
-# https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
-ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz
+# https://www.ibm.com/docs/en/app-connect/13.0?topic=enterprise-download-ace-developer-edition-get-started
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/13.0.4.0-ACE-LINUX64-EVALUATION.tar.gz
 # Can be set higher if needed
 ARG DOWNLOAD_CONNECTION_COUNT=1
 
@@ -29,8 +29,16 @@ RUN cat /tmp/excludes-base.txt >> /tmp/all-excludes.txt && \
     cat /tmp/excludes-globalcache.txt >> /tmp/all-excludes.txt && \
 # IMS is optional
     cat /tmp/excludes-ims.txt >> /tmp/all-excludes.txt && \
-# Java11 is not required
-    cat /tmp/excludes-java11.txt >> /tmp/all-excludes.txt && \
+# Use Java17 only
+    cat /tmp/excludes-jdk.txt >> /tmp/all-excludes.txt && \
+# Java17 is provided by the product
+#    cat /tmp/excludes-java17.txt >> /tmp/all-excludes.txt && \
+# JDBC connector is optional
+    cat /tmp/excludes-jdbc.txt >> /tmp/all-excludes.txt && \
+# Kafka connector is optional
+    cat /tmp/excludes-kafka.txt >> /tmp/all-excludes.txt && \
+# MQTT connector is optional
+    cat /tmp/excludes-mqtt.txt >> /tmp/all-excludes.txt && \
 # node.js support is optional; use --no-nodejs on server start line
     cat /tmp/excludes-nodejs.txt >> /tmp/all-excludes.txt && \
 # NPM install support is optional
@@ -54,25 +62,28 @@ RUN apt-get update && apt-get install -y aria2 zip binutils && \
     cd /tmp && \
     echo Downloading package ${DOWNLOAD_URL} && \
     aria2c -s ${DOWNLOAD_CONNECTION_COUNT} -j ${DOWNLOAD_CONNECTION_COUNT} -x ${DOWNLOAD_CONNECTION_COUNT} "${DOWNLOAD_URL}" && \
-    tar -zxf *12.0*tar.gz --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
-    rm -f *12.0*tar.gz && \
-    mv /opt/ibm/ace-12.* /opt/ibm/ace-12 && \
+    tar -zxf *13.0*tar.gz --exclude-from=/tmp/all-excludes.txt --directory /opt/ibm && \
+    rm -f *13.0*tar.gz && \
+    mv /opt/ibm/ace-13.* /opt/ibm/ace-13 && \
     find /opt/ibm -name "*.so*" -exec strip {} ";" && \
     find /opt/ibm -name "*.wrk" -exec strip {} ";" && \
     find /opt/ibm -name "*.lil" -exec strip {} ";" && \
-    ( strip /opt/ibm/ace-12/server/bin/* 2>/dev/null || /bin/true ) && \
-    zip -d /opt/ibm/ace-12/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
+    ( strip /opt/ibm/ace-13/server/bin/* 2>/dev/null || /bin/true ) && \
+    zip -d /opt/ibm/ace-13/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     if [ $(uname -m) = x86_64 ]; then apt-get remove -y zip binutils binutils-common libbinutils binutils-x86-64-linux-gnu; else apt-get remove -y zip binutils binutils-common libbinutils; fi && \
     rm -rf /var/lib/apt/lists/*  && \
-    /opt/ibm/ace-12/ace make registry global accept license deferred
+    rm -rf /opt/ibm/ace-13/common/java17/jmods && \
+    ln -s /opt/ibm/ace-13/common/java17 /opt/ibm/ace-13/common/jdk && \
+    ln -s . /opt/ibm/ace-13/common/java17/jre && \
+    /opt/ibm/ace-13/ace make registry global accept license deferred
 
 # Source profile automatically
 RUN usermod -a -G mqbrkrs vscode \
-  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.bashrc \ 
-  && echo ". /opt/ibm/ace-12/server/bin/mqsiprofile" >> /home/vscode/.profile
+  && echo ". /opt/ibm/ace-13/server/bin/mqsiprofile" >> /home/vscode/.bashrc \ 
+  && echo ". /opt/ibm/ace-13/server/bin/mqsiprofile" >> /home/vscode/.profile
 
 # Switch off the components that aren't in the image
-COPY minimal-image.components.yaml /opt/ibm/ace-12/image.components.yaml
+COPY minimal-image.components.yaml /opt/ibm/ace-13/image.components.yaml
 
 # Install Maven for development use.
 #
