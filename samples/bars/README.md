@@ -12,7 +12,7 @@ The [Dockerfile](Dockerfile) can also be used with a base image that contains an
 other pre-requisites; the CustomerDatabaseV1.bar application does not require any pre-reqs, but
 some other applications (if any are added into this directory) may do. For more details about the 
 CustomerDatabaseV1 application, see the `Using a REST API to manage a set of records` tutorial
-in the ACE v13 toolkit.
+in the ACE v12 toolkit.
 
 The image build process compiles maps and schema files to avoid this needing to be done when the
 container starts up, and also runs the [ibmint optimize server](https://www.ibm.com/docs/en/app-connect/12.0?topic=commands-ibmint-optimize-server-command)
@@ -26,7 +26,7 @@ First [build the ACE image](../../README.md#Building-a-container-image) or obtai
 In the `sample/bars` folder:
 
 ```bash
-docker build -t aceapp --build-arg FROMIMAGE=ace:13.0.1.0-r1 --file Dockerfile .
+docker build -t aceapp --build-arg FROMIMAGE=ace:13.0.8.0-r1 --file Dockerfile .
 ```
 
 ## Running the sample

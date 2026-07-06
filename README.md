@@ -33,17 +33,18 @@ docker build -t ace --build-arg USERNAME=<Username> --build-arg PASSWORD=<Passwo
 
 The link is likely to be of the form
 ```
-https://iwm.dhe.ibm.com/sdfdl/v2/regs2/mbford/Xa.2/Xb.WJL1cUPI9gANEhP8GuPD_qX1rj6x5R4yTUM7s_C2ue8/Xc.12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz/Xd./Xf.LpR.D1vk/Xg.12164875/Xi.swg-wmbfd/XY.regsrvs/XZ.pPVETUejcqPsVfDVKbdNu6IRpo4TkyKu/12.0.10.0-ACE-LINUX64-DEVELOPER.tar.gz
+https://iwm.dhe.ibm.com/sdfdl/v2/regs2/mbford/Xa.2/Xb.WJL1cUPI9gANEhP8GuPD_qX1rj6x5R4yTUM7s_C2ue8/Xc.13.0.4.0-ACE-LINUX64-EVALUATION.tar.gz/Xd./Xf.LpR.D1vk/Xg.12164875/Xi.swg-wmbfd/XY.regsrvs/XZ.pPVETUejcqPsVfDVKbdNu6IRpo4TkyKu/13.0.4.0-ACE-LINUX64-EVALUATION.tar.gz
 ```
 Use this link as the DOWNLOAD_URL build parameter, adjusting the version numbers in the other files and parameters as needed.
 
 ### Running the image
 
-To run the image use a command such as
+To run the image use a command such as:
 
-`docker run -d -p 7600:7600 -p 7800:7800 -e LICENSE=accept -e ACE_SERVER_NAME=myserver ace:latest`
+`docker run -d -p 7600:7600 -p 7800:7800 -e LICENSE=accept -e ACE_SERVER_NAME=myserver -e CALL_HOME_CUSTOMER_NAME=REPLACE_ME_COMPANY_NAME ace:latest`
 
 where `ACE_SERVER_NAME` is the name of the Integration Server that will be running.
+where `REPLACE_ME_COMPANY_NAME` is the name of your company
 
 ### Extending the image
 
