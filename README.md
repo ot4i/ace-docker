@@ -52,7 +52,7 @@ To add extra artifacts into the container such as server.conf.yaml overrides, ba
 
 ## Pre-Built Containers
 
-Pre-built production images can be found on IBM Container Registry at `cp.icr.io/cp/appc/ace` - [Building a sample IBM App Connect Enterprise image using Docker](https://www.ibm.com/docs/en/app-connect/13.0?topic=cacerid-building-sample-app-connect-enterprise-image-using-docker)
+Pre-built production images can be found on IBM Container Registry at `cp.icr.io/cp/appc/ace` - [Building a sample IBM App Connect Enterprise image using Docker](https://www.ibm.com/docs/en/app-connect/13.0.x?topic=cacerid-building-sample-supported-app-connect-enterprise-image-using-docker)
 
 ### Fixing security vulnerabilities in the base software
 
