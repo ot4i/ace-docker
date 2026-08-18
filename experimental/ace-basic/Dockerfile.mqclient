@@ -4,14 +4,17 @@ MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
 # Build:
 #
-# docker build -t ace-basic-mqclient:13.0.4.0 -f Dockerfile.mqclient .
+# docker build -t ace-basic-mqclient:13.0.8.0 -f Dockerfile.mqclient .
 
 # Later versions from the same site, or else via the Developer edition download site linked from
 # https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
-ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/13.0.4.0-ACE-LINUX64-EVALUATION.tar.gz
-ARG MQ_DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.4.3.1-IBM-MQC-Redist-LinuxX64.tar.gz
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/13.0.8.0-ACE-LINUX64-EVALUATION.tar.gz
+ARG MQ_DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/10.0.0.0-IBM-MQC-Redist-LinuxX64.tar.gz
 # Can be set higher if needed
 ARG DOWNLOAD_CONNECTION_COUNT=1
+
+# Override for local builds
+ARG COMPANY_NAME=ace-basic
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
@@ -25,7 +28,8 @@ RUN apt-get update && apt-get install -y aria2 curl && \
     tar -zxf *13.0*tar.gz --exclude=tools --exclude server/bin/TADataCollector.sh --exclude server/nodejs_partial -exclude server/transformationAdvisor/ta-plugin-ace.jar --directory /opt/ibm && \
     rm -f *13.0*tar.gz && \
     mv /opt/ibm/ace-13* /opt/ibm/ace-13 && \
-    /opt/ibm/ace-13/ace make registry global accept license deferred
+    /opt/ibm/ace-13/ace accept license --silently --make-registry-global --company-name "${COMPANY_NAME}" && \
+    sed -i "s|LICENSE_ACCEPTED=1|LICENSE_ACCEPTED=2|g" /opt/ibm/ace-13/server/bin/mqsiprofile
 
 # Create a user to run as, create the ace workdir, and chmod script files
 RUN useradd --uid 1001 --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \

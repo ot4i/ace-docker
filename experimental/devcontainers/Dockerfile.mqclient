@@ -4,14 +4,17 @@ MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
 # Build:
 #
-# docker build -t ace-devcontainer-mqclient:13.0.4.0 -f Dockerfile.mqclient .
+# docker build -t ace-devcontainer-mqclient:13.0.8.0 -f Dockerfile.mqclient .
 
 # Later versions from the same site, or else via the Developer edition download site linked from
 # https://www.ibm.com/docs/en/app-connect/13.0?topic=enterprise-download-ace-developer-edition-get-started
-ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/13.0.4.0-ACE-LINUX64-EVALUATION.tar.gz
-ARG MQ_DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/9.4.3.1-IBM-MQC-Redist-LinuxX64.tar.gz
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/13.0.8.0-ACE-LINUX64-EVALUATION.tar.gz
+ARG MQ_DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/messaging/mqdev/redist/10.0.0.0-IBM-MQC-Redist-LinuxX64.tar.gz
 # Can be set higher if needed
 ARG DOWNLOAD_CONNECTION_COUNT=1
+
+# Override for local builds
+ARG COMPANY_NAME=ace-devcontainer
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
@@ -44,7 +47,8 @@ RUN apt-get update && apt-get install -y aria2 zip binutils && \
     if [ $(uname -m) = x86_64 ]; then apt-get remove -y zip binutils binutils-common libbinutils binutils-x86-64-linux-gnu; else apt-get remove -y zip binutils binutils-common libbinutils; fi && \
     rm -rf /var/lib/apt/lists/*  && \
     rm -rf /opt/ibm/ace-13/common/java17/jmods && \
-    /opt/ibm/ace-13/ace make registry global accept license deferred
+    /opt/ibm/ace-13/ace accept license --silently --make-registry-global --company-name "${COMPANY_NAME}" && \
+    sed -i "s|LICENSE_ACCEPTED=1|LICENSE_ACCEPTED=2|g" /opt/ibm/ace-13/server/bin/mqsiprofile
 
 # Source profile automatically
 RUN usermod -a -G mqbrkrs vscode \

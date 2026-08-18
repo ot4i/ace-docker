@@ -1,14 +1,17 @@
 FROM ubuntu:24.04
 MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
-# docker build -t ace-full:13.0.4.0-ubuntu -f Dockerfile.ubuntu .
+# docker build -t ace-full:13.0.8.0-ubuntu -f Dockerfile.ubuntu .
 
 
 # Later versions from the same site, or else via the Developer edition download site linked from
 # https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
-ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/13.0.4.0-ACE-LINUX64-EVALUATION.tar.gz
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/13.0.8.0-ACE-LINUX64-EVALUATION.tar.gz
 # Can be set higher if needed
 ARG DOWNLOAD_CONNECTION_COUNT=1
+
+# Override for local builds
+ARG COMPANY_NAME=ace-basic
 
 # Prevent errors about having no terminal when using apt-get
 ENV DEBIAN_FRONTEND noninteractive
@@ -22,7 +25,8 @@ RUN apt-get update && apt-get install -y aria2 && \
     tar -zxf *13.0*tar.gz --directory /opt/ibm && \
     rm -f *13.0*tar.gz && \
     mv /opt/ibm/ace-13* /opt/ibm/ace-13 && \
-    /opt/ibm/ace-13/ace make registry global accept license deferred
+    /opt/ibm/ace-13/ace accept license --silently --make-registry-global --company-name "${COMPANY_NAME}" && \
+    sed -i "s|LICENSE_ACCEPTED=1|LICENSE_ACCEPTED=2|g" /opt/ibm/ace-13/server/bin/mqsiprofile
 
 # Configure the system
 RUN echo "ACE_13:" > /etc/debian_chroot \
@@ -38,6 +42,22 @@ ENV BASH_ENV=/opt/ibm/ace-13/server/bin/mqsiprofile
 RUN useradd --uid 1001 --create-home --home-dir /home/aceuser --shell /bin/bash -G mqbrkrs,sudo aceuser \
   && su - aceuser -c "export LICENSE=accept && . /opt/ibm/ace-13/server/bin/mqsiprofile && mqsicreateworkdir /home/aceuser/ace-server" \
   && echo ". /opt/ibm/ace-13/server/bin/mqsiprofile" >> /home/aceuser/.bashrc
+
+# Install useful utilities, and the latest of everything to keep security scanners happy
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    tzdata \
+    unzip \
+    zip \
+  && apt-get -y  dist-upgrade \
+  && rm -rf /var/lib/apt/lists/* 
+
+# Pull in Google's crane utility for managing containers
+RUN mkdir -p /usr/local/bin || /bin/true && \
+    cd /usr/local/bin && \
+    curl --location -fs https://github.com/google/go-containerregistry/releases/download/v0.21.5/go-containerregistry_Linux_x86_64.tar.gz | tar -xzvf - crane && \
+    chmod 775 /usr/local/bin/crane
 
 # This seems to be needed for OpenShift support due to random userids at runtime
 RUN chmod -R 777 /home/aceuser /var/mqsi || /bin/true
