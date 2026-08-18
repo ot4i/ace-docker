@@ -9,6 +9,7 @@
 */server/messages/BIPmsgs_ru.properties
 */server/messages/BIPmsgs_tr.properties
 */server/messages/BIPmsgs_zh.properties
+*/server/messages/BIPmsgs_zh_HK.properties
 */server/messages/BIPmsgs_zh_TW.properties
 */server/messages/De_DE/BIPmsgs.cat
 */server/messages/Es_ES/BIPmsgs.cat

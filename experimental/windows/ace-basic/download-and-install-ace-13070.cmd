@@ -33,7 +33,7 @@ REM
 REM **************************************************************** 
 c:\tmp\aria-unzip\aria2-1.36.0-win-64bit-build1\aria2c.exe -s 10 -j 10 -x 10 %1
 dir c:\tmp
-powershell -Command "Expand-Archive -Path c:\tmp\13.0.8.0-ACE-WIN64-EVALUATION.zip -DestinationPath c:\tmp\ace-unzip"
+powershell -Command "Expand-Archive -Path c:\tmp\13.0.4.0-ACE-WIN64-EVALUATION.zip -DestinationPath c:\tmp\ace-unzip"
 dir c:\tmp\ace-unzip
 
 REM **************************************************************** 
@@ -57,9 +57,7 @@ cd c:\tmp\ace-unzip\
 
 REM Note change from v12 to v13
 REM .\ACESetup12.0.10.0.exe /quiet LICENSE_ACCEPTED=true InstallFolder=C:\ace-12 InstallToolkit=0 InstallGAC=0 InstallElectronApp=0
-REM Note change at ACE 13.0.8
-REM .\ACESetup13.0.4.0.exe -silent -installFolder C:\ace-13 -licenseAccept yes -anonymousUsageStatistics no -installToolkit no -installWSRRnodes no -installElectronApp no 
-.\ACESetup13.0.8.0.exe -silent -installFolder C:\ace-13 -licenseAccept yes -companyName WindowsContainer -installToolkit no -installWSRRnodes no -installElectronApp no 
+.\ACESetup13.0.4.0.exe -silent -installFolder C:\ace-13 -licenseAccept yes -anonymousUsageStatistics no -installToolkit no -installWSRRnodes no -installElectronApp no 
 
 REM Install the .Net support DLLs
 call c:\ace-13\server\bin\runCommand.cmd C:\ace-13\server\bin\mqsiAssemblyInstall -i C:\ace-13\server\bin\IBM.Broker.Plugin.dll

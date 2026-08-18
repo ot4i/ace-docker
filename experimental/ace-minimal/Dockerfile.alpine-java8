@@ -1,14 +1,17 @@
 FROM alpine:3.20
 
-# docker build -t ace-minimal:13.0.4.0-alpine-java8 -f Dockerfile.alpine-java8 .
+# docker build -t ace-minimal:13.0.8.0-alpine-java8 -f Dockerfile.alpine-java8 .
 
 MAINTAINER Trevor Dolby <trevor.dolby@ibm.com> (@trevor-dolby-at-ibm-com)
 
 # Later versions from the same site, or else via the Developer edition download site linked from
 # https://www.ibm.com/docs/en/app-connect/12.0?topic=enterprise-download-ace-developer-edition-get-started
-ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/13.0.4.0-ACE-LINUX64-EVALUATION.tar.gz
+ARG DOWNLOAD_URL=https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/integration/13.0.8.0-ACE-LINUX64-EVALUATION.tar.gz
 # Can be set higher if needed
 ARG DOWNLOAD_CONNECTION_COUNT=1
+
+# Override for local builds
+ARG COMPANY_NAME=ace-minimal
 
 RUN apk --update add --no-cache --virtual .build-deps curl binutils zstd \
     && set -x \
@@ -102,7 +105,7 @@ RUN mkdir -p /opt/ibm && \
     zip -d /opt/ibm/ace-13/common/classes/IntegrationAPI.jar BIPmsgs_de.properties BIPmsgs_es.properties BIPmsgs_fr.properties BIPmsgs_it.properties BIPmsgs_ja.properties BIPmsgs_ko.properties BIPmsgs_pl.properties BIPmsgs_pt_BR.properties BIPmsgs_ru.properties BIPmsgs_tr.properties BIPmsgs_zh.properties BIPmsgs_zh_HK.properties BIPmsgs_zh_TW.properties && \
     apk del --purge binutils zip && \
     addgroup mqbrkrs && \
-    bash -c '. /etc/profile.d/profile-with-product-java8-paths.sh && /opt/ibm/ace-13/ace make registry global accept license deferred' && \
+    bash -c '. /etc/profile.d/profile-with-product-java8-paths.sh && /opt/ibm/ace-13/ace accept license --silently --make-registry-global --company-name "${COMPANY_NAME}" && sed -i "s|LICENSE_ACCEPTED=1|LICENSE_ACCEPTED=2|g" /opt/ibm/ace-13/server/bin/mqsiprofile' && \
     rm -rf /opt/ibm/ace-13/common/java17 && \
     cat /etc/profile.d/profile-with-product-java8-paths.sh >> /root/.bashrc && \
     ln -s /opt/ibm/ace-13/common/jdk /opt/ibm/ace-13/common/java17 && \
